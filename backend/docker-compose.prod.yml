@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: vending_db_prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vending}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vending_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-vending}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vending"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vending_network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vending_app_prod
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-vending}:${POSTGRES_PASSWORD:-vending_pass}@db:5432/${POSTGRES_DB:-vending}
+      SECRET_KEY: ${SECRET_KEY}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      VENDISTA_API_BASE_URL: ${VENDISTA_API_BASE_URL:-https://api.vendista.ru}
+      VENDISTA_API_TOKEN: ${VENDISTA_API_TOKEN}
+      HOST: 0.0.0.0
+      PORT: 8000
+      DEBUG: "False"
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://t.me}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - vending_network
+    command: >
+      sh -c "
+        alembic upgrade head &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4 --proxy-headers
+      "
+
+volumes:
+  postgres_data_prod:
+    driver: local
+
+networks:
+  vending_network:
+    driver: bridge

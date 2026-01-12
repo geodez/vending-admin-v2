@@ -154,3 +154,64 @@ export interface OwnerReportIssue {
   action_url: string;
   count?: number;
 }
+
+// Additional Business Entity Types
+export interface Location {
+  id: number;
+  name: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Product {
+  product_external_id: string;
+  name: string;
+  sale_price_rub: number;
+  enabled: boolean;
+  visible: boolean;
+  meta?: any;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Drink {
+  id: number;
+  name: string;
+  is_active: boolean;
+  created_at?: string;
+}
+
+export interface KPIData {
+  revenue: number;
+  sales_count: number;
+  gross_profit: number;
+  gross_margin_pct: number;
+  variable_expenses: number;
+  net_profit: number;
+  net_margin_pct: number;
+}
+
+export interface SalesData {
+  date: string;
+  revenue: number;
+  cogs: number;
+  gross_profit: number;
+  sales_count: number;
+}
+
+export interface InventoryData {
+  ingredient_code: string;
+  ingredient_name: string;
+  balance: number;
+  unit: string;
+  alert_threshold: number;
+  status: 'ok' | 'warning' | 'critical';
+}
+
+export interface ExpenseData {
+  id: number;
+  date: string;
+  category: string;
+  amount: number;
+  description?: string;
+}

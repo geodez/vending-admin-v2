@@ -21,6 +21,15 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
+class UserCreate(BaseModel):
+    """Схема для создания пользователя"""
+    telegram_user_id: int
+    username: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    role: str = "operator"
+
+
 class TokenResponse(BaseModel):
     """Ответ с JWT токеном"""
     access_token: str
