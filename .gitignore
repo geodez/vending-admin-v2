@@ -89,3 +89,4 @@ migrations/versions/__pycache__/
 *.bak
 *.swp
 .~lock.*
+backend/.env

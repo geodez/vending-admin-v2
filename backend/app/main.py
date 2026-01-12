@@ -1,0 +1,38 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.config import settings
+from app.api.v1 import auth
+
+app = FastAPI(
+    title="Vending Admin v2 API",
+    description="Telegram Mini App для управления вендинговым бизнесом",
+    version="1.0.0"
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Подключение роутеров
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
+
+
+@app.get("/")
+def root():
+    """Health check endpoint"""
+    return {
+        "status": "ok",
+        "message": "Vending Admin v2 API is running",
+        "version": "1.0.0"
+    }
+
+
+@app.get("/health")
+def health_check():
+    """Health check для мониторинга"""
+    return {"status": "healthy"}
