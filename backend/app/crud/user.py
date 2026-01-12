@@ -1,6 +1,7 @@
-from typing import Optional
+from typing import Optional, List
 from sqlalchemy.orm import Session
 from app.models.user import User
+from app.schemas.auth import UserCreate
 
 
 def get_user_by_telegram_id(db: Session, telegram_user_id: int) -> Optional[User]:
@@ -13,24 +14,27 @@ def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
     return db.query(User).filter(User.id == user_id).first()
 
 
-def create_user(
-    db: Session,
-    telegram_user_id: int,
-    username: Optional[str] = None,
-    first_name: Optional[str] = None,
-    last_name: Optional[str] = None,
-    role: str = "operator"
-) -> User:
-    """Создать нового пользователя"""
-    user = User(
-        telegram_user_id=telegram_user_id,
-        username=username,
-        first_name=first_name,
-        last_name=last_name,
-        role=role,
+def get_user(db: Session, user_id: int) -> Optional[User]:
+    """Get user by ID (alias for compatibility)"""
+    return get_user_by_id(db, user_id)
+
+
+def get_users(db: Session, skip: int = 0, limit: int = 100) -> List[User]:
+    """Get list of all users"""
+    return db.query(User).offset(skip).limit(limit).all()
+
+
+def create_user(db: Session, user: UserCreate) -> User:
+    """Create a new user"""
+    db_user = User(
+        telegram_user_id=user.telegram_user_id,
+        username=user.username,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        role=user.role,
         is_active=True
     )
-    db.add(user)
+    db.add(db_user)
     db.commit()
-    db.refresh(user)
-    return user
+    db.refresh(db_user)
+    return db_user

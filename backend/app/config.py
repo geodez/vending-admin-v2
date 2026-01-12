@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     def cors_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
     
+    # Vendista API
+    vendista_api_base_url: str = "https://api.vendista.ru"
+    vendista_api_token: str = ""  # Must be set in .env
+    
     class Config:
         env_file = ".env"
         case_sensitive = True
