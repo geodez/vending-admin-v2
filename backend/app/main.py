@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.v1 import auth, sync, business, analytics
+from app.api.v1 import auth, sync, business, analytics, users
 
 app = FastAPI(
     title="Vending Admin v2 API",
@@ -23,6 +23,7 @@ app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(sync.router, prefix="/api/v1/sync", tags=["Vendista Sync"])
 app.include_router(business.router, prefix="/api/v1", tags=["Business Entities"])
 app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["Analytics & Reports"])
+app.include_router(users.router, prefix="/api/v1", tags=["User Management"])
 
 
 @app.get("/")
