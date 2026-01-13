@@ -5,10 +5,10 @@ import apiClient from './client';
 import type { User } from '@/types/api';
 
 export const getUsers = () =>
-  apiClient.get<User[]>('/api/v1/users');
+  apiClient.get<User[]>('/v1/users');
 
 export const getUser = (userId: number) =>
-  apiClient.get<User>(`/api/v1/users/${userId}`);
+  apiClient.get<User>(`/v1/users/${userId}`);
 
 export const createUser = (data: {
   telegram_user_id: number;
@@ -16,12 +16,12 @@ export const createUser = (data: {
   first_name?: string;
   last_name?: string;
   role: 'owner' | 'operator';
-}) => apiClient.post<User>('/api/v1/users', data);
+}) => apiClient.post<User>('/v1/users', data);
 
 export const updateUser = (userId: number, data: {
   role?: 'owner' | 'operator';
   is_active?: boolean;
-}) => apiClient.put<User>(`/api/v1/users/${userId}`, data);
+}) => apiClient.put<User>(`/v1/users/${userId}`, data);
 
 export const deleteUser = (userId: number) =>
-  apiClient.delete(`/api/v1/users/${userId}`);
+  apiClient.delete(`/v1/users/${userId}`);

@@ -30,15 +30,15 @@ export interface VendistaTransaction {
 
 // Trigger manual sync
 export const triggerSync = (params?: { terminal_id?: number; force?: boolean }) =>
-  apiClient.post<{ message: string; synced_count: number }>('/api/v1/sync/sync', null, { params });
+  apiClient.post<{ message: string; synced_count: number }>('/v1/sync/sync', null, { params });
 
 // Get sync status
 export const getSyncStatus = (terminalId?: number) =>
-  apiClient.get<SyncStatus[]>('/api/v1/sync/status', { params: { terminal_id: terminalId } });
+  apiClient.get<SyncStatus[]>('/v1/sync/status', { params: { terminal_id: terminalId } });
 
 // Get terminals
 export const getTerminals = () =>
-  apiClient.get<VendistaTerminal[]>('/api/v1/sync/terminals');
+  apiClient.get<VendistaTerminal[]>('/v1/sync/terminals');
 
 // Get transactions
 export const getTransactions = (params?: {
@@ -47,11 +47,11 @@ export const getTransactions = (params?: {
   to_date?: string;
   limit?: number;
   offset?: number;
-}) => apiClient.get<VendistaTransaction[]>('/api/v1/sync/transactions', { params });
+}) => apiClient.get<VendistaTransaction[]>('/v1/sync/transactions', { params });
 
 // Get transaction count
 export const getTransactionCount = (params?: {
   terminal_id?: number;
   from_date?: string;
   to_date?: string;
-}) => apiClient.get<{ count: number }>('/api/v1/sync/transactions/count', { params });
+}) => apiClient.get<{ count: number }>('/v1/sync/transactions/count', { params });

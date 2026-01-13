@@ -10,7 +10,7 @@ export const authApi = {
       console.log('🔐 Отправляем Telegram initData на сервер...');
       const payload: TelegramAuthRequest = { init_data: initData };
       console.log('📡 API_BASE_URL:', import.meta.env.VITE_API_BASE_URL || 'http://155.212.160.190:8000');
-      const response = await apiClient.post<TokenResponse>('/api/v1/auth/telegram', payload);
+      const response = await apiClient.post<TokenResponse>('/v1/auth/telegram', payload);
       console.log('✅ Ответ от сервера получен');
       return response.data;
     } catch (error) {

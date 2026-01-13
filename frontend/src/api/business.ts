@@ -11,43 +11,43 @@ import type {
 } from '@/types/api';
 
 // Locations
-export const getLocations = () => apiClient.get<Location[]>('/api/v1/business/locations');
+export const getLocations = () => apiClient.get<Location[]>('/v1/business/locations');
 export const createLocation = (data: { name: string }) => 
-  apiClient.post<Location>('/api/v1/business/locations', data);
+  apiClient.post<Location>('/v1/business/locations', data);
 export const updateLocation = (id: number, data: { name: string }) =>
-  apiClient.put<Location>(`/api/v1/business/locations/${id}`, data);
+  apiClient.put<Location>(`/v1/business/locations/${id}`, data);
 export const deleteLocation = (id: number) =>
-  apiClient.delete(`/api/v1/business/locations/${id}`);
+  apiClient.delete(`/v1/business/locations/${id}`);
 
 // Products
-export const getProducts = () => apiClient.get<Product[]>('/api/v1/business/products');
+export const getProducts = () => apiClient.get<Product[]>('/v1/business/products');
 export const createProduct = (data: Partial<Product>) =>
-  apiClient.post<Product>('/api/v1/business/products', data);
+  apiClient.post<Product>('/v1/business/products', data);
 export const updateProduct = (id: string, data: Partial<Product>) =>
-  apiClient.put<Product>(`/api/v1/business/products/${id}`, data);
+  apiClient.put<Product>(`/v1/business/products/${id}`, data);
 export const deleteProduct = (id: string) =>
-  apiClient.delete(`/api/v1/business/products/${id}`);
+  apiClient.delete(`/v1/business/products/${id}`);
 
 // Ingredients
-export const getIngredients = () => apiClient.get<Ingredient[]>('/api/v1/business/ingredients');
+export const getIngredients = () => apiClient.get<Ingredient[]>('/v1/business/ingredients');
 export const createIngredient = (data: Partial<Ingredient>) =>
-  apiClient.post<Ingredient>('/api/v1/business/ingredients', data);
+  apiClient.post<Ingredient>('/v1/business/ingredients', data);
 export const updateIngredient = (code: string, data: Partial<Ingredient>) =>
-  apiClient.put<Ingredient>(`/api/v1/business/ingredients/${code}`, data);
+  apiClient.put<Ingredient>(`/v1/business/ingredients/${code}`, data);
 export const deleteIngredient = (code: string) =>
-  apiClient.delete(`/api/v1/business/ingredients/${code}`);
+  apiClient.delete(`/v1/business/ingredients/${code}`);
 
 // Drinks (Recipes)
-export const getDrinks = () => apiClient.get<Drink[]>('/api/v1/business/drinks');
+export const getDrinks = () => apiClient.get<Drink[]>('/v1/business/drinks');
 export const createDrink = (data: Partial<Drink>) =>
-  apiClient.post<Drink>('/api/v1/business/drinks', data);
+  apiClient.post<Drink>('/v1/business/drinks', data);
 export const updateDrink = (id: number, data: Partial<Drink>) =>
-  apiClient.put<Drink>(`/api/v1/business/drinks/${id}`, data);
+  apiClient.put<Drink>(`/v1/business/drinks/${id}`, data);
 export const deleteDrink = (id: number) =>
-  apiClient.delete(`/api/v1/business/drinks/${id}`);
+  apiClient.delete(`/v1/business/drinks/${id}`);
 
 // Recipes (drink items)
 export const getRecipe = (drinkId: number) =>
-  apiClient.get<Recipe>(`/api/v1/business/drinks/${drinkId}/recipe`);
+  apiClient.get<Recipe>(`/v1/business/drinks/${drinkId}/recipe`);
 export const updateRecipe = (drinkId: number, items: Array<{ ingredient_code: string; qty_per_unit: number; unit: string }>) =>
-  apiClient.put(`/api/v1/business/drinks/${drinkId}/recipe`, { items });
+  apiClient.put(`/v1/business/drinks/${drinkId}/recipe`, { items });
