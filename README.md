@@ -7,8 +7,13 @@
 
 ## 📚 Документация
 
-- **[START_HERE.md](./START_HERE.md)** — начало работы и обзор проекта
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** — полная архитектура проекта (30+ страниц)
+- **[QUICK_START_TELEGRAM.md](./QUICK_START_TELEGRAM.md)** ⚡ **← НАЧНИТЕ ОТСЮДА** - Telegram Web App за 5 минут
+- **[SETUP_TELEGRAM_BOT.md](./SETUP_TELEGRAM_BOT.md)** - Пошаговая настройка бота в @BotFather
+- **[TROUBLESHOOT_TELEGRAM.md](./TROUBLESHOOT_TELEGRAM.md)** - Диагностика ошибок Web App
+- **[TELEGRAM_FLOW.md](./TELEGRAM_FLOW.md)** - Полное описание Telegram авторизации
+- **[TELEGRAM_INTEGRATION_COMPLETE.md](./TELEGRAM_INTEGRATION_COMPLETE.md)** - Статус интеграции
+- **[START_HERE.md](./START_HERE.md)** — обзор проекта
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** — архитектура (30+ страниц)
 - **[API_REFERENCE.md](./API_REFERENCE.md)** — справочник API
 - **[DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md)** — план разработки
 - **[QUICK_DEPLOY.md](./QUICK_DEPLOY.md)** — быстрый деплой на сервер
@@ -77,18 +82,57 @@ npm run build
 # Результат в: dist/
 ```
 
-### 3️⃣ Тестирование Telegram Mini App
+### 3️⃣ Telegram Web App
 
-1. Откройте [@BotFather](https://t.me/BotFather) в Telegram
-2. Создайте нового бота или используйте существующий
-3. Настройте Mini App:
-   ```
-   /setmenubutton
-   Выберите вашего бота
-   Введите текст кнопки: Admin Panel
-   Введите URL: http://localhost:5173 (для разработки)
-   ```
-4. Откройте бота и нажмите кнопку Menu → Admin Panel
+**🚀 Быстрая настройка (5 минут):**
+
+1. **Откройте [@BotFather](https://t.me/BotFather)**
+2. `/mybots` → выберите бота → `🌐 Web App Settings`
+3. **Введите URL:** `https://admin.b2broundtable.ru`
+4. **Сохраните**
+
+После этого:
+- Пользователи смогут открыть Web App из Telegram бота
+- Также смогут открыть с обычного браузера и перенаправиться в Telegram
+
+**Подробная инструкция:** [QUICK_START_TELEGRAM.md](./QUICK_START_TELEGRAM.md)
+
+---
+
+### Тестирование Telegram Mini App
+
+**Локально (development):**
+
+```bash
+cd frontend
+
+# Установите зависимости
+npm install
+
+# Настройте .env
+cp .env.example .env
+# VITE_API_BASE_URL=http://localhost:8000
+# VITE_TELEGRAM_BOT_USERNAME=coffeekznebot
+
+# Запустите dev server
+npm run dev
+# Приложение: http://localhost:5173
+```
+
+**Debug mode (без реального Telegram):**
+
+```
+https://localhost:5173/login?debug=true
+или
+https://admin.b2broundtable.ru/login?debug=true
+```
+
+**С реальным Telegram:**
+
+1. Откройте [@BotFather](https://t.me/BotFather)
+2. Создайте нового бота
+3. Настройте Web App (как выше)
+4. Откройте бота в Telegram и нажмите на кнопку Web App
 
 ## 🏗️ Production Deployment
 
