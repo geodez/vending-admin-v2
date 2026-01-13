@@ -1,6 +1,6 @@
 // Constants for Vending Admin v2
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://155.212.160.190:8000';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 export const TELEGRAM_BOT_USERNAME = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'coffeekznebot';
 
 export const TOKEN_STORAGE_KEY = 'vending_admin_token';
