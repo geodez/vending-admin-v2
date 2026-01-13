@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '0001'
+revision = '0001_create_users_table'
 down_revision = None
 branch_labels = None
 depends_on = None
