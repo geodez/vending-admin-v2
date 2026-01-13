@@ -63,6 +63,32 @@ export const useTelegram = (): UseTelegramReturn => {
         setIsReady(true);
       } else {
         console.warn('⚠️ WebApp недоступен, возможно приложение не открыто через Telegram');
+        
+        // DEV MODE: Если открыто не через Telegram, используем test данные
+        const isDev = !import.meta.env.PROD;
+        if (isDev && window.location.hostname === 'localhost') {
+          console.log('💻 DEV MODE: Используем test Telegram данные');
+          
+          // Test user data
+          const testUser: TelegramUser = {
+            id: 602720033,
+            is_bot: false,
+            first_name: 'Roman',
+            last_name: 'Test',
+            username: 'roman_test',
+            language_code: 'ru',
+            is_premium: false,
+            allows_write_to_pm: true,
+          };
+          
+          // Генерируем test initData
+          const testInitData = `query_id=test&user=${JSON.stringify(testUser)}&auth_date=${Math.floor(Date.now() / 1000)}&hash=test`;
+          
+          console.log('📱 Test initData:', testInitData);
+          setUser(testUser);
+          setInitData(testInitData);
+        }
+        
         setIsReady(true);
       }
     } catch (error) {

@@ -22,6 +22,10 @@ const LoginPage = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+  const isDev = !import.meta.env.PROD;
+  const buttonDisabled = !initData && !(isLocalhost && isDev);
+
   const handleLogin = async () => {
     if (!initData) {
       setError('Telegram данные недоступны. Откройте приложение через Telegram.');
@@ -109,16 +113,25 @@ const LoginPage = () => {
             block
             loading={loading}
             onClick={handleLogin}
-            disabled={!initData}
+            disabled={buttonDisabled}
           >
             {loading ? 'Вход...' : 'Войти через Telegram'}
           </Button>
 
-          {!initData && (
+          {!initData && !isDev && (
             <Alert
               message="Откройте через Telegram"
               description="Это приложение работает только через Telegram Mini App"
               type="warning"
+              showIcon
+            />
+          )}
+          
+          {!initData && isDev && isLocalhost && (
+            <Alert
+              message="DEV MODE: Test данные загружены"
+              description="Вы можете использовать test Telegram данные для отладки"
+              type="success"
               showIcon
             />
           )}
