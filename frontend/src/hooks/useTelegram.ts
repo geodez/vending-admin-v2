@@ -22,7 +22,7 @@ export const useTelegram = (): UseTelegramReturn => {
   useEffect(() => {
     try {
       if (typeof window !== 'undefined' && WebApp) {
-        console.log('Initializing Telegram WebApp...');
+        console.log('🚀 Инициализация Telegram WebApp...');
         
         // Initialize Telegram WebApp
         WebApp.ready();
@@ -33,17 +33,23 @@ export const useTelegram = (): UseTelegramReturn => {
         const appInitData = (WebApp as any)?.initData || '';
         const scheme = (WebApp as any)?.colorScheme || 'light';
         
-        console.log('Telegram data:', {
+        console.log('📊 Данные Telegram:', {
           userData,
           appInitData: appInitData?.substring(0, 50) + '...',
           scheme
         });
         
         if (userData) {
+          console.log('👤 Пользователь найден:', userData.id, userData.first_name);
           setUser(userData);
+        } else {
+          console.warn('⚠️ Пользователь не найден в initDataUnsafe');
         }
         if (appInitData) {
+          console.log('🔐 initData получен (длина: ' + appInitData.length + ')');
           setInitData(appInitData);
+        } else {
+          console.warn('⚠️ initData пуст');
         }
         if (scheme) {
           setColorScheme(scheme);
@@ -56,11 +62,11 @@ export const useTelegram = (): UseTelegramReturn => {
         
         setIsReady(true);
       } else {
-        console.log('WebApp not available, using fallback');
+        console.warn('⚠️ WebApp недоступен, возможно приложение не открыто через Telegram');
         setIsReady(true);
       }
     } catch (error) {
-      console.error('Error initializing Telegram WebApp:', error);
+      console.error('❌ Ошибка инициализации Telegram WebApp:', error);
       setIsReady(true);
     }
   }, []);

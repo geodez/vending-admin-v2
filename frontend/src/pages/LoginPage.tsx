@@ -32,15 +32,21 @@ const LoginPage = () => {
     setError(null);
 
     try {
+      console.log('📱 Отправляем запрос на авторизацию...');
+      console.log('initData длина:', initData.length);
       const response = await authApi.loginWithTelegram(initData);
+      console.log('✅ Авторизация успешна!', response);
       setToken(response.access_token);
       setUser(response.user);
       navigate(ROUTES.OVERVIEW);
     } catch (err: any) {
-      console.error('Login error:', err);
+      console.error('❌ Login error:', err);
+      console.error('Status:', err.response?.status);
+      console.error('Data:', err.response?.data);
+      console.error('Message:', err.message);
       setError(
         err.response?.data?.detail || 
-        'Ошибка входа. Возможно, у вас нет доступа к системе.'
+        `Ошибка входа: ${err.message || 'Проверьте консоль'}`
       );
     } finally {
       setLoading(false);
