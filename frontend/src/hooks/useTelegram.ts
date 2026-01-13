@@ -44,9 +44,9 @@ export const useTelegram = (): UseTelegramReturn => {
           console.log('👤 Пользователь найден:', userData.id, userData.first_name);
           setUser(userData);
           setInitData(appInitData);
-        } else {
-          // Если данные не загружены, проверяем debug mode
-          console.warn('⚠️ Данные Telegram не загружены, проверяем debug mode...');
+        } else if (!userData) {
+          // Если userData не загружен - это не реальное Telegram окружение
+          console.warn('⚠️ userData не загружен, проверяем debug mode...');
           
           const isDev = !import.meta.env.PROD;
           const isLocalhost = window.location.hostname === 'localhost';
