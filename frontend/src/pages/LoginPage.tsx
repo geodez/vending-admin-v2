@@ -5,7 +5,7 @@ import { LoginOutlined } from '@ant-design/icons';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/api/auth';
-import { ROUTES } from '@/utils/constants';
+import { ROUTES, TELEGRAM_BOT_USERNAME } from '@/utils/constants';
 
 const { Title, Text } = Typography;
 
@@ -26,6 +26,7 @@ const LoginPage = () => {
   const isDev = !import.meta.env.PROD;
   const hasDebugParam = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').has('debug');
   const isDebugMode = (isLocalhost && isDev) || hasDebugParam;
+  const isInTelegram = !!initData; // Если initData есть - мы в Telegram
   const buttonDisabled = !initData && !isDebugMode;
 
   const handleLogin = async () => {
@@ -57,6 +58,16 @@ const LoginPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOpenTelegram = () => {
+    // Открываем Telegram бота с параметром startapp для инициирования Web App
+    const appName = 'vendingadmin'; // Имя приложения в Bot Father
+    
+    // Используем deep link с параметром startapp
+    const telegramUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}/${appName}?startapp=login_${Date.now()}`;
+    console.log('🔗 Открываем Telegram:', telegramUrl);
+    window.location.href = telegramUrl;
   };
 
   return (
@@ -114,22 +125,22 @@ const LoginPage = () => {
             icon={<LoginOutlined />}
             block
             loading={loading}
-            onClick={handleLogin}
-            disabled={buttonDisabled}
+            onClick={isInTelegram ? handleLogin : handleOpenTelegram}
+            disabled={buttonDisabled && !isInTelegram}
           >
-            {loading ? 'Вход...' : 'Войти через Telegram'}
+            {loading ? 'Вход...' : isInTelegram ? 'Войти через Telegram' : 'Открыть в Telegram'}
           </Button>
 
-          {!initData && !isDebugMode && (
+          {!isInTelegram && !isDebugMode && (
             <Alert
-              message="Откройте через Telegram"
-              description="Это приложение работает только через Telegram Mini App"
-              type="warning"
+              message="Требуется Telegram"
+              description="Нажмите кнопку выше чтобы открыть приложение в Telegram"
+              type="info"
               showIcon
             />
           )}
           
-          {!initData && isDebugMode && (
+          {!isInTelegram && isDebugMode && (
             <Alert
               message="DEBUG MODE: Test данные загружены"
               description="Вы можете использовать test Telegram данные для отладки"
