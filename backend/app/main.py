@@ -24,6 +24,7 @@ app.include_router(users.router, prefix="/api/v1", tags=["User Management"])
 app.include_router(sync.router, prefix="/api/v1/sync", tags=["Vendista Sync"])
 app.include_router(business.router, prefix="/api/v1", tags=["Business Entities"])
 app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["Analytics & Reports"])
+app.include_router(users.router, prefix="/api/v1", tags=["User Management"])
 
 
 @app.get("/")
