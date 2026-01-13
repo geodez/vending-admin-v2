@@ -24,7 +24,9 @@ const LoginPage = () => {
 
   const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
   const isDev = !import.meta.env.PROD;
-  const buttonDisabled = !initData && !(isLocalhost && isDev);
+  const hasDebugParam = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').has('debug');
+  const isDebugMode = (isLocalhost && isDev) || hasDebugParam;
+  const buttonDisabled = !initData && !isDebugMode;
 
   const handleLogin = async () => {
     if (!initData) {
@@ -118,7 +120,7 @@ const LoginPage = () => {
             {loading ? 'Вход...' : 'Войти через Telegram'}
           </Button>
 
-          {!initData && !isDev && (
+          {!initData && !isDebugMode && (
             <Alert
               message="Откройте через Telegram"
               description="Это приложение работает только через Telegram Mini App"
@@ -127,9 +129,9 @@ const LoginPage = () => {
             />
           )}
           
-          {!initData && isDev && isLocalhost && (
+          {!initData && isDebugMode && (
             <Alert
-              message="DEV MODE: Test данные загружены"
+              message="DEBUG MODE: Test данные загружены"
               description="Вы можете использовать test Telegram данные для отладки"
               type="success"
               showIcon

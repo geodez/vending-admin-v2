@@ -66,7 +66,10 @@ export const useTelegram = (): UseTelegramReturn => {
         
         // DEV MODE: Если открыто не через Telegram, используем test данные
         const isDev = !import.meta.env.PROD;
-        if (isDev && window.location.hostname === 'localhost') {
+        const isLocalhost = window.location.hostname === 'localhost';
+        const hasDebugParam = new URLSearchParams(window.location.search).has('debug');
+        
+        if ((isDev && isLocalhost) || hasDebugParam) {
           console.log('💻 DEV MODE: Используем test Telegram данные');
           
           // Test user data
