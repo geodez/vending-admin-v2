@@ -24,7 +24,8 @@ function App() {
     initAuth();
   }, [initAuth]);
 
-  if (isLoading || !isReady) {
+  // Show loading only while checking auth state, not while waiting for Telegram
+  if (isLoading) {
     return (
       <div style={{ 
         display: 'flex', 

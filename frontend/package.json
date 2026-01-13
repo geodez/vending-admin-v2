@@ -1,33 +1,31 @@
 {
   "name": "vending-admin-frontend",
+  "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Vending Admin v2 - React Frontend with Telegram Mini App",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "build": "vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
   },
   "dependencies": {
+    "@ant-design/icons": "^5.2.6",
+    "@twa-dev/sdk": "^7.0.0",
+    "antd": "^5.11.3",
+    "axios": "^1.6.2",
+    "zustand": "^4.4.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.21.0",
-    "antd": "^5.12.0",
-    "@ant-design/icons": "^5.2.6",
-    "axios": "^1.6.2",
-    "zustand": "^4.4.7",
-    "@twa-dev/sdk": "^7.0.0",
-    "dayjs": "^1.11.10",
-    "recharts": "^2.10.3"
+    "react-router-dom": "^6.20.1"
   },
   "devDependencies": {
-    "@types/react": "^18.2.43",
-    "@types/react-dom": "^18.2.17",
-    "@typescript-eslint/eslint-plugin": "^6.14.0",
-    "@typescript-eslint/parser": "^6.14.0",
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@typescript-eslint/eslint-plugin": "^6.10.0",
+    "@typescript-eslint/parser": "^6.10.0",
     "@vitejs/plugin-react": "^4.2.1",
-    "eslint": "^8.55.0",
+    "eslint": "^8.53.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
     "typescript": "^5.2.2",

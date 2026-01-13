@@ -3,7 +3,6 @@ import {
   DollarOutlined,
   ShoppingCartOutlined,
   RiseOutlined,
-  FallOutlined,
   WalletOutlined,
   TrophyOutlined,
 } from '@ant-design/icons';

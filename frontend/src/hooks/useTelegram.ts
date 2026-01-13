@@ -15,26 +15,57 @@ interface UseTelegramReturn {
  */
 export const useTelegram = (): UseTelegramReturn => {
   const [isReady, setIsReady] = useState(false);
+  const [user, setUser] = useState<TelegramUser | null>(null);
+  const [initData, setInitData] = useState('');
+  const [colorScheme, setColorScheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && WebApp) {
-      // Initialize Telegram WebApp
-      WebApp.ready();
-      WebApp.expand();
-      
-      // Apply theme
-      if (WebApp.themeParams.bg_color) {
-        document.body.style.backgroundColor = WebApp.themeParams.bg_color;
+    try {
+      if (typeof window !== 'undefined' && WebApp) {
+        console.log('Initializing Telegram WebApp...');
+        
+        // Initialize Telegram WebApp
+        WebApp.ready();
+        WebApp.expand();
+        
+        // Get user data
+        const userData = (WebApp as any)?.initDataUnsafe?.user || null;
+        const appInitData = (WebApp as any)?.initData || '';
+        const scheme = (WebApp as any)?.colorScheme || 'light';
+        
+        console.log('Telegram data:', {
+          userData,
+          appInitData: appInitData?.substring(0, 50) + '...',
+          scheme
+        });
+        
+        if (userData) {
+          setUser(userData);
+        }
+        if (appInitData) {
+          setInitData(appInitData);
+        }
+        if (scheme) {
+          setColorScheme(scheme);
+        }
+        
+        // Apply theme
+        if ((WebApp as any)?.themeParams?.bg_color) {
+          document.body.style.backgroundColor = (WebApp as any).themeParams.bg_color;
+        }
+        
+        setIsReady(true);
+      } else {
+        console.log('WebApp not available, using fallback');
+        setIsReady(true);
       }
-      
+    } catch (error) {
+      console.error('Error initializing Telegram WebApp:', error);
       setIsReady(true);
     }
   }, []);
 
   const webApp = (WebApp as unknown) as TelegramWebApp;
-  const user = webApp?.initDataUnsafe?.user || null;
-  const initData = webApp?.initData || '';
-  const colorScheme = webApp?.colorScheme || 'light';
 
   return {
     webApp,

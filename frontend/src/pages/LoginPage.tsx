@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Card, Typography, Space, Alert, Spin } from 'antd';
+import { Button, Card, Typography, Space, Alert } from 'antd';
 import { LoginOutlined } from '@ant-design/icons';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useAuthStore } from '@/store/authStore';
