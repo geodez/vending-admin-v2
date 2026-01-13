@@ -40,7 +40,7 @@ def authenticate_telegram(request: TelegramAuthRequest, db: Session = Depends(ge
                 detail="Invalid Telegram authentication data"
             )
     else:
-        telegram_user_id = user_data.get(user_id)
+        telegram_user_id = user_data.get("user_id")
         print(f"DEBUG: user_id из user_data: {telegram_user_id}")
         if not telegram_user_id:
             print("DEBUG: user_id is None, пытаемся использовать hardcoded ID в DEBUG режиме")
