@@ -126,7 +126,7 @@ const LoginPage = () => {
             block
             loading={loading}
             onClick={isInTelegram ? handleLogin : handleOpenTelegram}
-            disabled={buttonDisabled && !isInTelegram}
+            disabled={isInTelegram && buttonDisabled}
           >
             {loading ? 'Вход...' : isInTelegram ? 'Войти через Telegram' : 'Открыть в Telegram'}
           </Button>
