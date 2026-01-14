@@ -5,7 +5,7 @@ import apiClient from './client';
 import type { User } from '@/types/api';
 
 export const getUsers = () =>
-  apiClient.get<User[]>('/v1/users');
+  apiClient.get<User[]>('/users');
 
 export const getUser = (userId: number) =>
   apiClient.get<User>(`/v1/users/${userId}`);
@@ -16,7 +16,7 @@ export const createUser = (data: {
   first_name?: string;
   last_name?: string;
   role: 'owner' | 'operator';
-}) => apiClient.post<User>('/v1/users', data);
+}) => apiClient.post<User>('/users', data);
 
 export const updateUser = (userId: number, data: {
   role?: 'owner' | 'operator';
