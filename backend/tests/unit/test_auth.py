@@ -48,6 +48,17 @@ def test_root_endpoint(client):
     assert "version" in data
 
 
+def test_status_endpoint(client):
+    """Test connection status endpoint (answers 'на связи?')."""
+    response = client.get("/status")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "online"
+    assert "на связи" in data["message"]
+    assert data["service"] == "Vending Admin v2 API"
+    assert "version" in data
+
+
 def test_validate_telegram_login_widget_valid():
     """Test Telegram Login Widget validation with valid signature."""
     bot_token = "test_token_123"
