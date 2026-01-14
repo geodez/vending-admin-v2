@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, Typography, Space, Alert } from 'antd';
 import { LoginOutlined } from '@ant-design/icons';
@@ -6,45 +6,40 @@ import { useTelegram } from '@/hooks/useTelegram';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/api/auth';
 import { ROUTES, TELEGRAM_BOT_USERNAME } from '@/utils/constants';
-import { useTelegramOAuth } from '@/hooks/useTelegramOAuth';
-import { telegramOAuthApi } from '@/api/telegramOAuth';
 
 const { Title, Text } = Typography;
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { initData, user } = useTelegram();
+  const { initData } = useTelegram();
   const { setUser, setToken, isAuthenticated } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [oauthLoading, setOauthLoading] = useState(false);
 
+  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
       navigate(ROUTES.OVERVIEW);
     }
     
-    // Проверяем, есть ли токен в URL (после Telegram Login Widget или возврата из Web App)
+    // Check if token in URL (from Telegram Login Widget redirect)
     const params = new URLSearchParams(window.location.search);
     const tokenFromUrl = params.get('token');
     const userIdFromUrl = params.get('user_id');
     
     if (tokenFromUrl && userIdFromUrl) {
-      console.log('Найден токен в URL, выполняем авторизацию...');
+      console.log('Token found in URL, authenticating...');
       setToken(tokenFromUrl);
-      
-      // Очищаем localStorage от pending статуса
       localStorage.removeItem('telegram_auth_pending');
       
-      // Получаем данные пользователя
       authApi.getCurrentUser().then((userData) => {
         setUser(userData);
-        // Очищаем URL от параметров
         window.history.replaceState({}, document.title, window.location.pathname);
         navigate(ROUTES.OVERVIEW);
       }).catch((err) => {
-        console.error('Ошибка получения данных пользователя:', err);
-        setError('Не удалось загрузить данные пользователя');
+        console.error('Error loading user data:', err);
+        setError('Failed to load user data');
       });
     }
   }, [isAuthenticated, navigate, setToken, setUser]);
@@ -53,36 +48,17 @@ const LoginPage = () => {
   const isDev = !import.meta.env.PROD;
   const hasDebugParam = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').has('debug');
   const isDebugMode = (isLocalhost && isDev) || hasDebugParam;
-  const isInTelegram = !!initData; // Если initData есть - мы в Telegram
+  const isInTelegram = !!initData;
   const buttonDisabled = !initData && !isDebugMode;
   
-  // Определяем тип устройства
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
     typeof window !== 'undefined' ? navigator.userAgent : ''
   );
 
-  // Обработка Telegram OAuth авторизации (браузер)
-  useTelegramOAuth(async (tgUser) => {
-    setOauthLoading(true);
-    setError(null);
-    try {
-      const response = await telegramOAuthApi.loginWithTelegramOAuth(tgUser);
-      setToken(response.access_token);
-      setUser(response.user);
-      navigate(ROUTES.OVERVIEW);
-    } catch (err: any) {
-      setError(
-        err.response?.data?.detail || 
-        `Ошибка входа через Telegram OAuth: ${err.message || 'Проверьте консоль'}`
-      );
-    } finally {
-      setOauthLoading(false);
-    }
-  });
-
+  // Mini App Login Handler
   const handleLogin = async () => {
     if (!initData) {
-      setError('Telegram данные недоступны. Откройте приложение через Telegram.');
+      setError('Telegram data unavailable. Open app via Telegram.');
       return;
     }
 
@@ -90,63 +66,45 @@ const LoginPage = () => {
     setError(null);
 
     try {
-      console.log('📱 Отправляем запрос на авторизацию...');
-      console.log('initData длина:', initData.length);
+      console.log('🔐 Sending Telegram initData...');
       const response = await authApi.loginWithTelegram(initData);
-      console.log('✅ Авторизация успешна!', response);
+      console.log('✅ Login successful!', response);
       setToken(response.access_token);
       setUser(response.user);
       navigate(ROUTES.OVERVIEW);
     } catch (err: any) {
       console.error('❌ Login error:', err);
-      console.error('Status:', err.response?.status);
-      console.error('Data:', err.response?.data);
-      console.error('Message:', err.message);
       setError(
         err.response?.data?.detail || 
-        `Ошибка входа: ${err.message || 'Проверьте консоль'}`
+        `Login failed: ${err.message || 'Check console'}`
       );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpenTelegram = () => {
-    // Открываем Telegram бота с параметром startapp (универсальный deep link)
-    const telegramUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}?startapp=login_${Date.now()}`;
-    console.log('🔗 Открываем Telegram:', telegramUrl);
-    window.location.href = telegramUrl;
-  };
-
-  // Обработчик для мобильных устройств - открывает Telegram приложение
   const handleMobileTelegramAuth = () => {
-    // Генерируем уникальный ID для этой сессии авторизации
     const authId = `webauth_${Date.now()}`;
-    
-    // Сохраняем в localStorage, чтобы знать что ожидаем возврата
     localStorage.setItem('telegram_auth_pending', authId);
-    
-    // Открываем Web App в Telegram через deep link
-    // При открытии Web App получит initData и сможет авторизоваться
-    const telegramLink = `https://t.me/coffeekznebot/vendingadmin?startapp=${authId}`;
-    
-    console.log('Открываем Telegram приложение:', telegramLink);
+    const telegramLink = `https://t.me/${TELEGRAM_BOT_USERNAME}/vendingadmin?startapp=${authId}`;
+    console.log('Opening Telegram:', telegramLink);
     window.location.href = telegramLink;
   };
 
-  // Инициализируем Telegram Login Widget для десктопа
+  // Telegram Login Widget for desktop
   useEffect(() => {
-    if (isInTelegram || isMobile) return; // На мобильных и в Telegram не показываем виджет
+    if (isInTelegram || isMobile) return;
     
-    // Создаем глобальную функцию для callback от Telegram Widget
+    // Global callback for Telegram Widget
     (window as any).onTelegramAuth = async (user: any) => {
       console.log('Telegram auth callback received:', user);
       setOauthLoading(true);
       setError(null);
       
       try {
-        // Отправляем данные на backend через POST
-        const response = await telegramOAuthApi.loginWithTelegramOAuth(user);
+        // Send user data to backend
+        const payload = { init_data: JSON.stringify(user) };
+        const response = await authApi.loginWithTelegram(JSON.stringify(payload));
         setToken(response.access_token);
         setUser(response.user);
         navigate(ROUTES.OVERVIEW);
@@ -154,24 +112,21 @@ const LoginPage = () => {
         console.error('Login error:', err);
         setError(
           err.response?.data?.detail || 
-          `Ошибка входа: ${err.message || 'Проверьте консоль'}`
+          `Login failed: ${err.message || 'Check console'}`
         );
       } finally {
         setOauthLoading(false);
       }
     };
     
-    // Создаем контейнер для виджета если его еще нет
+    // Setup Telegram Login Widget
     const widgetContainer = document.getElementById('telegram-login-widget');
     if (!widgetContainer) return;
     
-    // Очищаем предыдущий виджет
     widgetContainer.innerHTML = '';
-    
-    // Создаем скрипт для Telegram Login Widget
     const script = document.createElement('script');
     script.src = 'https://telegram.org/js/telegram-widget.js?22';
-    script.setAttribute('data-telegram-login', 'coffeekznebot');
+    script.setAttribute('data-telegram-login', TELEGRAM_BOT_USERNAME.replace('@', ''));
     script.setAttribute('data-size', 'large');
     script.setAttribute('data-radius', '8');
     script.setAttribute('data-onauth', 'onTelegramAuth(user)');
@@ -179,8 +134,7 @@ const LoginPage = () => {
     script.async = true;
     
     widgetContainer.appendChild(script);
-    
-    console.log('Telegram Login Widget инициализирован с callback');
+    console.log('Telegram Login Widget initialized');
   }, [isInTelegram, isMobile, navigate, setToken, setUser]);
 
   return (
@@ -208,13 +162,13 @@ const LoginPage = () => {
               Vending Admin
             </Title>
             <Text type="secondary">
-              Система управления вендинговым бизнесом
+              Vending Business Management System
             </Text>
           </div>
 
           {error && (
             <Alert
-              message="Ошибка входа"
+              message="Login Error"
               description={error}
               type="error"
               showIcon
@@ -223,23 +177,13 @@ const LoginPage = () => {
             />
           )}
 
-          {user && (
-            <Alert
-              message={`Привет, ${user.first_name || 'пользователь'}!`}
-              description="Нажмите кнопку ниже для входа в систему"
-              type="info"
-              showIcon
-            />
-          )}
-
-          {/* Telegram OAuth для браузера */}
+          {/* Telegram OAuth for browser */}
           {!isInTelegram && (
             <div style={{ textAlign: 'center' }}>
               <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
-                Войдите через Telegram для доступа к админ-панели
+                Login via Telegram to access admin panel
               </Text>
               
-              {/* Для мобильных - кнопка открытия Telegram приложения */}
               {isMobile ? (
                 <Button
                   type="primary"
@@ -250,10 +194,9 @@ const LoginPage = () => {
                   loading={oauthLoading}
                   style={{ marginBottom: 16 }}
                 >
-                  🔐 Открыть в Telegram
+                  🔐 Open in Telegram
                 </Button>
               ) : (
-                /* Для десктопа - Telegram Login Widget */
                 <div 
                   id="telegram-login-widget" 
                   style={{ 
@@ -266,13 +209,13 @@ const LoginPage = () => {
               
               {oauthLoading && (
                 <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
-                  Авторизация через Telegram...
+                  Authenticating via Telegram...
                 </Text>
               )}
             </div>
           )}
 
-          {/* Кнопка для входа внутри Telegram Mini App */}
+          {/* Login button for Mini App */}
           {isInTelegram && (
             <Button
               type="primary"
@@ -283,17 +226,17 @@ const LoginPage = () => {
               onClick={handleLogin}
               disabled={buttonDisabled}
             >
-              {loading ? 'Вход...' : 'Войти через Telegram'}
+              {loading ? 'Logging in...' : 'Login via Telegram'}
             </Button>
           )}
 
           {!isInTelegram && !isDebugMode && (
             <Alert
-              message="Вход через Telegram"
+              message="Telegram Login"
               description={
                 isMobile 
-                  ? "Нажмите кнопку выше для открытия Telegram приложения. После подтверждения вы вернетесь в браузер авторизованным."
-                  : "Нажмите кнопку выше для авторизации. После подтверждения в Telegram вы продолжите работу в браузере."
+                  ? "Tap the button above to open Telegram app. After confirmation you will return to browser authenticated."
+                  : "Click the button above to authenticate. After Telegram confirmation you will continue in browser."
               }
               type="info"
               showIcon
@@ -302,8 +245,8 @@ const LoginPage = () => {
           
           {!isInTelegram && isDebugMode && (
             <Alert
-              message="DEBUG MODE: Test данные загружены"
-              description="Вы можете использовать test Telegram данные для отладки"
+              message="DEBUG MODE: Test data loaded"
+              description="You can use test Telegram data for debugging"
               type="success"
               showIcon
             />
@@ -311,7 +254,7 @@ const LoginPage = () => {
 
           <div style={{ textAlign: 'center', marginTop: 24 }}>
             <Text type="secondary" style={{ fontSize: 12 }}>
-              Версия 1.0.0 • © 2026 Vending Admin
+              Version 1.0.0 • © 2026 Vending Admin
             </Text>
           </div>
         </Space>
