@@ -61,9 +61,14 @@ def test_validate_telegram_login_widget_valid():
         "auth_date": auth_date,
     }
     
-    # Вычисляем правильный hash
-    check_items = [f"{k}={v}" for k, v in sorted(auth_data.items())]
-    check_string = "\\n".join(check_items)
+    # Вычисляем правильный hash (как в реальном алгоритме Login Widget)
+    check_items = []
+    for key in sorted(auth_data.keys()):
+        value = auth_data[key]
+        if value is not None:
+            check_items.append(f"{key}={value}")
+    
+    check_string = "\n".join(check_items)  # ВАЖНО: реальный \n, не \\n
     secret_key = hashlib.sha256(bot_token.encode()).digest()
     calculated_hash = hmac.new(secret_key, check_string.encode(), hashlib.sha256).hexdigest()
     

@@ -33,13 +33,16 @@ def validate_telegram_login_widget(auth_data: Dict, bot_token: str) -> bool:
             return False
         
         # Создаем строку для проверки (все поля кроме hash, отсортированные)
+        # Пропускаем None значения и hash
         check_items = []
         for key in sorted(auth_data.keys()):
             if key != "hash":
                 value = auth_data[key]
-                check_items.append(f"{key}={value}")
+                # Пропускаем None значения
+                if value is not None:
+                    check_items.append(f"{key}={value}")
         
-        check_string = "\\n".join(check_items)
+        check_string = "\n".join(check_items)
         
         # Вычисляем secret_key (SHA256 хэш от токена бота)
         secret_key = hashlib.sha256(bot_token.encode()).digest()
@@ -51,22 +54,26 @@ def validate_telegram_login_widget(auth_data: Dict, bot_token: str) -> bool:
             hashlib.sha256
         ).hexdigest()
         
-        # Диагностика (только префиксы хешей)
-        logger.debug(
-            f"Hash validation: "
-            f"calculated={calculated_hash[:6]}..., "
-            f"received={received_hash[:6]}..., "
-            f"check_string_keys={list(auth_data.keys() - {'hash'})}"
+        # Диагностика (безопасное логирование)
+        logger.info(
+            f"Login Widget validation: "
+            f"user_id={auth_data.get('id')}, "
+            f"keys={sorted([k for k in auth_data.keys() if k != 'hash'])}, "
+            f"data_check_string_length={len(check_string)}, "
+            f"calculated_hash={calculated_hash[:8]}..., "
+            f"received_hash={received_hash[:8]}..."
         )
         
-        # Проверяем совпадение
-        if calculated_hash != received_hash:
+        # Проверяем совпадение (constant-time comparison)
+        if not hmac.compare_digest(calculated_hash, received_hash):
             logger.warning(
-                f"Hash mismatch: "
-                f"calculated_prefix={calculated_hash[:6]}, "
-                f"received_prefix={received_hash[:6]}"
+                f"❌ Hash mismatch for user_id={auth_data.get('id')}: "
+                f"calculated={calculated_hash[:8]}..., "
+                f"received={received_hash[:8]}..."
             )
             return False
+        
+        logger.info(f"✅ Hash validated for user_id={auth_data.get('id')}")
         
         return True
     except Exception as e:
