@@ -7,7 +7,7 @@ from sqlalchemy import text
 from typing import List, Optional
 from datetime import date
 from app.db.session import get_db
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, require_owner
 from app.models.user import User
 
 router = APIRouter()
@@ -255,16 +255,15 @@ def get_owner_report(
     to_date: Optional[date] = None,
     location_id: Optional[int] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_owner)
 ):
     """
     Get owner report (Owner only).
     Includes net profit calculation with variable expenses.
-    """
-    # Check if user is owner
-    if current_user.role != "owner":
-        raise HTTPException(status_code=403, detail="Only owners can access this report")
     
+    Requires: role='owner'
+    Returns: 403 if accessed by non-owner
+    """
     query = """
         SELECT
             tx_date,

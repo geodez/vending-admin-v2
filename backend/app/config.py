@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     
     # Telegram
     TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_BOT_USERNAME: str = ""
     
     # Server
     HOST: str = "0.0.0.0"

@@ -1,9 +1,9 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
-import { API_BASE_URL, TOKEN_STORAGE_KEY } from '@/utils/constants';
+import { TOKEN_STORAGE_KEY } from '@/utils/constants';
 
-// Create axios instance
+// Create axios instance with /api/v1 baseURL
 const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
