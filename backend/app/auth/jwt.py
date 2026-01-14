@@ -43,3 +43,17 @@ def verify_token(token: str) -> Optional[Dict]:
         return payload
     except JWTError:
         return None
+
+
+def decode_access_token(token: str) -> Optional[Dict]:
+    """
+    Alias для verify_token для совместимости.
+    Декодирует JWT токен и возвращает payload.
+    
+    Args:
+        token: JWT токен строкой
+    
+    Returns:
+        Payload токена (dict) или None при ошибке
+    """
+    return verify_token(token)

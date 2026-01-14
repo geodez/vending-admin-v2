@@ -24,7 +24,7 @@ const LoginPage = () => {
       navigate(ROUTES.OVERVIEW);
     }
     
-    // Проверяем, есть ли токен в URL (после Telegram Login Widget)
+    // Проверяем, есть ли токен в URL (после Telegram Login Widget или возврата из Web App)
     const params = new URLSearchParams(window.location.search);
     const tokenFromUrl = params.get('token');
     const userIdFromUrl = params.get('user_id');
@@ -32,6 +32,9 @@ const LoginPage = () => {
     if (tokenFromUrl && userIdFromUrl) {
       console.log('Найден токен в URL, выполняем авторизацию...');
       setToken(tokenFromUrl);
+      
+      // Очищаем localStorage от pending статуса
+      localStorage.removeItem('telegram_auth_pending');
       
       // Получаем данные пользователя
       authApi.getCurrentUser().then((userData) => {
@@ -52,21 +55,37 @@ const LoginPage = () => {
   const isDebugMode = (isLocalhost && isDev) || hasDebugParam;
   const isInTelegram = !!initData; // Если initData есть - мы в Telegram
   const buttonDisabled = !initData && !isDebugMode;
+  
+  // Определяем тип устройства
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    typeof window !== 'undefined' ? navigator.userAgent : ''
+  );
 
   // Обработка Telegram OAuth авторизации (браузер)
   useTelegramOAuth(async (tgUser) => {
     setOauthLoading(true);
     setError(null);
     try {
+      console.log('🔐 Processing Telegram OAuth callback...');
       const response = await telegramOAuthApi.loginWithTelegramOAuth(tgUser);
+      console.log('✅ OAuth successful, storing token...');
       setToken(response.access_token);
       setUser(response.user);
       navigate(ROUTES.OVERVIEW);
     } catch (err: any) {
-      setError(
-        err.response?.data?.detail || 
-        `Ошибка входа через Telegram OAuth: ${err.message || 'Проверьте консоль'}`
-      );
+      console.error('❌ OAuth error:', err.response?.status, err.response?.data);
+      
+      // Обработка 403 - доступ запрещен
+      if (err.response?.status === 403) {
+        setError('Доступ запрещен. Ваш аккаунт не имеет доступа к этой системе.');
+      } else if (err.response?.status === 401) {
+        setError('Ошибка авторизации. Попробуйте ещё раз.');
+      } else {
+        setError(
+          err.response?.data?.detail || 
+          `Ошибка входа: ${err.message || 'Проверьте консоль'}`
+        );
+      }
     } finally {
       setOauthLoading(false);
     }
@@ -110,9 +129,25 @@ const LoginPage = () => {
     window.location.href = telegramUrl;
   };
 
-  // Инициализируем Telegram Login Widget для браузера
+  // Обработчик для мобильных устройств - открывает Telegram приложение
+  const handleMobileTelegramAuth = () => {
+    // Генерируем уникальный ID для этой сессии авторизации
+    const authId = `webauth_${Date.now()}`;
+    
+    // Сохраняем в localStorage, чтобы знать что ожидаем возврата
+    localStorage.setItem('telegram_auth_pending', authId);
+    
+    // Открываем Web App в Telegram через deep link
+    // При открытии Web App получит initData и сможет авторизоваться
+    const telegramLink = `https://t.me/coffeekznebot/vendingadmin?startapp=${authId}`;
+    
+    console.log('Открываем Telegram приложение:', telegramLink);
+    window.location.href = telegramLink;
+  };
+
+  // Инициализируем Telegram Login Widget для десктопа
   useEffect(() => {
-    if (isInTelegram) return; // Если в Telegram - не показываем виджет
+    if (isInTelegram || isMobile) return; // На мобильных и в Telegram не показываем виджет
     
     // Создаем глобальную функцию для callback от Telegram Widget
     (window as any).onTelegramAuth = async (user: any) => {
@@ -157,7 +192,7 @@ const LoginPage = () => {
     widgetContainer.appendChild(script);
     
     console.log('Telegram Login Widget инициализирован с callback');
-  }, [isInTelegram, navigate, setToken, setUser]);
+  }, [isInTelegram, isMobile, navigate, setToken, setUser]);
 
   return (
     <div
@@ -214,15 +249,32 @@ const LoginPage = () => {
               <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
                 Войдите через Telegram для доступа к админ-панели
               </Text>
-              {/* Контейнер для Telegram Login Widget */}
-              <div 
-                id="telegram-login-widget" 
-                style={{ 
-                  display: 'flex', 
-                  justifyContent: 'center', 
-                  marginBottom: 16 
-                }}
-              />
+              
+              {/* Для мобильных - кнопка открытия Telegram приложения */}
+              {isMobile ? (
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<LoginOutlined />}
+                  block
+                  onClick={handleMobileTelegramAuth}
+                  loading={oauthLoading}
+                  style={{ marginBottom: 16 }}
+                >
+                  🔐 Открыть в Telegram
+                </Button>
+              ) : (
+                /* Для десктопа - Telegram Login Widget */
+                <div 
+                  id="telegram-login-widget" 
+                  style={{ 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    marginBottom: 16 
+                  }}
+                />
+              )}
+              
               {oauthLoading && (
                 <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
                   Авторизация через Telegram...
@@ -249,7 +301,11 @@ const LoginPage = () => {
           {!isInTelegram && !isDebugMode && (
             <Alert
               message="Вход через Telegram"
-              description="Нажмите кнопку выше для авторизации. После подтверждения в Telegram вы продолжите работу в браузере."
+              description={
+                isMobile 
+                  ? "Нажмите кнопку выше для открытия Telegram приложения. После подтверждения вы вернетесь в браузер авторизованным."
+                  : "Нажмите кнопку выше для авторизации. После подтверждения в Telegram вы продолжите работу в браузере."
+              }
               type="info"
               showIcon
             />

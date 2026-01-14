@@ -32,6 +32,12 @@ def db():
 
 
 @pytest.fixture(scope="function")
+def db_session(db):
+    """Alias for db fixture for compatibility."""
+    return db
+
+
+@pytest.fixture(scope="function")
 def client(db):
     """Create test client."""
     def override_get_db():
@@ -44,6 +50,33 @@ def client(db):
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def create_test_user(db):
+    """Factory fixture to create test users."""
+    def _create_user(
+        telegram_user_id: int,
+        role: str = "operator",
+        is_active: bool = True,
+        username: str = None,
+        first_name: str = None,
+        last_name: str = None
+    ) -> User:
+        user = User(
+            telegram_user_id=telegram_user_id,
+            username=username or f"user_{telegram_user_id}",
+            first_name=first_name or "Test",
+            last_name=last_name or f"User{telegram_user_id}",
+            role=role,
+            is_active=is_active
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+    
+    return _create_user
 
 
 @pytest.fixture
