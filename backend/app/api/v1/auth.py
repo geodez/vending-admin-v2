@@ -1,15 +1,220 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from typing import Optional
 from app.db.session import get_db
 from app.auth.telegram import validate_telegram_init_data
 from app.auth.jwt import create_access_token
-from app.crud.user import get_user_by_telegram_id
-from app.schemas.auth import TelegramAuthRequest, TokenResponse, UserResponse
+from app.crud.user import get_user_by_telegram_id, create_user
+from app.schemas.auth import TelegramAuthRequest, TokenResponse, UserResponse, UserCreate
 from app.api.deps import get_current_user
 from app.models.user import User
 from app.config import settings
+import hmac
+import hashlib
+import time
+import json
 
 router = APIRouter()
+
+
+def validate_telegram_oauth(data: dict, bot_token: str) -> bool:
+    '''
+    Проверка подписи Telegram OAuth (https://core.telegram.org/widgets/login#checking-authorization)
+    '''
+    auth_data = data.copy()
+    hash_ = auth_data.pop('hash', None)
+    if not hash_:
+        return False
+    data_check_arr = [f"{k}={v}" for k, v in sorted(auth_data.items())]
+    data_check_string = '\n'.join(data_check_arr)
+    secret_key = hashlib.sha256(bot_token.encode()).digest()
+    hmac_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+    return hmac_hash == hash_
+
+
+@router.post("/telegram_oauth", response_model=TokenResponse)
+def authenticate_telegram_oauth_post(request: TelegramAuthRequest, db: Session = Depends(get_db)):
+    """
+    Аутентификация через Telegram Login Widget (POST запрос от фронтенда).
+    
+    Принимает данные пользователя от виджета через frontend callback.
+    """
+    # Парсим данные пользователя из init_data
+    try:
+        user_data = json.loads(request.init_data)
+    except:
+        # Если это не JSON, пытаемся использовать как есть
+        user_data = request.init_data if isinstance(request.init_data, dict) else {}
+    
+    # Валидируем данные
+    from app.auth.telegram import validate_telegram_widget_data
+    try:
+        is_valid = validate_telegram_widget_data(user_data)
+        if not is_valid:
+            raise HTTPException(status_code=401, detail="Invalid Telegram authentication")
+    except Exception as e:
+        print(f"Validation error: {e}")
+        if not settings.DEBUG:
+            raise HTTPException(status_code=401, detail=f"Telegram auth validation failed: {str(e)}")
+    
+    telegram_user_id = user_data.get("id")
+    if not telegram_user_id:
+        raise HTTPException(status_code=400, detail="No Telegram user id")
+    
+    # Поиск или создание пользователя
+    user = get_user_by_telegram_id(db, telegram_user_id)
+    if not user:
+        user_in = UserCreate(
+            telegram_user_id=telegram_user_id,
+            username=user_data.get("username"),
+            first_name=user_data.get("first_name"),
+            last_name=user_data.get("last_name"),
+            role="operator"
+        )
+        user = create_user(db, user_in)
+    
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="User account is inactive")
+    
+    # Генерация JWT токена
+    token = create_access_token(
+        data={
+            "user_id": user.id,
+            "telegram_user_id": user.telegram_user_id,
+            "role": user.role
+        }
+    )
+    
+    return TokenResponse(
+        access_token=token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user)
+    )
+
+
+@router.get("/telegram_oauth")
+async def authenticate_telegram_oauth_widget(
+    id: int,
+    first_name: str,
+    hash: str,
+    auth_date: int,
+    username: Optional[str] = None,
+    last_name: Optional[str] = None,
+    photo_url: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Аутентификация через Telegram Login Widget (GET запрос).
+    
+    Telegram Widget отправляет GET запрос с параметрами пользователя.
+    После успешной авторизации перенаправляем на фронтенд с токеном.
+    """
+    from urllib.parse import urlencode
+    
+    # Собираем данные для валидации
+    auth_data = {
+        "id": id,
+        "first_name": first_name,
+        "auth_date": auth_date,
+        "hash": hash
+    }
+    if username:
+        auth_data["username"] = username
+    if last_name:
+        auth_data["last_name"] = last_name
+    if photo_url:
+        auth_data["photo_url"] = photo_url
+    
+    # Валидируем данные
+    try:
+        from app.auth.telegram import validate_telegram_widget_data
+        is_valid = validate_telegram_widget_data(auth_data)
+        if not is_valid:
+            raise HTTPException(status_code=401, detail="Invalid Telegram authentication")
+    except Exception as e:
+        print(f"Validation error: {e}")
+        raise HTTPException(status_code=401, detail=f"Telegram auth validation failed: {str(e)}")
+    
+    # Поиск или создание пользователя
+    user = get_user_by_telegram_id(db, id)
+    if not user:
+        user_in = UserCreate(
+            telegram_user_id=id,
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            role="operator"
+        )
+        user = create_user(db, user_in)
+    
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="User account is inactive")
+    
+    # Генерация JWT токена
+    token = create_access_token(
+        data={
+            "user_id": user.id,
+            "telegram_user_id": user.telegram_user_id,
+            "role": user.role
+        }
+    )
+    
+    # Перенаправляем на фронтенд с токеном в URL
+    from fastapi.responses import RedirectResponse
+    frontend_url = f"/login?token={token}&user_id={user.id}&username={username or ''}"
+    return RedirectResponse(url=frontend_url)
+
+
+@router.post("/telegram_oauth_old", response_model=TokenResponse)
+def authenticate_telegram_oauth(request: TelegramAuthRequest, db: Session = Depends(get_db)):
+    """
+    Аутентификация через Telegram OAuth (браузер).
+    1. Валидация подписи Telegram
+    2. Поиск или создание пользователя
+    3. Возврат JWT токена
+    """
+    try:
+        oauth_data = json.loads(request.init_data)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid OAuth data format")
+
+    # Проверка подписи
+    if not validate_telegram_oauth(oauth_data, settings.TELEGRAM_BOT_TOKEN):
+        raise HTTPException(status_code=401, detail="Invalid Telegram OAuth signature")
+
+    telegram_user_id = oauth_data.get("id")
+    if not telegram_user_id:
+        raise HTTPException(status_code=400, detail="No Telegram user id")
+
+    # Поиск пользователя
+    user = get_user_by_telegram_id(db, telegram_user_id)
+    if not user:
+        # Создаём пользователя
+        user_in = UserCreate(
+            telegram_user_id=telegram_user_id,
+            username=oauth_data.get("username"),
+            first_name=oauth_data.get("first_name"),
+            last_name=oauth_data.get("last_name"),
+            role="operator"
+        )
+        user = create_user(db, user_in)
+
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="User account is inactive")
+
+    # Генерация JWT токена
+    token = create_access_token(
+        data={
+            "user_id": user.id,
+            "telegram_user_id": user.telegram_user_id,
+            "role": user.role
+        }
+    )
+    return TokenResponse(
+        access_token=token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user)
+    )
 
 
 @router.post("/telegram", response_model=TokenResponse)
