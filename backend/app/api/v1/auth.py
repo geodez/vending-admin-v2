@@ -2,10 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.db.session import get_db
-from app.auth.telegram import validate_telegram_init_data
+from app.auth.telegram import validate_telegram_init_data, validate_telegram_login_widget
 from app.auth.jwt import create_access_token
 from app.crud.user import get_user_by_telegram_id, create_user
-from app.schemas.auth import TelegramAuthRequest, TokenResponse, UserResponse, UserCreate
+from app.schemas.auth import (
+    TelegramAuthRequest, 
+    TelegramLoginWidgetRequest,
+    TokenResponse, 
+    UserResponse, 
+    UserCreate
+)
 from app.api.deps import get_current_user
 from app.models.user import User
 from app.config import settings
@@ -13,91 +19,100 @@ import hmac
 import hashlib
 import time
 import json
+import logging
 
 router = APIRouter()
-
-
-def validate_telegram_oauth(data: dict, bot_token: str) -> bool:
-    '''
-    Проверка подписи Telegram OAuth (https://core.telegram.org/widgets/login#checking-authorization)
-    '''
-    auth_data = data.copy()
-    hash_ = auth_data.pop('hash', None)
-    if not hash_:
-        return False
-    data_check_arr = [f"{k}={v}" for k, v in sorted(auth_data.items())]
-    data_check_string = '\n'.join(data_check_arr)
-    secret_key = hashlib.sha256(bot_token.encode()).digest()
-    hmac_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
-    return hmac_hash == hash_
+logger = logging.getLogger(__name__)
 
 
 @router.post("/telegram_oauth", response_model=TokenResponse)
-def authenticate_telegram_oauth(request: TelegramAuthRequest, db: Session = Depends(get_db)):
+def authenticate_telegram_oauth(request: TelegramLoginWidgetRequest, db: Session = Depends(get_db)):
     """
     Аутентификация через Telegram Login Widget (браузер).
     
-    Валидирует данные от виджета:
-    1. Проверяет подпись (hash)
-    2. Проверяет время авторизации (не старше 24ч)
-    3. Ищет пользователя в БД
-    4. Выдает JWT если пользователь существует и активен
+    Принимает плоский объект с полями от Telegram Login Widget:
+    - id: Telegram user ID
+    - first_name: Имя пользователя
+    - auth_date: Unix timestamp авторизации
+    - hash: HMAC-SHA256 подпись
+    - username, last_name, photo_url: опциональные поля
     
-    Требования:
-    - Невозможно залогиниться без валидного Telegram hash
-    - Пользователь отсутствует в БД → 403 "Доступ запрещен"
-    - Пользователь неактивен → 403 "Доступ запрещен"
+    Валидация:
+    1. Проверяет HMAC-SHA256 подпись (secret_key = SHA256(BOT_TOKEN))
+    2. Проверяет auth_date (не старше 24 часов)
+    3. Проверяет наличие пользователя в БД (whitelist)
+    4. Генерирует JWT токен
+    
+    Важно: Это НЕ Telegram WebApp initData! 
+    Для WebApp используйте POST /telegram_webapp
     """
     if not settings.TELEGRAM_BOT_TOKEN:
         raise HTTPException(status_code=500, detail="Bot token not configured")
     
-    # Парсим данные от виджета
-    try:
-        user_data = json.loads(request.init_data) if isinstance(request.init_data, str) else request.init_data
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid JSON format")
+    # Собираем данные для валидации (конвертируем Pydantic model в dict)
+    auth_data = request.model_dump(exclude_none=True)
     
-    if not isinstance(user_data, dict):
-        raise HTTPException(status_code=400, detail="Expected dict from init_data")
+    # Диагностика (безопасная - без полных хешей)
+    current_time = int(time.time())
+    auth_age = current_time - request.auth_date
     
-    # Извлекаем обязательные поля
-    telegram_user_id = user_data.get("id")
-    hash_value = user_data.get("hash")
-    auth_date = user_data.get("auth_date")
+    logger.info(
+        f"🔐 Login Widget auth attempt: "
+        f"user_id={request.id}, "
+        f"auth_age={auth_age}s, "
+        f"keys={sorted(auth_data.keys())}, "
+        f"hash_prefix={request.hash[:6]}"
+    )
     
-    if not telegram_user_id or not hash_value or not auth_date:
+    # Проверка auth_date (не старше 24 часов)
+    if auth_age > 86400:
+        logger.warning(
+            f"❌ auth_date too old: user_id={request.id}, "
+            f"auth_age={auth_age}s ({auth_age/3600:.1f}h)"
+        )
         raise HTTPException(
             status_code=401,
-            detail="Доступ запрещен"
+            detail="Authentication expired. Please try again."
+        )
+    
+    if auth_age < 0:
+        logger.warning(
+            f"❌ auth_date in future: user_id={request.id}, auth_age={auth_age}s"
+        )
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid authentication timestamp"
         )
     
     # Валидация подписи Telegram Login Widget
-    if not validate_telegram_oauth(user_data, settings.TELEGRAM_BOT_TOKEN):
+    is_valid = validate_telegram_login_widget(auth_data, settings.TELEGRAM_BOT_TOKEN)
+    
+    if not is_valid:
+        logger.warning(
+            f"❌ Signature validation failed: user_id={request.id}"
+        )
         raise HTTPException(
             status_code=401,
-            detail="Доступ запрещен"
+            detail="Invalid signature"
         )
     
-    # Проверка времени авторизации (не старше 24 часов)
-    current_time = int(time.time())
-    if current_time - auth_date > 86400:  # 24 * 60 * 60
-        raise HTTPException(
-            status_code=401,
-            detail="Доступ запрещен"
-        )
+    logger.info(f"✅ Signature valid: user_id={request.id}")
     
     # Поиск пользователя в БД
-    user = get_user_by_telegram_id(db, telegram_user_id)
+    user = get_user_by_telegram_id(db, request.id)
     
-    # Если пользователя нет → 403
     if not user:
+        logger.warning(
+            f"❌ User not in whitelist: user_id={request.id}, "
+            f"username={request.username or 'N/A'}"
+        )
         raise HTTPException(
             status_code=403,
             detail="Доступ запрещен"
         )
     
-    # Если пользователь неактивен → 403
     if not user.is_active:
+        logger.warning(f"❌ User inactive: user_id={request.id}")
         raise HTTPException(
             status_code=403,
             detail="Доступ запрещен"
@@ -110,6 +125,10 @@ def authenticate_telegram_oauth(request: TelegramAuthRequest, db: Session = Depe
             "telegram_user_id": user.telegram_user_id,
             "role": user.role
         }
+    )
+    
+    logger.info(
+        f"✅ Login successful: user_id={request.id}, role={user.role}"
     )
     
     return TokenResponse(
@@ -143,23 +162,30 @@ async def authenticate_telegram_oauth_widget(
 
 
 
-@router.post("/telegram", response_model=TokenResponse)
-def authenticate_telegram(request: TelegramAuthRequest, db: Session = Depends(get_db)):
+@router.post("/telegram_webapp", response_model=TokenResponse)
+@router.post("/telegram", response_model=TokenResponse)  # Alias для обратной совместимости
+def authenticate_telegram_webapp(request: TelegramAuthRequest, db: Session = Depends(get_db)):
     """
-    Аутентификация через Telegram Mini App.
+    Аутентификация через Telegram WebApp (Mini App).
     
-    Используется для мини-приложений Telegram. Валидирует initData.
-    Для браузерного входа используйте POST /telegram_oauth.
+    Используется для мини-приложений Telegram. Валидирует initData в формате query-string.
+    Для браузерного Login Widget используйте POST /telegram_oauth.
     
     Процесс:
-    1. Валидирует initData от Telegram
-    2. Проверяет существование пользователя в БД
+    1. Валидирует initData от Telegram WebApp (query-string формат)
+    2. Проверяет существование пользователя в БД (whitelist)
     3. Возвращает JWT токен (если пользователь активен)
+    
+    Важно: initData должен быть в формате query-string (url-encoded),
+    а НЕ плоский JSON объект от Login Widget.
     """
+    logger.info("🔐 WebApp auth attempt: validating initData...")
+    
     # Валидация initData
     user_data = validate_telegram_init_data(request.init_data)
     
     if not user_data:
+        logger.warning("❌ WebApp initData validation failed")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Telegram authentication data"
@@ -167,21 +193,26 @@ def authenticate_telegram(request: TelegramAuthRequest, db: Session = Depends(ge
     
     telegram_user_id = user_data.get("user_id")
     if not telegram_user_id:
+        logger.warning("❌ Missing user_id in validated initData")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Telegram authentication data"
         )
     
+    logger.info(f"✅ WebApp initData valid: user_id={telegram_user_id}")
+    
     # Поиск пользователя в БД
     user = get_user_by_telegram_id(db, telegram_user_id)
     
     if not user:
+        logger.warning(f"❌ User not in whitelist: user_id={telegram_user_id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Доступ запрещен"
         )
     
     if not user.is_active:
+        logger.warning(f"❌ User inactive: user_id={telegram_user_id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Доступ запрещен"
@@ -195,6 +226,8 @@ def authenticate_telegram(request: TelegramAuthRequest, db: Session = Depends(ge
             "role": user.role
         }
     )
+    
+    logger.info(f"✅ WebApp login successful: user_id={telegram_user_id}, role={user.role}")
     
     return TokenResponse(
         access_token=token,

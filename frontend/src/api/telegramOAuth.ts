@@ -10,18 +10,29 @@ export const telegramOAuthApi = {
     try {
       // tgUser содержит данные от Telegram Login Widget:
       // { id, hash, username, first_name, last_name, auth_date, photo_url }
-      const payload: TelegramAuthRequest = { 
-        init_data: JSON.stringify(tgUser) 
-      };
       
-      console.log('📤 Sending OAuth request to /auth/telegram_oauth', {
+      // DEBUG: Проверяем auth_date (должен быть текущим)
+      const now = Math.floor(Date.now() / 1000);
+      const authAge = now - (tgUser.auth_date || 0);
+      
+      console.log('🔐 Telegram Login Widget callback received:', {
         id: tgUser.id,
+        first_name: tgUser.first_name,
         auth_date: tgUser.auth_date,
+        auth_age_seconds: authAge,
+        auth_date_iso: new Date((tgUser.auth_date || 0) * 1000).toISOString(),
+        hash_prefix: tgUser.hash?.substring(0, 6),
+        keys: Object.keys(tgUser).sort(),
       });
       
+      if (authAge > 86400) {
+        console.warn('⚠️ auth_date is older than 24h!', { authAge });
+      }
+      
+      // Отправляем данные напрямую без обёртки (плоский объект)
       const response = await apiClient.post<TokenResponse>(
         '/auth/telegram_oauth', 
-        payload
+        tgUser  // Отправляем объект напрямую, а не { init_data: JSON.stringify(...) }
       );
       
       console.log('✅ OAuth login successful');

@@ -3,8 +3,19 @@ from typing import Optional
 
 
 class TelegramAuthRequest(BaseModel):
-    """Запрос аутентификации через Telegram"""
+    """Запрос аутентификации через Telegram WebApp (initData query-string)"""
     init_data: str
+
+
+class TelegramLoginWidgetRequest(BaseModel):
+    """Запрос аутентификации через Telegram Login Widget (браузер)"""
+    id: int
+    first_name: str
+    auth_date: int
+    hash: str
+    last_name: Optional[str] = None
+    username: Optional[str] = None
+    photo_url: Optional[str] = None
 
 
 class UserResponse(BaseModel):
