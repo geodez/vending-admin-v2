@@ -1,7 +1,7 @@
 """create sync_runs table
 
-Revision ID: 0005
-Revises: 0004
+Revision ID: 0005_create_sync_runs_table
+Revises: 0004_create_kpi_views
 Create Date: 2026-01-15 21:15:00
 
 """
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '0005'
-down_revision = '0004'
+revision = '0005_create_sync_runs_table'
+down_revision = '0004_create_kpi_views'
 branch_labels = None
 depends_on = None
 
