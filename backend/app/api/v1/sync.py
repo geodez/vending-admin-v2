@@ -206,14 +206,22 @@ async def trigger_sync(
 
 @router.get("/runs")
 async def get_sync_runs(
+    date_from: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    date_to: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     limit: int = Query(20, ge=1, le=100, description="Number of runs to return"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get sync run history.
+    Get sync run history with optional date filtering.
     
     Returns recent sync runs with stats and status.
+    
+    Parameters:
+    - date_from: Optional start date (YYYY-MM-DD) to filter runs
+    - date_to: Optional end date (YYYY-MM-DD) to filter runs
+    - limit: Max number of runs (default 20, max 100)
+    
     Owner-only access.
     """
     if current_user.role != "owner":
@@ -222,17 +230,46 @@ async def get_sync_runs(
             detail="Only owners can view sync history"
         )
     
-    query = text("""
+    # Parse and validate dates
+    where_conditions = []
+    params = {"limit": limit}
+    
+    if date_from:
+        try:
+            parsed_date = datetime.strptime(date_from, "%Y-%m-%d").date()
+            where_conditions.append("started_at >= :date_from::date")
+            params["date_from"] = parsed_date
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid date_from format: {date_from}. Use YYYY-MM-DD"
+            )
+    
+    if date_to:
+        try:
+            parsed_date = datetime.strptime(date_to, "%Y-%m-%d").date()
+            where_conditions.append("started_at < :date_to::date + interval '1 day'")
+            params["date_to"] = parsed_date
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid date_to format: {date_to}. Use YYYY-MM-DD"
+            )
+    
+    where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
+    
+    query = text(f"""
         SELECT
             id, started_at, completed_at, period_start, period_end,
             fetched, inserted, skipped_duplicates, expected_total,
             pages_fetched, items_per_page, last_page, ok, message
         FROM sync_runs
+        {where_clause}
         ORDER BY started_at DESC
         LIMIT :limit
     """)
     
-    result = db.execute(query, {"limit": limit})
+    result = db.execute(query, params)
     rows = result.fetchall()
     
     runs = []
@@ -255,3 +292,153 @@ async def get_sync_runs(
         })
     
     return runs
+
+
+@router.post("/runs/{run_id}/rerun")
+async def rerun_sync(
+    run_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Re-run a previous sync operation using the same parameters.
+    
+    Fetches the original run's parameters (period_start, period_end, items_per_page, order_desc)
+    and re-executes the sync.
+    
+    Owner-only access.
+    """
+    if current_user.role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owners can rerun sync operations"
+        )
+    
+    # Get original sync run parameters
+    fetch_query = text("""
+        SELECT period_start, period_end, items_per_page
+        FROM sync_runs
+        WHERE id = :run_id
+    """)
+    
+    result = db.execute(fetch_query, {"run_id": run_id})
+    row = result.fetchone()
+    
+    if not row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Sync run with id {run_id} not found"
+        )
+    
+    period_start = row[0]
+    period_end = row[1]
+    items_per_page = row[2] or 50
+    
+    if not period_start or not period_end:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Original sync run missing period_start or period_end"
+        )
+    
+    # Re-run sync with original parameters
+    logger.info(
+        "User %s triggered rerun of sync run %d (period_start=%s, period_end=%s, items_per_page=%d)",
+        current_user.telegram_user_id,
+        run_id,
+        period_start,
+        period_end,
+        items_per_page
+    )
+    
+    started_at = datetime.utcnow()
+    
+    try:
+        result = await sync_service.sync_all_from_vendista(
+            db=db,
+            period_start=period_start,
+            period_end=period_end,
+            items_per_page=items_per_page,
+            order_desc=True
+        )
+        
+        completed_at = datetime.utcnow()
+        duration = (completed_at - started_at).total_seconds()
+        
+        # Record rerun in database
+        try:
+            record_query = text("""
+                INSERT INTO sync_runs (
+                    started_at, completed_at, period_start, period_end,
+                    fetched, inserted, skipped_duplicates, expected_total,
+                    pages_fetched, items_per_page, last_page, ok, message
+                ) VALUES (
+                    :started_at, :completed_at, :period_start, :period_end,
+                    :fetched, :inserted, :skipped_duplicates, :expected_total,
+                    :pages_fetched, :items_per_page, :last_page, :ok, :message
+                )
+            """)
+            db.execute(record_query, {
+                "started_at": started_at,
+                "completed_at": completed_at,
+                "period_start": period_start,
+                "period_end": period_end,
+                "fetched": result.fetched,
+                "inserted": result.inserted,
+                "skipped_duplicates": result.skipped_duplicates,
+                "expected_total": result.expected_total,
+                "pages_fetched": result.pages_fetched,
+                "items_per_page": result.items_per_page,
+                "last_page": result.last_page,
+                "ok": result.success,
+                "message": result.error_message or "Rerun completed successfully"
+            })
+            db.commit()
+        except Exception as record_error:
+            logger.warning(f"Failed to record rerun: {record_error}")
+        
+        return {
+            "ok": result.success,
+            "started_at": started_at,
+            "completed_at": completed_at,
+            "duration_seconds": duration,
+            "fetched": result.fetched,
+            "inserted": result.inserted,
+            "skipped_duplicates": result.skipped_duplicates,
+            "expected_total": result.expected_total,
+            "items_per_page": items_per_page,
+            "pages_fetched": result.pages_fetched,
+            "last_page": result.last_page,
+            "message": result.error_message or "Rerun completed successfully"
+        }
+    
+    except Exception as e:
+        logger.error(f"Rerun failed: {e}")
+        
+        # Try to record failed rerun
+        try:
+            completed_at = datetime.utcnow()
+            record_query = text("""
+                INSERT INTO sync_runs (
+                    started_at, completed_at, period_start, period_end,
+                    ok, message
+                ) VALUES (
+                    :started_at, :completed_at, :period_start, :period_end,
+                    :ok, :message
+                )
+            """)
+            db.execute(record_query, {
+                "started_at": started_at,
+                "completed_at": completed_at,
+                "period_start": period_start,
+                "period_end": period_end,
+                "ok": False,
+                "message": f"Rerun failed: {str(e)}"
+            })
+            db.commit()
+        except:
+            pass
+        
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Rerun failed: {str(e)}"
+        )
