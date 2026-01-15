@@ -285,9 +285,6 @@ def get_owner_report(
         )
     
     # Агрегированный запрос из view vw_owner_report_daily
-    # View включает variable_expenses и net_profit
-    # ВАЖНО: sales_count — это уже COUNT транзакций за день
-    # Используем SUM(sales_count), а не COUNT(*) (который считал бы дни)
     query = """
         SELECT
             COALESCE(SUM(sales_count), 0) as transactions_count,
@@ -306,22 +303,47 @@ def get_owner_report(
     
     result = db.execute(text(query), params).fetchone()
     
-    # Агрегированные значения (все поля, может быть None если нет данных)
+    # Агрегированные значения
     transactions_count = int(result[0]) if result[0] else 0
     revenue_gross = float(result[1]) if result[1] else 0.0
     expenses_total = float(result[3]) if result[3] else 0.0
     net_profit = float(result[4]) if result[4] else 0.0
     
-    # Комиссии/налоги: если нет поля в БД, считать как revenue * 0.0895 (8.95%)
-    # TODO: Заменить на реальное поле commission/fee из таблицы, когда оно будет доступно
+    # FALLBACK: если vw_owner_report_daily пустая, считаем из vendista_tx_raw
+    if transactions_count == 0 and revenue_gross == 0.0:
+        fallback_query = """
+            SELECT
+                COUNT(*) as tx_count,
+                COALESCE(SUM((payload->>'sum')::numeric), 0) as sum_kopecks
+            FROM vendista_tx_raw
+            WHERE tx_time::date >= :from_date AND tx_time::date <= :to_date
+              AND (payload->>'sum') IS NOT NULL
+              AND (payload->>'sum')::numeric > 0
+        """
+        fallback_result = db.execute(text(fallback_query), params).fetchone()
+        
+        if fallback_result and fallback_result[0] > 0:
+            transactions_count = int(fallback_result[0])
+            # Vendista sum в копейках, конвертируем в рубли
+            revenue_gross = round(float(fallback_result[1]) / 100, 2)
+            
+            # Расходы из variable_expenses
+            expense_query = """
+                SELECT COALESCE(SUM(amount_rub), 0)
+                FROM variable_expenses
+                WHERE expense_date >= :from_date AND expense_date <= :to_date
+            """
+            exp_result = db.execute(text(expense_query), params).fetchone()
+            expenses_total = float(exp_result[0]) if exp_result else 0.0
+    
+    # Комиссии: 8.95% от выручки
     fees_total = round(revenue_gross * 0.0895, 2)
     
-    # Финальная проверка: net_profit = revenue - fees - expenses (с допуском на float ошибки)
-    # Если view уже считает net_profit, используем его; иначе пересчитаем
-    expected_net_profit = revenue_gross - fees_total - expenses_total
-    # Используем net_profit из view (он включает переменные расходы)
-    # Но нужно учесть, что fees еще не вычтены в view
-    final_net_profit = net_profit - fees_total
+    # Чистая прибыль
+    if revenue_gross > 0:
+        final_net_profit = revenue_gross - fees_total - expenses_total
+    else:
+        final_net_profit = net_profit - fees_total
     
     return {
         "period_start": period_start.isoformat(),

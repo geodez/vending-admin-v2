@@ -77,7 +77,7 @@ export default function OwnerReportPage() {
   const handleCheckHealth = async () => {
     setHealthLoading(true);
     try {
-      const res = await apiClient.get('/api/v1/sync/health');
+      const res = await apiClient.get('/sync/health');
       const { ok, status } = res.data;
       setHealthStatus({ ok, status });
       
@@ -104,7 +104,7 @@ export default function OwnerReportPage() {
       onOk: async () => {
         setSyncLoading(true);
         try {
-          const res = await apiClient.post('/api/v1/sync/sync');
+          const res = await apiClient.post('/sync/sync');
           const { ok, transactions_synced, message: msg } = res.data;
           
           if (ok) {
