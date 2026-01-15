@@ -1,10 +1,11 @@
 """
 API endpoints for Vendista synchronization.
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from datetime import datetime, date
-from typing import Optional
+from typing import Optional, List
 from app.db.session import get_db
 from app.api.deps import get_current_user
 from app.models.user import User
@@ -121,6 +122,39 @@ async def trigger_sync(
         completed_at = datetime.utcnow()
         duration = (completed_at - started_at).total_seconds()
 
+        # Record sync run in database
+        try:
+            record_query = text("""
+                INSERT INTO sync_runs (
+                    started_at, completed_at, period_start, period_end,
+                    fetched, inserted, skipped_duplicates, expected_total,
+                    pages_fetched, items_per_page, last_page, ok, message
+                ) VALUES (
+                    :started_at, :completed_at, :period_start, :period_end,
+                    :fetched, :inserted, :skipped_duplicates, :expected_total,
+                    :pages_fetched, :items_per_page, :last_page, :ok, :message
+                )
+            """)
+            db.execute(record_query, {
+                "started_at": started_at,
+                "completed_at": completed_at,
+                "period_start": period_start,
+                "period_end": period_end,
+                "fetched": result.fetched,
+                "inserted": result.inserted,
+                "skipped_duplicates": result.skipped_duplicates,
+                "expected_total": result.expected_total,
+                "pages_fetched": result.pages_fetched,
+                "items_per_page": result.items_per_page,
+                "last_page": result.last_page,
+                "ok": result.success,
+                "message": result.error_message or "Sync completed successfully"
+            })
+            db.commit()
+        except Exception as record_error:
+            logger.warning(f"Failed to record sync run: {record_error}")
+            # Don't fail the whole request if recording fails
+
         return {
             "ok": result.success,
             "started_at": started_at,
@@ -139,7 +173,85 @@ async def trigger_sync(
 
     except Exception as e:
         logger.error(f"Sync failed: {e}")
+        
+        # Try to record failed run
+        try:
+            completed_at = datetime.utcnow()
+            record_query = text("""
+                INSERT INTO sync_runs (
+                    started_at, completed_at, period_start, period_end,
+                    ok, message
+                ) VALUES (
+                    :started_at, :completed_at, :period_start, :period_end,
+                    :ok, :message
+                )
+            """)
+            db.execute(record_query, {
+                "started_at": started_at,
+                "completed_at": completed_at,
+                "period_start": period_start,
+                "period_end": period_end,
+                "ok": False,
+                "message": str(e)
+            })
+            db.commit()
+        except:
+            pass
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Sync failed: {str(e)}"
         )
+
+
+@router.get("/runs")
+async def get_sync_runs(
+    limit: int = Query(20, ge=1, le=100, description="Number of runs to return"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get sync run history.
+    
+    Returns recent sync runs with stats and status.
+    Owner-only access.
+    """
+    if current_user.role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owners can view sync history"
+        )
+    
+    query = text("""
+        SELECT
+            id, started_at, completed_at, period_start, period_end,
+            fetched, inserted, skipped_duplicates, expected_total,
+            pages_fetched, items_per_page, last_page, ok, message
+        FROM sync_runs
+        ORDER BY started_at DESC
+        LIMIT :limit
+    """)
+    
+    result = db.execute(query, {"limit": limit})
+    rows = result.fetchall()
+    
+    runs = []
+    for row in rows:
+        runs.append({
+            "id": row[0],
+            "started_at": row[1].isoformat() if row[1] else None,
+            "completed_at": row[2].isoformat() if row[2] else None,
+            "period_start": row[3].isoformat() if row[3] else None,
+            "period_end": row[4].isoformat() if row[4] else None,
+            "fetched": row[5],
+            "inserted": row[6],
+            "skipped_duplicates": row[7],
+            "expected_total": row[8],
+            "pages_fetched": row[9],
+            "items_per_page": row[10],
+            "last_page": row[11],
+            "ok": row[12],
+            "message": row[13]
+        })
+    
+    return runs
