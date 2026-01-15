@@ -258,55 +258,47 @@ def get_owner_report(
     current_user: User = Depends(require_owner)
 ):
     """
-    Get owner report (Owner only).
-    Includes net profit calculation with variable expenses.
+    Get owner report (Owner only) - MVP payload.
+    Returns aggregated financial metrics for the period.
     
     Requires: role='owner'
     Returns: 403 if accessed by non-owner
     """
+    from datetime import datetime, timezone
+    
+    # Определяем период (по умолчанию: текущий месяц)
+    if not from_date:
+        now = datetime.now(timezone.utc)
+        from_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).date()
+    if not to_date:
+        to_date = datetime.now(timezone.utc).date()
+    
+    # Агрегированный запрос
     query = """
         SELECT
-            tx_date,
-            location_id,
-            sales_count,
-            revenue,
-            cogs,
-            gross_profit,
-            gross_margin_pct,
-            variable_expenses,
-            net_profit,
-            net_margin_pct
+            COUNT(*) as total_transactions,
+            COALESCE(SUM(revenue), 0) as revenue_gross,
+            COALESCE(SUM(cogs), 0) as cogs_total,
+            COALESCE(SUM(variable_expenses), 0) as expenses_total,
+            COALESCE(SUM(net_profit), 0) as net_profit
         FROM vw_owner_report_daily
-        WHERE 1=1
+        WHERE tx_date >= :from_date AND tx_date <= :to_date
     """
     
-    params = {}
-    if from_date:
-        query += " AND tx_date >= :from_date"
-        params['from_date'] = from_date
-    if to_date:
-        query += " AND tx_date <= :to_date"
-        params['to_date'] = to_date
+    params = {'from_date': from_date, 'to_date': to_date}
     if location_id:
         query += " AND location_id = :location_id"
         params['location_id'] = location_id
     
-    query += " ORDER BY tx_date DESC"
+    result = db.execute(text(query), params).fetchone()
     
-    results = db.execute(text(query), params).fetchall()
-    
-    return [
-        {
-            "date": row[0],
-            "location_id": row[1],
-            "sales_count": row[2],
-            "revenue": float(row[3]),
-            "cogs": float(row[4]),
-            "gross_profit": float(row[5]),
-            "gross_margin_pct": float(row[6]),
-            "variable_expenses": float(row[7]),
-            "net_profit": float(row[8]),
-            "net_margin_pct": float(row[9])
-        }
-        for row in results
-    ]
+    # MVP payload: объект с фиксированной структурой
+    return {
+        "period_start": from_date.isoformat(),
+        "period_end": to_date.isoformat(),
+        "revenue_gross": float(result[1]) if result[1] else 0.0,
+        "fees_total": 0.0,  # MVP: нет данных по комиссиям, вернём 0
+        "expenses_total": float(result[3]) if result[3] else 0.0,
+        "net_profit": float(result[4]) if result[4] else 0.0,
+        "transactions_count": int(result[0]) if result[0] else 0
+    }
