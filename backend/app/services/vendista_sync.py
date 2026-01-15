@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from app.models.vendista import VendistaTerminal, VendistaTxRaw, SyncState
 from app.services.vendista_client import vendista_client
 from app.schemas.vendista import SyncResult
@@ -28,6 +29,7 @@ class VendistaSyncService:
         """
         Sync ALL transactions from Vendista DEFEN API into vendista_tx_raw table.
         Handles pagination automatically.
+        IDEMPOTENT: uses ON CONFLICT DO NOTHING and client-side deduplication.
 
         Args:
             db: Database session
@@ -48,13 +50,20 @@ class VendistaSyncService:
 
             logger.info(f"Received {len(transactions)} transactions from Vendista API")
 
-            # Insert transactions into vendista_tx_raw table (idempotent)
-            inserted_count = 0
-            updated_count = 0
+            if not transactions:
+                logger.info("No transactions to sync")
+                return SyncResult(
+                    success=True,
+                    transactions_synced=0,
+                    fetched=0,
+                    skipped_duplicates=0,
+                    error_message=None
+                )
 
+            # Prepare rows for bulk insert
+            rows = []
             for tx in transactions:
                 try:
-                    # Extract fields from transaction dict
                     vendista_tx_id = tx.get("id")
                     term_id = tx.get("term_id")
                     tx_time_str = tx.get("time")
@@ -63,61 +72,76 @@ class VendistaSyncService:
                         logger.warning(f"Skipping transaction with missing fields: {tx}")
                         continue
 
-                    # Parse transaction time
                     try:
                         tx_time = datetime.fromisoformat(tx_time_str.replace('Z', '+00:00'))
                     except (ValueError, AttributeError):
                         logger.warning(f"Failed to parse tx_time '{tx_time_str}' for tx {vendista_tx_id}")
                         tx_time = datetime.utcnow()
 
-                    # Check if transaction already exists
-                    existing_tx = db.query(VendistaTxRaw).filter(
-                        and_(
-                            VendistaTxRaw.term_id == term_id,
-                            VendistaTxRaw.vendista_tx_id == vendista_tx_id
-                        )
-                    ).first()
-
-                    if existing_tx:
-                        # Update existing transaction
-                        existing_tx.tx_time = tx_time
-                        existing_tx.payload = tx  # Store full dict as JSON
-                        updated_count += 1
-                        logger.debug(f"Updated transaction {vendista_tx_id} for terminal {term_id}")
-                    else:
-                        # Insert new transaction
-                        new_tx = VendistaTxRaw(
-                            term_id=term_id,
-                            vendista_tx_id=vendista_tx_id,
-                            tx_time=tx_time,
-                            payload=tx  # Store full dict as JSON
-                        )
-                        db.add(new_tx)
-                        inserted_count += 1
-                        logger.debug(f"Inserted new transaction {vendista_tx_id} for terminal {term_id}")
+                    rows.append({
+                        "term_id": term_id,
+                        "vendista_tx_id": vendista_tx_id,
+                        "tx_time": tx_time,
+                        "payload": tx
+                    })
 
                 except Exception as e:
-                    logger.error(f"Error processing transaction: {e}")
+                    logger.error(f"Error preparing transaction: {e}")
                     continue
 
-            # Commit all changes
+            # Client-side deduplication
+            seen = set()
+            unique_rows = []
+            for r in rows:
+                key = (r["term_id"], r["vendista_tx_id"])
+                if key in seen:
+                    continue
+                seen.add(key)
+                unique_rows.append(r)
+
+            skipped_duplicates = len(rows) - len(unique_rows)
+            logger.info(f"Client-side dedupe: {len(rows)} -> {len(unique_rows)} (skipped {skipped_duplicates})")
+
+            if not unique_rows:
+                logger.info("No unique rows to insert after deduplication")
+                return SyncResult(
+                    success=True,
+                    transactions_synced=0,
+                    fetched=len(transactions),
+                    skipped_duplicates=skipped_duplicates,
+                    error_message=None
+                )
+
+            # Bulk insert with ON CONFLICT DO NOTHING
+            stmt = pg_insert(VendistaTxRaw).values(unique_rows)
+            stmt = stmt.on_conflict_do_nothing(constraint="uq_vendista_tx")
+            
+            result = db.execute(stmt)
             db.commit()
+
+            inserted = result.rowcount if result.rowcount is not None else 0
+            
             logger.info(
-                f"Sync completed: {inserted_count} new, {updated_count} updated, "
-                f"total {len(transactions)} processed"
+                f"Sync completed: fetched={len(transactions)}, "
+                f"inserted={inserted}, skipped_duplicates={skipped_duplicates}"
             )
 
             return SyncResult(
                 success=True,
-                transactions_synced=inserted_count + updated_count,
+                transactions_synced=inserted,
+                fetched=len(transactions),
+                skipped_duplicates=skipped_duplicates,
                 error_message=None
             )
 
         except Exception as e:
-            logger.error(f"Sync failed: {e}")
+            logger.error(f"Sync failed: {e}", exc_info=True)
+            db.rollback()
             return SyncResult(
                 success=False,
                 transactions_synced=0,
+                fetched=0,
+                skipped_duplicates=0,
                 error_message=str(e)
             )
 

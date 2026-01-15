@@ -154,9 +154,11 @@ class SyncRequest(BaseModel):
 
 
 class SyncResult(BaseModel):
-    """Result of sync operation."""
+    """Result of sync operation with detailed metrics."""
     success: bool
     transactions_synced: int
+    fetched: int = 0
+    skipped_duplicates: int = 0
     error_message: Optional[str] = None
 
 
