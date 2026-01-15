@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:api-prefix": "! grep -RIn '\\/api\\/v1' src --include=*.ts --include=*.tsx --exclude=client.ts"
   },
   "dependencies": {
     "@ant-design/icons": "^5.2.6",

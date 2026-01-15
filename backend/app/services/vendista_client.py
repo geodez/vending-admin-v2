@@ -6,6 +6,7 @@ Docs: https://wiki.vendista.ru/en/home/defen_api
 import httpx
 from datetime import datetime
 from typing import List, Dict, Any, Optional
+import math
 from app.config import settings
 import logging
 
@@ -110,69 +111,114 @@ class VendistaAPIClient:
 
     async def get_paginated_transactions(
         self,
-        limit: int = 1000,
-        from_date: Optional[datetime] = None,
-        to_date: Optional[datetime] = None
-    ) -> List[Dict[str, Any]]:
+        date_from: str,
+        date_to: str,
+        items_per_page: int = 50,
+        order_desc: bool = True
+    ) -> Dict[str, Any]:
         """
-        Fetch ALL transactions with pagination.
-        Automatically fetches all pages and combines results.
+        Fetch ALL transactions with pagination using DEFEN parameters.
 
         Args:
-            limit: Items per page (default: 1000, max: 1000)
-            from_date: Optional start date filter
-            to_date: Optional end date filter
+            date_from: "YYYY-MM-DD HH:MM:SS"
+            date_to:   "YYYY-MM-DD HH:MM:SS"
+            items_per_page: Page size (default 50, per API spec)
+            order_desc: Whether to sort desc by time
 
         Returns:
-            Combined list of all transaction items
+            Dict with combined items and pagination metadata:
+                items: List of transactions
+                expected_total: items_count from API
+                items_per_page: page size returned by API
+                pages_fetched: how many pages were fetched
+                last_page: last page number fetched
         """
-        all_items = []
-        offset = 0
-        page = 1
+
+        all_items: List[Dict[str, Any]] = []
+        expected_total: Optional[int] = None
+        pages_fetched = 0
+        last_page = 0
+
+        page_number = 1
+        order_desc_str = "true" if order_desc else "false"
 
         logger.info(
-            f"Starting paginated fetch: limit={limit}, "
-            f"from={from_date}, to={to_date}"
+            "Starting Vendista pagination: DateFrom=%s, DateTo=%s, ItemsPerPage=%s, OrderDesc=%s",
+            date_from,
+            date_to,
+            items_per_page,
+            order_desc,
         )
 
-        while True:
-            try:
-                response = await self.get_transactions(
-                    limit=limit,
-                    offset=offset,
-                    from_date=from_date,
-                    to_date=to_date
-                )
-                
-                items = response.get("items", [])
-                if not items:
-                    logger.info(f"Page {page}: 0 items, stopping pagination")
-                    break
-                
-                all_items.extend(items)
-                items_count = response.get("items_count", 0)
-                logger.info(
-                    f"Page {page}: fetched {len(items)} items, "
-                    f"total so far: {len(all_items)}/{items_count}"
-                )
-                
-                # Check if we've fetched all items
-                if len(all_items) >= items_count:
-                    logger.info(f"Pagination complete: {len(all_items)} total items")
-                    break
-                
-                offset += limit
-                page += 1
-                
-            except httpx.HTTPError as e:
-                logger.error(f"Error on page {page}, offset {offset}: {e}")
-                # Continue with next batch or return what we have
-                if all_items:
-                    logger.warning(f"Returning partial results: {len(all_items)} items")
-                    break
-                raise
+        async with httpx.AsyncClient(verify=False, timeout=httpx.Timeout(30.0, connect=15.0)) as client:
+            while True:
+                params = {
+                    "token": self.api_token,
+                    "DateFrom": date_from,
+                    "DateTo": date_to,
+                    "ItemsPerPage": items_per_page,
+                    "PageNumber": page_number,
+                    "OrderDesc": order_desc_str,
+                }
 
-        return all_items
+                try:
+                    response = await client.get(f"{self.base_url}/transactions", params=params)
+                    response.raise_for_status()
+                    data = response.json()
+                except httpx.HTTPError as e:
+                    logger.error("Vendista API page %s failed: %s", page_number, e)
+                    raise
+
+                items = data.get("items", [])
+                items_count = data.get("items_count", 0) or 0
+                items_per_page_resp = data.get("items_per_page", items_per_page)
+                page_number_resp = data.get("page_number", page_number)
+
+                if expected_total is None:
+                    expected_total = items_count
+
+                pages_fetched += 1
+                last_page = page_number_resp
+
+                logger.info(
+                    "Page %s/%s: got %s items (count=%s, per_page=%s)",
+                    page_number_resp,
+                    math.ceil(items_count / items_per_page_resp) if items_per_page_resp else "?",
+                    len(items),
+                    items_count,
+                    items_per_page_resp,
+                )
+
+                if not items:
+                    # If we haven't reached expected_total but items empty -> guard
+                    logger.warning(
+                        "Empty items on page %s before reaching expected_total=%s; stopping",
+                        page_number_resp,
+                        expected_total,
+                    )
+                    break
+
+                all_items.extend(items)
+
+                total_pages = math.ceil(items_count / items_per_page_resp) if items_per_page_resp else 1
+
+                if page_number_resp >= total_pages:
+                    logger.info("Pagination finished at page %s/%s", page_number_resp, total_pages)
+                    break
+
+                page_number = page_number_resp + 1
+                # Guard: ensure progress
+                if page_number > total_pages + 1:
+                    logger.warning("Page number exceeded total_pages (%s); breaking", total_pages)
+                    break
+
+        return {
+            "items": all_items,
+            "expected_total": expected_total or 0,
+            "items_per_page": items_per_page_resp if 'items_per_page_resp' in locals() else items_per_page,
+            "pages_fetched": pages_fetched,
+            "last_page": last_page,
+        }
 
 
 # Singleton instance

@@ -2,7 +2,7 @@
 Vendista synchronization service.
 Handles syncing transactions from Vendista API to local database.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, date
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
@@ -23,8 +23,10 @@ class VendistaSyncService:
     async def sync_all_from_vendista(
         self,
         db: Session,
-        from_date: Optional[datetime] = None,
-        to_date: Optional[datetime] = None
+        period_start: Optional[date] = None,
+        period_end: Optional[date] = None,
+        items_per_page: int = 50,
+        order_desc: bool = True,
     ) -> SyncResult:
         """
         Sync ALL transactions from Vendista DEFEN API into vendista_tx_raw table.
@@ -33,22 +35,55 @@ class VendistaSyncService:
 
         Args:
             db: Database session
-            from_date: Optional start date filter
-            to_date: Optional end date filter
+            period_start: Start date (inclusive)
+            period_end: End date (inclusive)
+            items_per_page: Page size for Vendista API
+            order_desc: OrderDesc flag for Vendista API
 
         Returns:
             SyncResult with sync status and count
         """
-        logger.info(f"Starting full Vendista sync (from={from_date}, to={to_date})")
+
+        # Defaults: first day of current month to today (UTC)
+        today = datetime.utcnow().date()
+        if period_end is None:
+            period_end = today
+        if period_start is None:
+            period_start = today.replace(day=1)
+
+        date_from_str = f"{period_start.strftime('%Y-%m-%d')} 00:00:00"
+        date_to_str = f"{period_end.strftime('%Y-%m-%d')} 23:59:59"
+
+        logger.info(
+            "Starting full Vendista sync (DateFrom=%s, DateTo=%s, ItemsPerPage=%s, OrderDesc=%s)",
+            date_from_str,
+            date_to_str,
+            items_per_page,
+            order_desc,
+        )
 
         try:
             # Fetch all transactions from Vendista API
-            transactions = await vendista_client.get_paginated_transactions(
-                from_date=from_date,
-                to_date=to_date
+            paginated = await vendista_client.get_paginated_transactions(
+                date_from=date_from_str,
+                date_to=date_to_str,
+                items_per_page=items_per_page,
+                order_desc=order_desc,
             )
 
-            logger.info(f"Received {len(transactions)} transactions from Vendista API")
+            transactions = paginated.get("items", [])
+            expected_total = paginated.get("expected_total", 0)
+            pages_fetched = paginated.get("pages_fetched", 0)
+            items_per_page_resp = paginated.get("items_per_page", items_per_page)
+            last_page = paginated.get("last_page", pages_fetched)
+
+            logger.info(
+                "Received %s transactions from Vendista API (expected_total=%s, pages=%s, last_page=%s)",
+                len(transactions),
+                expected_total,
+                pages_fetched,
+                last_page,
+            )
 
             if not transactions:
                 logger.info("No transactions to sync")
@@ -57,8 +92,12 @@ class VendistaSyncService:
                     fetched=0,
                     inserted=0,
                     skipped_duplicates=0,
+                    expected_total=expected_total,
+                    pages_fetched=pages_fetched,
+                    items_per_page=items_per_page_resp,
+                    last_page=last_page,
                     transactions_synced=0,
-                    error_message=None
+                    error_message=None,
                 )
 
             # Prepare rows for bulk insert
@@ -110,8 +149,12 @@ class VendistaSyncService:
                     fetched=len(transactions),
                     inserted=0,
                     skipped_duplicates=skipped_duplicates,
+                    expected_total=expected_total,
+                    pages_fetched=pages_fetched,
+                    items_per_page=items_per_page_resp,
+                    last_page=last_page,
                     transactions_synced=0,
-                    error_message=None
+                    error_message=None,
                 )
 
             # Bulk insert with ON CONFLICT DO NOTHING
@@ -133,8 +176,12 @@ class VendistaSyncService:
                 fetched=len(transactions),
                 inserted=inserted,
                 skipped_duplicates=skipped_duplicates,
+                expected_total=expected_total,
+                pages_fetched=pages_fetched,
+                items_per_page=items_per_page_resp,
+                last_page=last_page,
                 transactions_synced=inserted,
-                error_message=None
+                error_message=None,
             )
 
         except Exception as e:
@@ -145,8 +192,12 @@ class VendistaSyncService:
                 fetched=0,
                 inserted=0,
                 skipped_duplicates=0,
+                expected_total=0,
+                pages_fetched=0,
+                items_per_page=items_per_page,
+                last_page=0,
                 transactions_synced=0,
-                error_message=str(e)
+                error_message=str(e),
             )
 
 

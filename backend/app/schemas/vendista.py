@@ -159,6 +159,10 @@ class SyncResult(BaseModel):
     fetched: int = 0  # Total transactions fetched from API
     inserted: int = 0  # Transactions inserted into DB
     skipped_duplicates: int = 0  # Duplicates skipped (ON CONFLICT)
+    expected_total: int = 0  # items_count reported by Vendista API
+    pages_fetched: int = 0  # How many pages were requested
+    items_per_page: int = 0  # Page size used when fetching
+    last_page: int = 0  # Last page number fetched
     transactions_synced: int  # Total synced (inserted + updated)
     error_message: Optional[str] = None
 
