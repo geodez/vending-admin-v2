@@ -286,9 +286,11 @@ def get_owner_report(
     
     # Агрегированный запрос из view vw_owner_report_daily
     # View включает variable_expenses и net_profit
+    # ВАЖНО: sales_count — это уже COUNT транзакций за день
+    # Используем SUM(sales_count), а не COUNT(*) (который считал бы дни)
     query = """
         SELECT
-            COUNT(*) as transactions_count,
+            COALESCE(SUM(sales_count), 0) as transactions_count,
             COALESCE(SUM(revenue), 0) as revenue_gross,
             COALESCE(SUM(cogs), 0) as cogs_total,
             COALESCE(SUM(variable_expenses), 0) as expenses_total,
