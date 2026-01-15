@@ -54,9 +54,10 @@ class VendistaSyncService:
                 logger.info("No transactions to sync")
                 return SyncResult(
                     success=True,
-                    transactions_synced=0,
                     fetched=0,
+                    inserted=0,
                     skipped_duplicates=0,
+                    transactions_synced=0,
                     error_message=None
                 )
 
@@ -106,9 +107,10 @@ class VendistaSyncService:
                 logger.info("No unique rows to insert after deduplication")
                 return SyncResult(
                     success=True,
-                    transactions_synced=0,
                     fetched=len(transactions),
+                    inserted=0,
                     skipped_duplicates=skipped_duplicates,
+                    transactions_synced=0,
                     error_message=None
                 )
 
@@ -128,9 +130,10 @@ class VendistaSyncService:
 
             return SyncResult(
                 success=True,
-                transactions_synced=inserted,
                 fetched=len(transactions),
+                inserted=inserted,
                 skipped_duplicates=skipped_duplicates,
+                transactions_synced=inserted,
                 error_message=None
             )
 
@@ -139,9 +142,10 @@ class VendistaSyncService:
             db.rollback()
             return SyncResult(
                 success=False,
-                transactions_synced=0,
                 fetched=0,
+                inserted=0,
                 skipped_duplicates=0,
+                transactions_synced=0,
                 error_message=str(e)
             )
 

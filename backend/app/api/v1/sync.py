@@ -100,6 +100,9 @@ async def trigger_sync(
             "started_at": started_at,
             "completed_at": completed_at,
             "duration_seconds": duration,
+            "fetched": result.fetched,
+            "inserted": result.inserted,
+            "skipped_duplicates": result.skipped_duplicates,
             "transactions_synced": result.transactions_synced,
             "message": result.error_message or "Sync completed successfully"
         }

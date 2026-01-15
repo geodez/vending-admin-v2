@@ -156,9 +156,10 @@ class SyncRequest(BaseModel):
 class SyncResult(BaseModel):
     """Result of sync operation with detailed metrics."""
     success: bool
-    transactions_synced: int
-    fetched: int = 0
-    skipped_duplicates: int = 0
+    fetched: int = 0  # Total transactions fetched from API
+    inserted: int = 0  # Transactions inserted into DB
+    skipped_duplicates: int = 0  # Duplicates skipped (ON CONFLICT)
+    transactions_synced: int  # Total synced (inserted + updated)
     error_message: Optional[str] = None
 
 
