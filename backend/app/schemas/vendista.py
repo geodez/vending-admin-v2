@@ -154,8 +154,7 @@ class SyncRequest(BaseModel):
 
 
 class SyncResult(BaseModel):
-    """Result of sync operation for a single terminal."""
-    term_id: int
+    """Result of sync operation."""
     success: bool
     transactions_synced: int
     error_message: Optional[str] = None

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Spin, Result, Button, Typography, Card, Row, Col, Table, Space, Statistic } from 'antd';
-import { DollarOutlined, CreditCardOutlined, ShoppingOutlined, LineChartOutlined } from '@ant-design/icons';
+import { Spin, Result, Button, Typography, Card, Row, Col, Table, Space, Statistic, Alert, Modal, message } from 'antd';
+import { DollarOutlined, CreditCardOutlined, ShoppingOutlined, LineChartOutlined, ReloadOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import apiClient from '../api/client';
 
 const { Paragraph, Title, Text } = Typography;
@@ -34,29 +34,37 @@ const formatRub = (value: number) => {
 
 export default function OwnerReportPage() {
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
+  const [healthLoading, setHealthLoading] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [healthStatus, setHealthStatus] = useState<{ ok: boolean; status: string } | null>(null);
+
+  // Загрузка данных отчёта
+  const loadReport = async () => {
+    try {
+      const res = await apiClient.get('/analytics/owner-report');
+      setState({ kind: 'ok', data: res.data });
+    } catch (e: any) {
+      const status = e?.response?.status;
+
+      if (status === 401) {
+        setState({ kind: 'unauthorized' });
+        window.location.href = '/login';
+        return;
+      }
+      if (status === 403) {
+        setState({ kind: 'forbidden' });
+        return;
+      }
+      setState({ kind: 'error', message: e?.message });
+    }
+  };
 
   useEffect(() => {
     let alive = true;
 
     (async () => {
-      try {
-        const res = await apiClient.get('/analytics/owner-report');
-        if (!alive) return;
-        setState({ kind: 'ok', data: res.data });
-      } catch (e: any) {
-        if (!alive) return;
-        const status = e?.response?.status;
-
-        if (status === 401) {
-          setState({ kind: 'unauthorized' });
-          window.location.href = '/login';
-          return;
-        }
-        if (status === 403) {
-          setState({ kind: 'forbidden' });
-          return;
-        }
-        setState({ kind: 'error', message: e?.message });
+      if (alive) {
+        await loadReport();
       }
     })();
 
@@ -64,6 +72,56 @@ export default function OwnerReportPage() {
       alive = false;
     };
   }, []);
+
+  // Проверка соединения с Vendista API
+  const handleCheckHealth = async () => {
+    setHealthLoading(true);
+    try {
+      const res = await apiClient.get('/api/v1/sync/health');
+      const { ok, status } = res.data;
+      setHealthStatus({ ok, status });
+      
+      if (ok) {
+        message.success('✅ ' + status);
+      } else {
+        message.error('❌ ' + status);
+      }
+    } catch (e: any) {
+      message.error('Ошибка проверки соединения: ' + (e?.message || 'Unknown error'));
+      setHealthStatus({ ok: false, status: e?.message || 'Connection failed' });
+    } finally {
+      setHealthLoading(false);
+    }
+  };
+
+  // Запуск синхронизации
+  const handleRunSync = async () => {
+    Modal.confirm({
+      title: 'Запустить синхронизацию',
+      content: 'Это может занять некоторое время. Продолжить?',
+      okText: 'Да',
+      cancelText: 'Отмена',
+      onOk: async () => {
+        setSyncLoading(true);
+        try {
+          const res = await apiClient.post('/api/v1/sync/sync');
+          const { ok, transactions_synced, message: msg } = res.data;
+          
+          if (ok) {
+            message.success(`✅ Синхронизировано ${transactions_synced} транзакций`);
+            // Перезагрузить отчёт
+            await loadReport();
+          } else {
+            message.error('❌ ' + msg);
+          }
+        } catch (e: any) {
+          message.error('Ошибка синхронизации: ' + (e?.message || 'Unknown error'));
+        } finally {
+          setSyncLoading(false);
+        }
+      },
+    });
+  };
 
   if (state.kind === 'loading') {
     return (
@@ -105,6 +163,7 @@ export default function OwnerReportPage() {
 
   if (state.kind === 'ok') {
     const data: OwnerReportData = state.data;
+    const isDataEmpty = data.revenue_gross === 0 && data.transactions_count === 0;
     
     // Таблица итогов
     const tableColumns = [
@@ -150,6 +209,47 @@ export default function OwnerReportPage() {
               Финансовые метрики за период {data.period_start} — {data.period_end}
             </Paragraph>
           </div>
+
+          {/* Alert если данные нулевые */}
+          {isDataEmpty && (
+            <Alert
+              message="Данные отсутствуют"
+              description="В базе данных нет информации о транзакциях. Запустите синхронизацию с API Vendista."
+              type="warning"
+              showIcon
+              closable
+            />
+          )}
+
+          {/* Кнопки управления синхронизацией */}
+          <Card style={{ background: '#f5f5f5' }}>
+            <Space>
+              <Button
+                icon={<CheckCircleOutlined />}
+                onClick={handleCheckHealth}
+                loading={healthLoading}
+              >
+                Проверить соединение с Vendista
+              </Button>
+              <Button
+                type="primary"
+                icon={<ReloadOutlined />}
+                onClick={handleRunSync}
+                loading={syncLoading}
+              >
+                Запустить синхронизацию
+              </Button>
+            </Space>
+            {healthStatus && (
+              <Paragraph style={{ marginTop: 12 }}>
+                {healthStatus.ok ? (
+                  <span style={{ color: 'green' }}>✅ {healthStatus.status}</span>
+                ) : (
+                  <span style={{ color: 'red' }}>❌ {healthStatus.status}</span>
+                )}
+              </Paragraph>
+            )}
+          </Card>
 
           {/* 4 карточки с ключевыми метриками */}
           <Row gutter={[16, 16]}>

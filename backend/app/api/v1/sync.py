@@ -1,23 +1,15 @@
 """
 API endpoints for Vendista synchronization.
 """
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 from app.db.session import get_db
 from app.api.deps import get_current_user
 from app.models.user import User
-from app.schemas.vendista import (
-    SyncRequest,
-    SyncResponse,
-    SyncResult,
-    SyncStateResponse,
-    VendistaTerminalResponse,
-    VendistaTxRawResponse
-)
 from app.services.vendista_sync import sync_service
-from app.crud import vendista as crud_vendista
+from app.services.vendista_client import vendista_client
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,18 +17,63 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/sync", response_model=SyncResponse)
-async def trigger_sync(
-    sync_request: SyncRequest,
-    background_tasks: BackgroundTasks,
+@router.get("/health")
+async def check_sync_health(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Trigger manual synchronization of Vendista transactions.
+    Check connection to Vendista API.
     
-    This endpoint starts a sync job that runs in the background.
+    Only users with owner role can check.
+    """
+    # Check if user has permission (only owners can access)
+    if current_user.role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owners can check sync health"
+        )
+
+    try:
+        is_connected = await vendista_client.test_connection()
+        
+        if is_connected:
+            return {
+                "ok": True,
+                "status": "Connected to Vendista API",
+                "status_code": 200
+            }
+        else:
+            return {
+                "ok": False,
+                "status": "Failed to connect to Vendista API",
+                "status_code": 500
+            }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return {
+            "ok": False,
+            "status": f"Error: {str(e)}",
+            "status_code": 500
+        }
+
+
+@router.post("/sync")
+async def trigger_sync(
+    from_date: Optional[datetime] = None,
+    to_date: Optional[datetime] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Trigger synchronization of transactions from Vendista DEFEN API.
+    
+    This fetches all transactions and inserts them into vendista_tx_raw table.
     Only users with owner role can trigger sync.
+    
+    Query parameters:
+    - from_date: Optional start date filter (ISO format)
+    - to_date: Optional end date filter (ISO format)
     """
     # Check if user has permission (only owners can sync)
     if current_user.role != "owner":
@@ -46,34 +83,26 @@ async def trigger_sync(
         )
 
     started_at = datetime.utcnow()
-    
-    logger.info(
-        f"User {current_user.telegram_user_id} triggered sync: "
-        f"term_ids={sync_request.term_ids}, force={sync_request.force}"
-    )
+    logger.info(f"User {current_user.telegram_user_id} triggered full sync")
 
     try:
-        # Run sync synchronously (we can move to background if needed)
-        results = await sync_service.sync_all_terminals(
+        result = await sync_service.sync_all_from_vendista(
             db=db,
-            term_ids=sync_request.term_ids,
-            from_date=sync_request.from_date,
-            to_date=sync_request.to_date,
-            force=sync_request.force
+            from_date=from_date,
+            to_date=to_date
         )
 
         completed_at = datetime.utcnow()
-        successful = sum(1 for r in results if r.success)
-        failed = sum(1 for r in results if not r.success)
+        duration = (completed_at - started_at).total_seconds()
 
-        return SyncResponse(
-            started_at=started_at,
-            completed_at=completed_at,
-            total_terminals=len(results),
-            successful=successful,
-            failed=failed,
-            results=results
-        )
+        return {
+            "ok": result.success,
+            "started_at": started_at,
+            "completed_at": completed_at,
+            "duration_seconds": duration,
+            "transactions_synced": result.transactions_synced,
+            "message": result.error_message or "Sync completed successfully"
+        }
 
     except Exception as e:
         logger.error(f"Sync failed: {e}")
@@ -81,105 +110,3 @@ async def trigger_sync(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Sync failed: {str(e)}"
         )
-
-
-@router.get("/sync/status", response_model=List[SyncStateResponse])
-def get_sync_status(
-    term_id: Optional[int] = None,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Get synchronization status for terminals.
-    
-    Returns sync state for all terminals or a specific terminal.
-    """
-    sync_states = sync_service.get_sync_status(db, term_id=term_id)
-    return sync_states
-
-
-@router.get("/terminals", response_model=List[VendistaTerminalResponse])
-def get_terminals(
-    skip: int = 0,
-    limit: int = 100,
-    is_active: Optional[bool] = None,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Get list of Vendista terminals.
-    """
-    terminals = crud_vendista.get_terminals(db, skip=skip, limit=limit, is_active=is_active)
-    return terminals
-
-
-@router.get("/terminals/{term_id}", response_model=VendistaTerminalResponse)
-def get_terminal(
-    term_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Get specific terminal by ID.
-    """
-    terminal = crud_vendista.get_terminal(db, term_id=term_id)
-    if terminal is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Terminal {term_id} not found"
-        )
-    return terminal
-
-
-@router.get("/transactions", response_model=List[VendistaTxRawResponse])
-def get_transactions(
-    term_id: Optional[int] = None,
-    from_date: Optional[datetime] = None,
-    to_date: Optional[datetime] = None,
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Get list of transactions with filters.
-    
-    Query parameters:
-    - term_id: Filter by terminal ID
-    - from_date: Filter transactions from this date
-    - to_date: Filter transactions until this date
-    - skip: Number of records to skip (for pagination)
-    - limit: Maximum number of records to return (max: 1000)
-    """
-    if limit > 1000:
-        limit = 1000
-
-    transactions = crud_vendista.get_transactions(
-        db,
-        term_id=term_id,
-        from_date=from_date,
-        to_date=to_date,
-        skip=skip,
-        limit=limit
-    )
-    return transactions
-
-
-@router.get("/transactions/count")
-def count_transactions(
-    term_id: Optional[int] = None,
-    from_date: Optional[datetime] = None,
-    to_date: Optional[datetime] = None,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Count transactions with filters.
-    """
-    count = crud_vendista.count_transactions(
-        db,
-        term_id=term_id,
-        from_date=from_date,
-        to_date=to_date
-    )
-    return {"count": count}

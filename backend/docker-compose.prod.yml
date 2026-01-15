@@ -21,7 +21,7 @@ services:
 
   app:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     container_name: vending_app_prod
     restart: always
