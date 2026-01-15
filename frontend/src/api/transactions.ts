@@ -6,6 +6,7 @@ export interface Transaction {
   vendista_tx_id: number;
   tx_time: string | null;
   sum_rub: number;
+  sum_kopecks: number;
   machine_item_id: number | null;
   terminal_comment: string | null;
   status: number | null;
@@ -17,26 +18,45 @@ export interface TransactionsResponse {
   page: number;
   page_size: number;
   total: number;
+  total_pages: number;
 }
 
 export const transactionsApi = {
   getTransactions: async (params: {
-    period_start?: string;
-    period_end?: string;
+    date_from?: string;
+    date_to?: string;
     term_id?: number;
-    only_positive?: boolean;
+    sum_type?: 'all' | 'positive' | 'non_positive';
     page?: number;
     page_size?: number;
   }): Promise<TransactionsResponse> => {
     const queryParams = new URLSearchParams();
-    if (params.period_start) queryParams.append('period_start', params.period_start);
-    if (params.period_end) queryParams.append('period_end', params.period_end);
+    if (params.date_from) queryParams.append('date_from', params.date_from);
+    if (params.date_to) queryParams.append('date_to', params.date_to);
     if (params.term_id !== undefined) queryParams.append('term_id', String(params.term_id));
-    if (params.only_positive !== undefined) queryParams.append('only_positive', String(params.only_positive));
+    if (params.sum_type) queryParams.append('sum_type', params.sum_type);
     if (params.page) queryParams.append('page', String(params.page));
     if (params.page_size) queryParams.append('page_size', String(params.page_size));
     
     const response = await apiClient.get<TransactionsResponse>(`/transactions?${queryParams.toString()}`);
+    return response.data;
+  },
+
+  exportTransactions: async (params: {
+    date_from?: string;
+    date_to?: string;
+    term_id?: number;
+    sum_type?: 'all' | 'positive' | 'non_positive';
+  }): Promise<Blob> => {
+    const queryParams = new URLSearchParams();
+    if (params.date_from) queryParams.append('date_from', params.date_from);
+    if (params.date_to) queryParams.append('date_to', params.date_to);
+    if (params.term_id !== undefined) queryParams.append('term_id', String(params.term_id));
+    if (params.sum_type) queryParams.append('sum_type', params.sum_type);
+    
+    const response = await apiClient.get(`/transactions/export?${queryParams.toString()}`, {
+      responseType: 'blob',
+    });
     return response.data;
   },
 };

@@ -32,6 +32,28 @@ export interface MachineMatrixCreate {
   is_active?: boolean;
 }
 
+export interface ImportPreviewRow {
+  term_id: number;
+  machine_item_id: number;
+  drink_id: number;
+  location_id: number;
+  is_active: boolean;
+}
+
+export interface ImportPreviewResponse {
+  total_rows: number;
+  valid_rows: number;
+  errors: Array<{ row: number; error: string }>;
+  preview: ImportPreviewRow[];
+}
+
+export interface ImportApplyResponse {
+  inserted: number;
+  updated: number;
+  errors: Array<{ term_id?: number; machine_item_id?: number; error: string }>;
+  message: string;
+}
+
 export const mappingApi = {
   // Drinks
   getDrinks: async (): Promise<Drink[]> => {
@@ -58,5 +80,32 @@ export const mappingApi = {
 
   deleteMachineMatrix: async (id: number): Promise<void> => {
     await apiClient.delete(`/mapping/machine-matrix/${id}`);
+  },
+
+  // CSV Import
+  dryRunImport: async (file: File): Promise<ImportPreviewResponse> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post<ImportPreviewResponse>(
+      '/mapping/matrix/import?dry_run=true',
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }
+    );
+    return response.data;
+  },
+
+  applyImport: async (file: File): Promise<ImportApplyResponse> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post<ImportApplyResponse>(
+      '/mapping/matrix/import?dry_run=false',
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }
+    );
+    return response.data;
   },
 };
