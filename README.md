@@ -5,8 +5,16 @@
 [![Backend Tests](https://github.com/geodez/vending-admin-v2/actions/workflows/backend-tests.yml/badge.svg)](https://github.com/geodez/vending-admin-v2/actions/workflows/backend-tests.yml)
 [![Frontend Build](https://github.com/geodez/vending-admin-v2/actions/workflows/frontend-build.yml/badge.svg)](https://github.com/geodez/vending-admin-v2/actions/workflows/frontend-build.yml)
 
+**Текущая версия:** [v1.1.1](./RELEASE_v1.1.1.md) — MVP Polish (filters, CSV export/import, sync management)
+
 ## 📚 Документация
 
+### 🔥 Новое в v1.1.1
+- **[RELEASE_v1.1.1.md](./RELEASE_v1.1.1.md)** — что нового в версии
+- **[STAGE_19_COMPLETION.md](./STAGE_19_COMPLETION.md)** — детальный отчет о реализации
+- **[ACCEPTANCE_TESTS_v1.1.1.md](./ACCEPTANCE_TESTS_v1.1.1.md)** — результаты тестирования (28/28 ✅)
+
+### 📖 Основная документация
 - **[START_HERE.md](./START_HERE.md)** — начало работы и обзор проекта
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** — полная архитектура проекта (30+ страниц)
 - **[API_REFERENCE.md](./API_REFERENCE.md)** — справочник API
