@@ -11,6 +11,23 @@ export interface SyncStatus {
   transactions_count: number;
 }
 
+export interface SyncRun {
+  id: number;
+  started_at: string | null;
+  completed_at: string | null;
+  period_start: string | null;
+  period_end: string | null;
+  fetched: number | null;
+  inserted: number | null;
+  skipped_duplicates: number | null;
+  expected_total: number | null;
+  pages_fetched: number | null;
+  items_per_page: number | null;
+  last_page: number | null;
+  ok: boolean | null;
+  message: string | null;
+}
+
 export interface VendistaTerminal {
   id: number;
   vendista_term_id: number;
@@ -55,3 +72,33 @@ export const getTransactionCount = (params?: {
   from_date?: string;
   to_date?: string;
 }) => apiClient.get<{ count: number }>('/v1/sync/transactions/count', { params });
+
+// Get sync runs history
+export const getSyncRuns = (limit?: number) =>
+  apiClient.get<SyncRun[]>('/sync/runs', { params: { limit: limit || 20 } });
+
+// Sync health check
+export const checkSyncHealth = () =>
+  apiClient.get<{ ok: boolean; status: string; status_code: number }>('/sync/health');
+
+// Trigger sync with period
+export const triggerSyncWithPeriod = (params: {
+  period_start?: string;
+  period_end?: string;
+  items_per_page?: number;
+  order_desc?: boolean;
+}) => apiClient.post<{
+  ok: boolean;
+  started_at: string;
+  completed_at: string;
+  duration_seconds: number;
+  fetched: number;
+  inserted: number;
+  skipped_duplicates: number;
+  expected_total: number;
+  items_per_page: number;
+  pages_fetched: number;
+  last_page: number;
+  transactions_synced: number;
+  message: string;
+}>('/sync/sync', null, { params });
