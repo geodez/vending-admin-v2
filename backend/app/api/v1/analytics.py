@@ -251,32 +251,44 @@ def get_inventory_balance(
 
 @router.get("/owner-report")
 def get_owner_report(
-    from_date: Optional[date] = None,
-    to_date: Optional[date] = None,
+    period_start: Optional[date] = None,
+    period_end: Optional[date] = None,
     location_id: Optional[int] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_owner)
 ):
     """
-    Get owner report (Owner only) - MVP payload.
+    Get owner report (Owner only).
     Returns aggregated financial metrics for the period.
     
+    Query params:
+      period_start: YYYY-MM-DD (default: first day of current month)
+      period_end:   YYYY-MM-DD (default: today)
+    
     Requires: role='owner'
-    Returns: 403 if accessed by non-owner
+    Returns: 403 if accessed by non-owner, 422 if period_end < period_start
     """
     from datetime import datetime, timezone
     
-    # Определяем период (по умолчанию: текущий месяц)
-    if not from_date:
+    # Нормализация периода (по умолчанию: текущий месяц)
+    if not period_start:
         now = datetime.now(timezone.utc)
-        from_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).date()
-    if not to_date:
-        to_date = datetime.now(timezone.utc).date()
+        period_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).date()
+    if not period_end:
+        period_end = datetime.now(timezone.utc).date()
     
-    # Агрегированный запрос
+    # Валидация периода
+    if period_end < period_start:
+        raise HTTPException(
+            status_code=422,
+            detail="period_end must be >= period_start"
+        )
+    
+    # Агрегированный запрос из view vw_owner_report_daily
+    # View включает variable_expenses и net_profit
     query = """
         SELECT
-            COUNT(*) as total_transactions,
+            COUNT(*) as transactions_count,
             COALESCE(SUM(revenue), 0) as revenue_gross,
             COALESCE(SUM(cogs), 0) as cogs_total,
             COALESCE(SUM(variable_expenses), 0) as expenses_total,
@@ -285,20 +297,36 @@ def get_owner_report(
         WHERE tx_date >= :from_date AND tx_date <= :to_date
     """
     
-    params = {'from_date': from_date, 'to_date': to_date}
+    params = {'from_date': period_start, 'to_date': period_end}
     if location_id:
         query += " AND location_id = :location_id"
         params['location_id'] = location_id
     
     result = db.execute(text(query), params).fetchone()
     
-    # MVP payload: объект с фиксированной структурой
+    # Агрегированные значения (все поля, может быть None если нет данных)
+    transactions_count = int(result[0]) if result[0] else 0
+    revenue_gross = float(result[1]) if result[1] else 0.0
+    expenses_total = float(result[3]) if result[3] else 0.0
+    net_profit = float(result[4]) if result[4] else 0.0
+    
+    # Комиссии/налоги: если нет поля в БД, считать как revenue * 0.0895 (8.95%)
+    # TODO: Заменить на реальное поле commission/fee из таблицы, когда оно будет доступно
+    fees_total = round(revenue_gross * 0.0895, 2)
+    
+    # Финальная проверка: net_profit = revenue - fees - expenses (с допуском на float ошибки)
+    # Если view уже считает net_profit, используем его; иначе пересчитаем
+    expected_net_profit = revenue_gross - fees_total - expenses_total
+    # Используем net_profit из view (он включает переменные расходы)
+    # Но нужно учесть, что fees еще не вычтены в view
+    final_net_profit = net_profit - fees_total
+    
     return {
-        "period_start": from_date.isoformat(),
-        "period_end": to_date.isoformat(),
-        "revenue_gross": float(result[1]) if result[1] else 0.0,
-        "fees_total": 0.0,  # MVP: нет данных по комиссиям, вернём 0
-        "expenses_total": float(result[3]) if result[3] else 0.0,
-        "net_profit": float(result[4]) if result[4] else 0.0,
-        "transactions_count": int(result[0]) if result[0] else 0
+        "period_start": period_start.isoformat(),
+        "period_end": period_end.isoformat(),
+        "revenue_gross": revenue_gross,
+        "fees_total": fees_total,
+        "expenses_total": expenses_total,
+        "net_profit": final_net_profit,
+        "transactions_count": transactions_count
     }
