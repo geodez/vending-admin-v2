@@ -7,11 +7,12 @@ from app.auth.jwt import verify_token
 from app.models.user import User
 from app.crud.user import get_user_by_id
 
-security = HTTPBearer()
+# auto_error=False чтобы вручную обработать отсутствие токена (401 вместо 403)
+security = HTTPBearer(auto_error=False)
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: Session = Depends(get_db)
 ) -> User:
     """
@@ -20,6 +21,12 @@ def get_current_user(
     Raises:
         HTTPException: 401 если токен невалидный или пользователь не найден
     """
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated"
+        )
+    
     token = credentials.credentials
     payload = verify_token(token)
     
