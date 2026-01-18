@@ -3,24 +3,19 @@ import apiClient from './client';
 export interface Drink {
   id: number;
   name: string;
-  purchase_price_rub: number | null;
-  sale_price_rub: number | null;
   is_active: boolean;
 }
 
 export interface DrinkCreate {
   name: string;
-  purchase_price_rub?: number;
-  sale_price_rub?: number;
   is_active?: boolean;
 }
 
 export interface MachineMatrix {
-  id: number;
   term_id: number;
   machine_item_id: number;
-  drink_id: number;
-  location_id: number;
+  drink_id: number | null;
+  location_id: number | null;
   is_active: boolean;
 }
 
@@ -78,8 +73,8 @@ export const mappingApi = {
     return response.data;
   },
 
-  deleteMachineMatrix: async (id: number): Promise<void> => {
-    await apiClient.delete(`/mapping/machine-matrix/${id}`);
+  deleteMachineMatrix: async (termId: number, machineItemId: number): Promise<void> => {
+    await apiClient.delete(`/mapping/machine-matrix?term_id=${termId}&machine_item_id=${machineItemId}`);
   },
 
   // CSV Import

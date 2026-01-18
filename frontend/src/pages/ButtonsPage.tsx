@@ -33,9 +33,9 @@ const ButtonsPage = () => {
     fetchMatrix();
   }, []);
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (termId: number, machineItemId: number) => {
     try {
-      await mappingApi.deleteMachineMatrix(id);
+      await mappingApi.deleteMachineMatrix(termId, machineItemId);
       message.success('Запись удалена');
       fetchMatrix();
     } catch (error: any) {
@@ -100,12 +100,6 @@ const ButtonsPage = () => {
 
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-      width: 50,
-    },
-    {
       title: 'Терминал',
       dataIndex: 'term_id',
       key: 'term_id',
@@ -123,12 +117,14 @@ const ButtonsPage = () => {
       dataIndex: 'drink_id',
       key: 'drink_id',
       width: 80,
+      render: (value: number | null) => value ?? '-',
     },
     {
       title: 'Локация',
       dataIndex: 'location_id',
       key: 'location_id',
       width: 80,
+      render: (value: number | null) => value ?? '-',
     },
     {
       title: 'Активен',
@@ -141,7 +137,7 @@ const ButtonsPage = () => {
       title: 'Действия',
       key: 'actions',
       render: (_: any, record: MachineMatrix) => (
-        <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} />
+        <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.term_id, record.machine_item_id)} />
       ),
       width: 80,
     },
@@ -179,7 +175,7 @@ const ButtonsPage = () => {
           <Table
             dataSource={matrix}
             columns={columns}
-            rowKey="id"
+            rowKey={(record) => `${record.term_id}-${record.machine_item_id}`}
             pagination={{ pageSize: 20 }}
             scroll={{ x: 800 }}
           />

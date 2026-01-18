@@ -56,18 +56,6 @@ const RecipesPage = () => {
       key: 'name',
     },
     {
-      title: 'Цена закупки',
-      dataIndex: 'purchase_price_rub',
-      key: 'purchase_price_rub',
-      render: (value: number | null) => value !== null ? `${value.toFixed(2)} ₽` : '-',
-    },
-    {
-      title: 'Цена продажи',
-      dataIndex: 'sale_price_rub',
-      key: 'sale_price_rub',
-      render: (value: number | null) => value !== null ? `${value.toFixed(2)} ₽` : '-',
-    },
-    {
       title: 'Активен',
       dataIndex: 'is_active',
       key: 'is_active',
@@ -124,12 +112,6 @@ const RecipesPage = () => {
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item name="name" label="Название" rules={[{ required: true }]}>
             <Input />
-          </Form.Item>
-          <Form.Item name="purchase_price_rub" label="Цена закупки (руб)">
-            <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="sale_price_rub" label="Цена продажи (руб)">
-            <InputNumber min={0} step={0.01} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item name="is_active" label="Активен" valuePropName="checked">
             <Switch />

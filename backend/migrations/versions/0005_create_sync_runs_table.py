@@ -20,7 +20,7 @@ def upgrade() -> None:
     # Create sync_runs table to track synchronization history
     op.create_table(
         'sync_runs',
-        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
         sa.Column('started_at', sa.DateTime(timezone=True), nullable=False),
         sa.Column('completed_at', sa.DateTime(timezone=True), nullable=True),
         sa.Column('period_start', sa.Date(), nullable=True),

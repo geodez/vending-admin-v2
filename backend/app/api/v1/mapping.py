@@ -1,7 +1,7 @@
 """
 API endpoints for Mapping (drinks + machine_matrix).
 """
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import List, Optional
@@ -21,16 +21,12 @@ router = APIRouter()
 # ===== DRINKS SCHEMAS =====
 class DrinkCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
-    purchase_price_rub: Optional[float] = Field(None, ge=0)
-    sale_price_rub: Optional[float] = Field(None, ge=0)
     is_active: bool = True
 
 
 class DrinkResponse(BaseModel):
     id: int
     name: str
-    purchase_price_rub: Optional[float]
-    sale_price_rub: Optional[float]
     is_active: bool
 
 
@@ -44,11 +40,10 @@ class MachineMatrixCreate(BaseModel):
 
 
 class MachineMatrixResponse(BaseModel):
-    id: int
     term_id: int
     machine_item_id: int
-    drink_id: int
-    location_id: int
+    drink_id: Optional[int]
+    location_id: Optional[int]
     is_active: bool
 
 
@@ -89,7 +84,7 @@ async def get_drinks(
     Get list of all drinks.
     """
     query = text("""
-        SELECT id, name, purchase_price_rub, sale_price_rub, is_active
+        SELECT id, name, is_active
         FROM drinks
         ORDER BY name
     """)
@@ -102,9 +97,7 @@ async def get_drinks(
         drinks.append({
             "id": row[0],
             "name": row[1],
-            "purchase_price_rub": float(row[2]) if row[2] else None,
-            "sale_price_rub": float(row[3]) if row[3] else None,
-            "is_active": row[4]
+            "is_active": row[2]
         })
     
     return drinks
@@ -128,15 +121,13 @@ async def create_drink(
         )
     
     query = text("""
-        INSERT INTO drinks (name, purchase_price_rub, sale_price_rub, is_active)
-        VALUES (:name, :purchase_price_rub, :sale_price_rub, :is_active)
-        RETURNING id, name, purchase_price_rub, sale_price_rub, is_active
+        INSERT INTO drinks (name, is_active)
+        VALUES (:name, :is_active)
+        RETURNING id, name, is_active
     """)
     
     result = db.execute(query, {
         "name": drink.name,
-        "purchase_price_rub": drink.purchase_price_rub,
-        "sale_price_rub": drink.sale_price_rub,
         "is_active": drink.is_active
     })
     db.commit()
@@ -146,9 +137,7 @@ async def create_drink(
     return {
         "id": row[0],
         "name": row[1],
-        "purchase_price_rub": float(row[2]) if row[2] else None,
-        "sale_price_rub": float(row[3]) if row[3] else None,
-        "is_active": row[4]
+        "is_active": row[2]
     }
 
 
@@ -165,14 +154,14 @@ async def get_machine_matrix(
     
     Optional filter by term_id.
     """
-    where_clause = "WHERE term_id = :term_id" if term_id else ""
+    where_clause = "WHERE vendista_term_id = :term_id" if term_id else ""
     params = {"term_id": term_id} if term_id else {}
     
     query = text(f"""
-        SELECT id, term_id, machine_item_id, drink_id, location_id, is_active
+        SELECT vendista_term_id, machine_item_id, drink_id, location_id, is_active
         FROM machine_matrix
         {where_clause}
-        ORDER BY term_id, machine_item_id
+        ORDER BY vendista_term_id, machine_item_id
     """)
     
     result = db.execute(query, params)
@@ -181,12 +170,11 @@ async def get_machine_matrix(
     matrix = []
     for row in rows:
         matrix.append({
-            "id": row[0],
-            "term_id": row[1],
-            "machine_item_id": row[2],
-            "drink_id": row[3],
-            "location_id": row[4],
-            "is_active": row[5]
+            "term_id": row[0],
+            "machine_item_id": row[1],
+            "drink_id": row[2],
+            "location_id": row[3],
+            "is_active": row[4]
         })
     
     return matrix
@@ -218,9 +206,9 @@ async def bulk_create_machine_matrix(
     
     # Prepare bulk insert
     query = text("""
-        INSERT INTO machine_matrix (term_id, machine_item_id, drink_id, location_id, is_active)
+        INSERT INTO machine_matrix (vendista_term_id, machine_item_id, drink_id, location_id, is_active)
         VALUES (:term_id, :machine_item_id, :drink_id, :location_id, :is_active)
-        ON CONFLICT (term_id, machine_item_id)
+        ON CONFLICT (vendista_term_id, machine_item_id)
         DO UPDATE SET
             drink_id = EXCLUDED.drink_id,
             location_id = EXCLUDED.location_id,
@@ -241,14 +229,15 @@ async def bulk_create_machine_matrix(
     return {"inserted": len(items), "message": "Machine matrix updated successfully"}
 
 
-@router.delete("/machine-matrix/{matrix_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/machine-matrix", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_machine_matrix(
-    matrix_id: int,
+    term_id: int = Query(..., description="Terminal ID"),
+    machine_item_id: int = Query(..., description="Machine item ID"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Delete a machine matrix record.
+    Delete a machine matrix record by term_id and machine_item_id.
     
     Owner-only access.
     """
@@ -258,8 +247,8 @@ async def delete_machine_matrix(
             detail="Only owners can delete machine matrix records"
         )
     
-    query = text("DELETE FROM machine_matrix WHERE id = :matrix_id")
-    result = db.execute(query, {"matrix_id": matrix_id})
+    query = text("DELETE FROM machine_matrix WHERE vendista_term_id = :term_id AND machine_item_id = :machine_item_id")
+    result = db.execute(query, {"term_id": term_id, "machine_item_id": machine_item_id})
     db.commit()
     
     if result.rowcount == 0:
@@ -417,9 +406,9 @@ async def import_matrix(
     apply_errors = []
     
     query = text("""
-        INSERT INTO machine_matrix (term_id, machine_item_id, drink_id, location_id, is_active)
+        INSERT INTO machine_matrix (vendista_term_id, machine_item_id, drink_id, location_id, is_active)
         VALUES (:term_id, :machine_item_id, :drink_id, :location_id, :is_active)
-        ON CONFLICT (term_id, machine_item_id)
+        ON CONFLICT (vendista_term_id, machine_item_id)
         DO UPDATE SET
             drink_id = EXCLUDED.drink_id,
             location_id = EXCLUDED.location_id,
