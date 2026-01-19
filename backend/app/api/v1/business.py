@@ -9,6 +9,8 @@ from app.db.session import get_db
 from app.api.deps import get_current_user
 from app.models.user import User
 from app.schemas.business import *
+from pydantic import BaseModel
+from decimal import Decimal
 from app.crud import business as crud
 
 router = APIRouter()
@@ -98,7 +100,7 @@ def create_product(
 @router.get("/ingredients", response_model=List[IngredientResponse])
 def list_ingredients(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 1000,  # Увеличен лимит, чтобы вернуть все ингредиенты
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -114,6 +116,100 @@ def create_ingredient(
 ):
     """Create a new ingredient."""
     return crud.create_ingredient(db, ingredient)
+
+
+class BulkUpdateRequest(BaseModel):
+    ingredient_codes: List[str]
+    expense_kind: Optional[str] = None
+    is_active: Optional[bool] = None
+    ingredient_group: Optional[str] = None
+    brand_name: Optional[str] = None
+    unit: Optional[str] = None
+    cost_per_unit_rub: Optional[Decimal] = None
+    default_load_qty: Optional[Decimal] = None
+    alert_threshold: Optional[Decimal] = None
+    alert_days_threshold: Optional[int] = None
+    display_name_ru: Optional[str] = None
+    unit_ru: Optional[str] = None
+    sort_order: Optional[int] = None
+
+
+@router.put("/ingredients/bulk/update", response_model=dict)
+@router.put("/ingredients/bulk-update", response_model=dict)  # Старый путь для обратной совместимости
+def bulk_update_ingredients(
+    request: BulkUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Bulk update multiple ingredients with the same values."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        if not request.ingredient_codes:
+            raise HTTPException(status_code=400, detail="No ingredient codes provided")
+        
+        logger.info(f"Bulk update request: {len(request.ingredient_codes)} codes: {request.ingredient_codes}")
+        
+        # Создаем IngredientUpdate из запроса (только не-None значения)
+        # Используем model_dump с exclude_unset=True, чтобы не включать поля, которые не были установлены
+        ingredient_update = IngredientUpdate(
+            expense_kind=request.expense_kind,
+            is_active=request.is_active,
+            ingredient_group=request.ingredient_group,
+            brand_name=request.brand_name,
+            unit=request.unit,
+            cost_per_unit_rub=request.cost_per_unit_rub,
+            default_load_qty=request.default_load_qty,
+            alert_threshold=request.alert_threshold,
+            alert_days_threshold=request.alert_days_threshold,
+            display_name_ru=request.display_name_ru,
+            unit_ru=request.unit_ru,
+            sort_order=request.sort_order,
+        )
+        
+        # Проверяем, что есть хотя бы одно поле для обновления
+        update_dict = ingredient_update.model_dump(exclude_unset=True, exclude_none=True)
+        if not update_dict:
+            raise HTTPException(status_code=400, detail="No fields to update provided")
+        
+        updated_count = 0
+        errors = []
+        
+        for code in request.ingredient_codes:
+            try:
+                # Проверяем, существует ли ингредиент
+                existing = crud.get_ingredient(db, code)
+                if not existing:
+                    logger.warning(f"Ingredient not found: {code}")
+                    errors.append(f"Ingredient {code} not found")
+                    continue
+                
+                ingredient = crud.update_ingredient(db, code, ingredient_update)
+                if ingredient:
+                    updated_count += 1
+                    logger.info(f"Updated ingredient: {code}")
+                else:
+                    logger.warning(f"Failed to update ingredient: {code}")
+                    errors.append(f"Ingredient {code} not found")
+            except Exception as e:
+                logger.error(f"Error updating {code}: {str(e)}", exc_info=True)
+                errors.append(f"Error updating {code}: {str(e)}")
+        
+        db.commit()
+        
+        logger.info(f"Bulk update completed: {updated_count}/{len(request.ingredient_codes)} updated")
+        
+        return {
+            "updated": updated_count,
+            "total": len(request.ingredient_codes),
+            "errors": errors if errors else None
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in bulk_update_ingredients: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @router.get("/ingredients/{ingredient_code}", response_model=IngredientResponse)

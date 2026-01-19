@@ -69,7 +69,7 @@ def get_ingredient(db: Session, ingredient_code: str) -> Optional[Ingredient]:
 
 
 def get_ingredients(db: Session, skip: int = 0, limit: int = 100) -> List[Ingredient]:
-    return db.query(Ingredient).offset(skip).limit(limit).all()
+    return db.query(Ingredient).order_by(Ingredient.sort_order.asc().nulls_last(), Ingredient.ingredient_code.asc()).offset(skip).limit(limit).all()
 
 
 def create_ingredient(db: Session, ingredient: IngredientCreate) -> Ingredient:
@@ -84,7 +84,9 @@ def update_ingredient(db: Session, ingredient_code: str, ingredient_update: Ingr
     db_ingredient = get_ingredient(db, ingredient_code)
     if not db_ingredient:
         return None
-    for field, value in ingredient_update.model_dump(exclude_unset=True).items():
+    # Обновляем только те поля, которые явно установлены (не None и не пропущены)
+    update_dict = ingredient_update.model_dump(exclude_unset=True, exclude_none=True)
+    for field, value in update_dict.items():
         setattr(db_ingredient, field, value)
     db.commit()
     db.refresh(db_ingredient)
