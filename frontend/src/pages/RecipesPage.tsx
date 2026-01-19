@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Card, Typography, Table, Button, Empty, message, Modal, Form, Input, InputNumber, Select, Space, Popconfirm, Tag, Switch, Checkbox, Badge, Tooltip } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CheckSquareOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckSquareOutlined, SearchOutlined, DollarOutlined } from '@ant-design/icons';
 import { mappingApi, Drink, DrinkCreate, DrinkUpdate, DrinkItem } from '../api/mapping';
 import { getIngredients } from '../api/business';
 import type { Ingredient } from '@/types/api';
@@ -264,14 +264,21 @@ const RecipesPage = () => {
       ),
       dataIndex: 'items',
       key: 'items',
-      width: 300,
+      width: 350,
       render: (items: DrinkItem[] | undefined) => {
         if (!items || items.length === 0) {
-          return <Text type="secondary">Нет ингредиентов</Text>;
+          return <Text type="secondary" style={{ fontSize: '13px' }}>Нет ингредиентов</Text>;
         }
+        
+        // Подсчитываем общую стоимость для отображения
+        const totalCost = items.reduce((sum, item) => {
+          return sum + (item.item_cost_rub || 0);
+        }, 0);
+        
         return (
-          <Space direction="vertical" size="small" style={{ width: '100%' }}>
-            {items.map((item, idx) => {
+          <div style={{ width: '100%' }}>
+            <Space direction="vertical" size={6} style={{ width: '100%' }}>
+              {items.map((item, idx) => {
               // Используем display_name_ru из item, если есть, иначе ищем в списке ингредиентов
               const ingredientName = item.display_name_ru || (() => {
                 const ingredient = ingredients.find(ing => {
@@ -282,41 +289,103 @@ const RecipesPage = () => {
               })();
               
               return (
-                <div key={idx} style={{ fontSize: '12px' }}>
-                  <Tag color="blue">{ingredientName}</Tag>
-                  <Text type="secondary">
-                    {item.qty_per_unit != null ? item.qty_per_unit : 0} {item.unit || ''}
-                    {item.item_cost_rub != null && (
-                      <span style={{ marginLeft: 8, color: '#52c41a', fontWeight: 500 }}>
-                        ({item.item_cost_rub.toFixed(2)}₽)
-                      </span>
+                <div key={idx} style={{ fontSize: '12px', lineHeight: '1.6', marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <Tag color="blue" style={{ margin: 0 }}>{ingredientName}</Tag>
+                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                      {item.qty_per_unit != null ? item.qty_per_unit.toFixed(item.unit === 'g' || item.unit === 'ml' ? 0 : 2) : 0} {item.unit || ''}
+                    </Text>
+                    {item.item_cost_rub != null && item.item_cost_rub > 0 && (
+                      <Tag 
+                        color="success" 
+                        style={{ 
+                          margin: 0, 
+                          fontWeight: 600,
+                          fontSize: '11px',
+                          padding: '2px 8px',
+                          borderRadius: 4
+                        }}
+                      >
+                        {item.item_cost_rub.toFixed(2)}₽
+                      </Tag>
                     )}
-                  </Text>
+                  </div>
                 </div>
               );
-            })}
-          </Space>
+              })}
+            </Space>
+            {totalCost > 0 && (
+              <div style={{ 
+                marginTop: 8, 
+                paddingTop: 8, 
+                borderTop: '1px solid #f0f0f0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <Text type="secondary" style={{ fontSize: '11px' }}>Итого:</Text>
+                <Text strong style={{ color: '#1890ff', fontSize: '13px', fontWeight: 600 }}>
+                  {totalCost.toFixed(2)}₽
+                </Text>
+              </div>
+            )}
+          </div>
         );
       },
     },
     {
       title: (
         <Tooltip title="Себестоимость напитка (COGS): сумма стоимости всех учитываемых ингредиентов">
-          Себестоимость
+          <Space size={4}>
+            <DollarOutlined />
+            <span>Себестоимость</span>
+          </Space>
         </Tooltip>
       ),
       dataIndex: 'cogs_rub',
       key: 'cogs_rub',
-      width: 120,
+      width: 140,
       align: 'right' as const,
-      render: (cogs: number | undefined) => {
-        if (cogs === undefined || cogs === null) {
-          return <Text type="secondary">-</Text>;
+      render: (cogs: number | undefined, record: Drink) => {
+        if (cogs === undefined || cogs === null || cogs === 0) {
+          return (
+            <Text type="secondary" style={{ fontSize: '13px' }}>
+              —
+            </Text>
+          );
         }
+        // Определяем цвет в зависимости от себестоимости
+        const getColor = (value: number) => {
+          if (value < 20) return '#52c41a'; // Зеленый для низкой себестоимости
+          if (value < 50) return '#1890ff'; // Синий для средней
+          return '#fa8c16'; // Оранжевый для высокой
+        };
+        
         return (
-          <Text strong style={{ color: '#1890ff' }}>
-            {cogs.toFixed(2)}₽
-          </Text>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+            <Text 
+              strong 
+              style={{ 
+                color: getColor(cogs),
+                fontSize: '15px',
+                fontWeight: 600,
+                lineHeight: 1.2
+              }}
+            >
+              {cogs.toFixed(2)}₽
+            </Text>
+            {record.items && record.items.length > 0 && (
+              <Text 
+                type="secondary" 
+                style={{ 
+                  fontSize: '10px',
+                  lineHeight: 1
+                }}
+              >
+                {record.items.filter(item => item.item_cost_rub && item.item_cost_rub > 0).length} ингр.
+              </Text>
+            )}
+          </div>
         );
       },
       sorter: (a: Drink, b: Drink) => {
