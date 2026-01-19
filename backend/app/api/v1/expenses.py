@@ -20,7 +20,7 @@ router = APIRouter()
 # Pydantic schemas
 class ExpenseCreate(BaseModel):
     expense_date: date
-    location_id: int
+    location_id: int  # This is actually terminal location_id or terminal id
     category: str = Field(..., min_length=1, max_length=50)
     amount_rub: float = Field(..., gt=0)
     comment: Optional[str] = None
@@ -37,7 +37,7 @@ class ExpenseUpdate(BaseModel):
 class ExpenseResponse(BaseModel):
     id: int
     expense_date: date
-    location_id: int
+    location_id: Optional[int]  # May be NULL since locations don't exist as entities
     category: str
     amount_rub: float
     comment: Optional[str]
@@ -108,7 +108,7 @@ async def get_expenses(
         expenses.append({
             "id": row[0],
             "expense_date": row[1],
-            "location_id": row[2],
+            "location_id": row[2] if row[2] is not None else None,  # Handle NULL location_id
             "category": row[3],
             "amount_rub": float(row[4]),
             "comment": row[5],
@@ -136,18 +136,40 @@ async def create_expense(
             detail="Only owners can create expenses"
         )
     
+    # Find terminal by location_id (which is actually terminal location_id or terminal id)
+    # Get terminal to find its vendista_term_id
+    terminal_query = text("""
+        SELECT id, location_id 
+        FROM vendista_terminals 
+        WHERE location_id = :location_id OR id = :location_id
+        LIMIT 1
+    """)
+    terminal_result = db.execute(terminal_query, {"location_id": expense.location_id})
+    terminal_row = terminal_result.fetchone()
+    
+    if not terminal_row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Terminal with location_id or id={expense.location_id} not found"
+        )
+    
+    vendista_term_id = terminal_row[0]  # terminal id
+    # Use NULL for location_id since locations don't exist as entities
+    # We use vendista_term_id to link expense to terminal
+    
     query = text("""
-        INSERT INTO variable_expenses (expense_date, location_id, category, amount_rub, comment, created_at, updated_at)
-        VALUES (:expense_date, :location_id, :category, :amount_rub, :comment, NOW(), NOW())
+        INSERT INTO variable_expenses (expense_date, location_id, vendista_term_id, category, amount_rub, comment, created_at, updated_at, created_by_user_id)
+        VALUES (:expense_date, NULL, :vendista_term_id, :category, :amount_rub, :comment, NOW(), NOW(), :created_by_user_id)
         RETURNING id, expense_date, location_id, category, amount_rub, comment, created_at, updated_at
     """)
     
     result = db.execute(query, {
         "expense_date": expense.expense_date,
-        "location_id": expense.location_id,
+        "vendista_term_id": vendista_term_id,  # Use terminal id
         "category": expense.category,
         "amount_rub": expense.amount_rub,
-        "comment": expense.comment
+        "comment": expense.comment,
+        "created_by_user_id": current_user.id
     })
     db.commit()
     
@@ -156,7 +178,7 @@ async def create_expense(
     return {
         "id": row[0],
         "expense_date": row[1],
-        "location_id": row[2],
+        "location_id": row[2] if row[2] is not None else None,  # Handle NULL location_id
         "category": row[3],
         "amount_rub": float(row[4]),
         "comment": row[5],
@@ -192,8 +214,21 @@ async def update_expense(
         params["expense_date"] = expense.expense_date
     
     if expense.location_id is not None:
-        updates.append("location_id = :location_id")
-        params["location_id"] = expense.location_id
+        # Find terminal and update vendista_term_id instead
+        terminal_query = text("""
+            SELECT id 
+            FROM vendista_terminals 
+            WHERE location_id = :location_id OR id = :location_id
+            LIMIT 1
+        """)
+        terminal_result = db.execute(terminal_query, {"location_id": expense.location_id})
+        terminal_row = terminal_result.fetchone()
+        
+        if terminal_row:
+            updates.append("vendista_term_id = :vendista_term_id")
+            params["vendista_term_id"] = terminal_row[0]
+            # Set location_id to NULL since locations don't exist as entities
+            updates.append("location_id = NULL")
     
     if expense.category is not None:
         updates.append("category = :category")

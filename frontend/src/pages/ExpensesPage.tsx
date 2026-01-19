@@ -133,9 +133,12 @@ const ExpensesPage = () => {
       title: 'Терминал',
       dataIndex: 'location_id',
       key: 'location_id',
-      render: (locationId: number) => {
-        // Find terminal by location_id (terminals have location_id field)
-        const terminal = terminals.find(t => t.location_id === locationId);
+      render: (locationId: number | null) => {
+        if (locationId === null || locationId === undefined) {
+          return '-';
+        }
+        // Find terminal by location_id (terminals have location_id field) or by id
+        const terminal = terminals.find(t => t.location_id === locationId || t.id === locationId);
         if (terminal) {
           return `${terminal.comment || terminal.title || 'Терминал'} (ID: ${locationId})`;
         }
