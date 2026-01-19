@@ -176,20 +176,23 @@ export default function OwnerReportPage() {
             return (
               <Space>
                 {text}
-                <Tooltip title={
-                  <div>
-                    <div><strong>Маржа прибыли</strong></div>
-                    <div style={{ marginTop: 8 }}>
-                      Процент чистой прибыли от выручки.
+                <Tooltip 
+                  title={
+                    <div style={{ whiteSpace: 'normal', maxWidth: '300px' }}>
+                      <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Маржа прибыли</div>
+                      <div style={{ marginBottom: '8px' }}>
+                        Процент чистой прибыли от выручки.
+                      </div>
+                      <div style={{ marginBottom: '8px' }}>
+                        <strong>Формула:</strong> (Чистая прибыль / Выручка) × 100%
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#999' }}>
+                        Показывает эффективность бизнеса
+                      </div>
                     </div>
-                    <div style={{ marginTop: 8 }}>
-                      <strong>Формула:</strong> (Чистая прибыль / Выручка) × 100%
-                    </div>
-                    <div style={{ marginTop: 4, fontSize: '12px', color: '#999' }}>
-                      Показывает эффективность бизнеса
-                    </div>
-                  </div>
-                }>
+                  }
+                  overlayStyle={{ maxWidth: '300px' }}
+                >
                   <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help' }} />
                 </Tooltip>
               </Space>
@@ -199,20 +202,23 @@ export default function OwnerReportPage() {
             return (
               <Space>
                 {text}
-                <Tooltip title={
-                  <div>
-                    <div><strong>Количество транзакций</strong></div>
-                    <div style={{ marginTop: 8 }}>
-                      Общее количество успешных продаж за период.
+                <Tooltip 
+                  title={
+                    <div style={{ whiteSpace: 'normal', maxWidth: '300px' }}>
+                      <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Количество транзакций</div>
+                      <div style={{ marginBottom: '8px' }}>
+                        Общее количество успешных продаж за период.
+                      </div>
+                      <div style={{ marginBottom: '8px' }}>
+                        <strong>Источник:</strong> COUNT(*) из vw_owner_report_daily
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#999' }}>
+                        Учитываются только транзакции с суммой {'>'} 0
+                      </div>
                     </div>
-                    <div style={{ marginTop: 8 }}>
-                      <strong>Источник:</strong> COUNT(*) из vw_owner_report_daily
-                    </div>
-                    <div style={{ marginTop: 4, fontSize: '12px', color: '#999' }}>
-                      Учитываются только транзакции с суммой > 0
-                    </div>
-                  </div>
-                }>
+                  }
+                  overlayStyle={{ maxWidth: '300px' }}
+                >
                   <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help' }} />
                 </Tooltip>
               </Space>
@@ -255,22 +261,29 @@ export default function OwnerReportPage() {
           <div>
             <Space align="center" style={{ marginBottom: 8 }}>
               <Title level={2} style={{ margin: 0 }}>Отчёт собственника</Title>
-              <Tooltip title={
-                <div style={{ maxWidth: '350px' }}>
-                  <div><strong>Источник данных</strong></div>
-                  <div style={{ marginTop: 8, fontSize: '12px' }}>
-                    Данные рассчитываются из транзакций Vendista через систему шаблонов матриц:
+              <Tooltip 
+                title={
+                  <div style={{ maxWidth: '350px', whiteSpace: 'normal' }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Источник данных</div>
+                    <div style={{ marginBottom: '8px', fontSize: '12px' }}>
+                      Данные рассчитываются из транзакций Vendista через систему шаблонов матриц:
+                    </div>
+                    <div style={{ marginBottom: '8px', fontSize: '12px' }}>
+                      • Транзакции → vw_tx_cogs (с COGS)
+                    </div>
+                    <div style={{ marginBottom: '8px', fontSize: '12px' }}>
+                      • Агрегация → vw_kpi_daily
+                    </div>
+                    <div style={{ marginBottom: '8px', fontSize: '12px' }}>
+                      • Итоговый отчёт → vw_owner_report_daily
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#999' }}>
+                      Связь транзакций с напитками происходит через шаблоны матриц (раздел "Шаблоны матриц")
+                    </div>
                   </div>
-                  <div style={{ marginTop: 8, fontSize: '12px', paddingLeft: '8px' }}>
-                    • Транзакции → vw_tx_cogs (с COGS)<br/>
-                    • Агрегация → vw_kpi_daily<br/>
-                    • Итоговый отчёт → vw_owner_report_daily
-                  </div>
-                  <div style={{ marginTop: 8, fontSize: '11px', color: '#999' }}>
-                    Связь транзакций с напитками происходит через шаблоны матриц (раздел "Шаблоны матриц")
-                  </div>
-                </div>
-              }>
+                }
+                overlayStyle={{ maxWidth: '350px' }}
+              >
                 <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help', fontSize: '18px' }} />
               </Tooltip>
             </Space>
@@ -328,28 +341,35 @@ export default function OwnerReportPage() {
                   title={
                     <Space>
                       Выручка
-                      <Tooltip title={
-                        <div style={{ maxWidth: '350px' }}>
-                          <div><strong>Выручка (валовая)</strong></div>
-                          <div style={{ marginTop: 8 }}>
-                            Сумма всех продаж за период из транзакций Vendista.
-                          </div>
-                          <div style={{ marginTop: 8 }}>
-                            <strong>Формула:</strong> SUM(revenue) из vw_owner_report_daily
-                          </div>
-                          <div style={{ marginTop: 8, fontSize: '12px', padding: '8px', background: '#f5f5f5', borderRadius: '4px' }}>
-                            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Расчет revenue:</div>
-                            <div style={{ marginLeft: '8px' }}>
-                              • Из транзакций: (payload->>'sum') / 100<br/>
-                              • Конвертация из копеек в рубли<br/>
-                              • Агрегация по датам и локациям
+                      <Tooltip 
+                        title={
+                          <div style={{ maxWidth: '350px', whiteSpace: 'normal' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Выручка (валовая)</div>
+                            <div style={{ marginBottom: '8px' }}>
+                              Сумма всех продаж за период из транзакций Vendista.
+                            </div>
+                            <div style={{ marginBottom: '8px' }}>
+                              <strong>Формула:</strong> SUM(revenue) из vw_owner_report_daily
+                            </div>
+                            <div style={{ fontSize: '12px', padding: '8px', background: 'rgba(0,0,0,0.05)', borderRadius: '4px', marginBottom: '8px' }}>
+                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Расчет revenue:</div>
+                              <div style={{ marginLeft: '8px' }}>
+                                • Из транзакций: (payload-&gt;&gt;'sum') / 100
+                              </div>
+                              <div style={{ marginLeft: '8px' }}>
+                                • Конвертация из копеек в рубли
+                              </div>
+                              <div style={{ marginLeft: '8px' }}>
+                                • Агрегация по датам и локациям
+                              </div>
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#999' }}>
+                              Данные берутся из view vw_tx_cogs → vw_kpi_daily → vw_owner_report_daily
                             </div>
                           </div>
-                          <div style={{ marginTop: 4, fontSize: '11px', color: '#999' }}>
-                            Данные берутся из view vw_tx_cogs → vw_kpi_daily → vw_owner_report_daily
-                          </div>
-                        </div>
-                      }>
+                        }
+                        overlayStyle={{ maxWidth: '350px' }}
+                      >
                         <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help' }} />
                       </Tooltip>
                     </Space>
@@ -367,28 +387,35 @@ export default function OwnerReportPage() {
                   title={
                     <Space>
                       Комиссии и налоги
-                      <Tooltip title={
-                        <div style={{ maxWidth: '300px' }}>
-                          <div><strong>Комиссии платформы</strong></div>
-                          <div style={{ marginTop: 8 }}>
-                            Комиссия платформы Vendista за обработку платежей.
-                          </div>
-                          <div style={{ marginTop: 8 }}>
-                            <strong>Формула:</strong> Выручка × 8.95%
-                          </div>
-                          <div style={{ marginTop: 8, fontSize: '12px', padding: '8px', background: '#f5f5f5', borderRadius: '4px' }}>
-                            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Применяется:</div>
-                            <div style={{ marginLeft: '8px' }}>
-                              • Ко всем транзакциям<br/>
-                              • Автоматически при расчете<br/>
-                              • Вычитается из выручки
+                      <Tooltip 
+                        title={
+                          <div style={{ maxWidth: '300px', whiteSpace: 'normal' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Комиссии платформы</div>
+                            <div style={{ marginBottom: '8px' }}>
+                              Комиссия платформы Vendista за обработку платежей.
+                            </div>
+                            <div style={{ marginBottom: '8px' }}>
+                              <strong>Формула:</strong> Выручка × 8.95%
+                            </div>
+                            <div style={{ fontSize: '12px', padding: '8px', background: 'rgba(0,0,0,0.05)', borderRadius: '4px', marginBottom: '8px' }}>
+                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Применяется:</div>
+                              <div style={{ marginLeft: '8px' }}>
+                                • Ко всем транзакциям
+                              </div>
+                              <div style={{ marginLeft: '8px' }}>
+                                • Автоматически при расчете
+                              </div>
+                              <div style={{ marginLeft: '8px' }}>
+                                • Вычитается из выручки
+                              </div>
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#999' }}>
+                              Стандартная комиссия платформы Vendista
                             </div>
                           </div>
-                          <div style={{ marginTop: 4, fontSize: '11px', color: '#999' }}>
-                            Стандартная комиссия платформы Vendista
-                          </div>
-                        </div>
-                      }>
+                        }
+                        overlayStyle={{ maxWidth: '300px' }}
+                      >
                         <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help' }} />
                       </Tooltip>
                     </Space>
@@ -406,29 +433,38 @@ export default function OwnerReportPage() {
                   title={
                     <Space>
                       Расходы
-                      <Tooltip title={
-                        <div>
-                          <div><strong>Переменные расходы</strong></div>
-                          <div style={{ marginTop: 8 }}>
-                            Переменные расходы, введенные вручную в разделе "Расходы".
-                          </div>
-                          <div style={{ marginTop: 8 }}>
-                            <strong>Формула:</strong> SUM(amount_rub) из variable_expenses
-                          </div>
-                          <div style={{ marginTop: 8, fontSize: '12px', padding: '8px', background: '#f5f5f5', borderRadius: '4px' }}>
-                            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Включает:</div>
-                            <div style={{ marginLeft: '8px' }}>
-                              • Аренду помещений<br/>
-                              • Коммунальные услуги<br/>
-                              • Обслуживание оборудования<br/>
-                              • Другие переменные расходы
+                      <Tooltip 
+                        title={
+                          <div style={{ maxWidth: '350px', whiteSpace: 'normal' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Переменные расходы</div>
+                            <div style={{ marginBottom: '8px' }}>
+                              Переменные расходы, введенные вручную в разделе "Расходы".
+                            </div>
+                            <div style={{ marginBottom: '8px' }}>
+                              <strong>Формула:</strong> SUM(amount_rub) из variable_expenses
+                            </div>
+                            <div style={{ fontSize: '12px', padding: '8px', background: 'rgba(0,0,0,0.05)', borderRadius: '4px', marginBottom: '8px' }}>
+                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Включает:</div>
+                              <div style={{ marginLeft: '8px' }}>
+                                • Аренду помещений
+                              </div>
+                              <div style={{ marginLeft: '8px' }}>
+                                • Коммунальные услуги
+                              </div>
+                              <div style={{ marginLeft: '8px' }}>
+                                • Обслуживание оборудования
+                              </div>
+                              <div style={{ marginLeft: '8px' }}>
+                                • Другие переменные расходы
+                              </div>
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#999' }}>
+                              Добавляются вручную в разделе "Расходы" за выбранный период
                             </div>
                           </div>
-                          <div style={{ marginTop: 4, fontSize: '11px', color: '#999' }}>
-                            Добавляются вручную в разделе "Расходы" за выбранный период
-                          </div>
-                        </div>
-                      }>
+                        }
+                        overlayStyle={{ maxWidth: '350px' }}
+                      >
                         <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help' }} />
                       </Tooltip>
                     </Space>
@@ -448,33 +484,44 @@ export default function OwnerReportPage() {
                   title={
                     <Space>
                       Чистая прибыль
-                      <Tooltip title={
-                        <div style={{ maxWidth: '400px' }}>
-                          <div><strong>Чистая прибыль</strong></div>
-                          <div style={{ marginTop: 8 }}>
-                            Итоговая прибыль после вычета всех расходов.
-                          </div>
-                          <div style={{ marginTop: 8 }}>
-                            <strong>Формула:</strong> Выручка - COGS - Комиссии - Расходы
-                          </div>
-                          <div style={{ marginTop: 12, padding: '8px', background: '#f5f5f5', borderRadius: '4px', fontSize: '12px' }}>
-                            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>COGS (себестоимость):</div>
-                            <div style={{ marginLeft: '8px' }}>
-                              • Рассчитывается из ингредиентов рецептов напитков<br/>
-                              • Только ингредиенты с expense_kind = 'stock_tracked'<br/>
-                              • С учетом конвертации единиц:<br/>
-                              <div style={{ marginLeft: '12px', marginTop: '4px' }}>
-                                - г → кг: qty × (cost / 1000)<br/>
-                                - мл → л: qty × (cost / 1000)<br/>
+                      <Tooltip 
+                        title={
+                          <div style={{ maxWidth: '400px', whiteSpace: 'normal' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Чистая прибыль</div>
+                            <div style={{ marginBottom: '8px' }}>
+                              Итоговая прибыль после вычета всех расходов.
+                            </div>
+                            <div style={{ marginBottom: '8px' }}>
+                              <strong>Формула:</strong> Выручка - COGS - Комиссии - Расходы
+                            </div>
+                            <div style={{ padding: '8px', background: 'rgba(0,0,0,0.05)', borderRadius: '4px', fontSize: '12px', marginBottom: '8px' }}>
+                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>COGS (себестоимость):</div>
+                              <div style={{ marginLeft: '8px' }}>
+                                • Рассчитывается из ингредиентов рецептов напитков
+                              </div>
+                              <div style={{ marginLeft: '8px' }}>
+                                • Только ингредиенты с expense_kind = 'stock_tracked'
+                              </div>
+                              <div style={{ marginLeft: '8px' }}>
+                                • С учетом конвертации единиц:
+                              </div>
+                              <div style={{ marginLeft: '16px', marginTop: '4px' }}>
+                                - г → кг: qty × (cost / 1000)
+                              </div>
+                              <div style={{ marginLeft: '16px' }}>
+                                - мл → л: qty × (cost / 1000)
+                              </div>
+                              <div style={{ marginLeft: '16px' }}>
                                 - одинаковые единицы: qty × cost
                               </div>
                             </div>
+                            <div style={{ fontSize: '11px', color: '#999' }}>
+                              Данные берутся из view vw_tx_cogs через шаблоны матриц
+                            </div>
                           </div>
-                          <div style={{ marginTop: 8, fontSize: '11px', color: '#999' }}>
-                            Данные берутся из view vw_tx_cogs через шаблоны матриц
-                          </div>
-                        </div>
-                      }>
+                        }
+                        overlayStyle={{ maxWidth: '400px' }}
+                      >
                         <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help' }} />
                       </Tooltip>
                     </Space>

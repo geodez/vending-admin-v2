@@ -19,10 +19,17 @@ depends_on = None
 
 
 def upgrade():
+    # Drop existing view first (PostgreSQL doesn't allow changing column types)
+    op.execute("DROP VIEW IF EXISTS vw_tx_cogs CASCADE")
+    op.execute("DROP VIEW IF EXISTS vw_kpi_daily CASCADE")
+    op.execute("DROP VIEW IF EXISTS vw_kpi_product CASCADE")
+    op.execute("DROP VIEW IF EXISTS vw_inventory_balance CASCADE")
+    op.execute("DROP VIEW IF EXISTS vw_owner_report_daily CASCADE")
+    
     # Update vw_tx_cogs to use button_matrix system
     # New logic: terminal_matrix_map -> button_matrix_items -> drinks
     op.execute("""
-        CREATE OR REPLACE VIEW vw_tx_cogs AS
+        CREATE VIEW vw_tx_cogs AS
         SELECT
             t.id,
             t.term_id,
@@ -37,19 +44,42 @@ def upgrade():
             bmi.drink_id,
             d.name as drink_name,
             COALESCE(
-                (SELECT SUM(di.qty_per_unit * i.cost_per_unit_rub)
+                (SELECT SUM(
+                    CASE 
+                        -- Если единицы совпадают, просто умножаем
+                        WHEN di.unit = i.unit THEN di.qty_per_unit * i.cost_per_unit_rub
+                        -- Конвертация: рецепт в граммах, ингредиент в килограммах
+                        WHEN di.unit = 'g' AND i.unit = 'kg' THEN di.qty_per_unit * (i.cost_per_unit_rub / 1000.0)
+                        -- Конвертация: рецепт в миллилитрах, ингредиент в литрах
+                        WHEN di.unit = 'ml' AND i.unit = 'l' THEN di.qty_per_unit * (i.cost_per_unit_rub / 1000.0)
+                        -- Конвертация: рецепт в граммах, ингредиент в граммах (но цена за кг, если цена > 100)
+                        WHEN di.unit = 'g' AND i.unit = 'g' AND i.cost_per_unit_rub > 100 THEN di.qty_per_unit * (i.cost_per_unit_rub / 1000.0)
+                        -- Остальные случаи - просто умножаем (предполагаем одинаковые единицы)
+                        ELSE di.qty_per_unit * i.cost_per_unit_rub
+                    END
+                )
                  FROM drink_items di
                  JOIN ingredients i ON i.ingredient_code = di.ingredient_code
                  WHERE di.drink_id = bmi.drink_id
-                   AND i.expense_kind = 'stock_tracked'),
+                   AND i.expense_kind = 'stock_tracked'
+                   AND i.cost_per_unit_rub IS NOT NULL),
                 0
             ) as cogs,
             (t.payload->>'sum')::numeric / 100.0 - COALESCE(
-                (SELECT SUM(di.qty_per_unit * i.cost_per_unit_rub)
+                (SELECT SUM(
+                    CASE 
+                        WHEN di.unit = i.unit THEN di.qty_per_unit * i.cost_per_unit_rub
+                        WHEN di.unit = 'g' AND i.unit = 'kg' THEN di.qty_per_unit * (i.cost_per_unit_rub / 1000.0)
+                        WHEN di.unit = 'ml' AND i.unit = 'l' THEN di.qty_per_unit * (i.cost_per_unit_rub / 1000.0)
+                        WHEN di.unit = 'g' AND i.unit = 'g' AND i.cost_per_unit_rub > 100 THEN di.qty_per_unit * (i.cost_per_unit_rub / 1000.0)
+                        ELSE di.qty_per_unit * i.cost_per_unit_rub
+                    END
+                )
                  FROM drink_items di
                  JOIN ingredients i ON i.ingredient_code = di.ingredient_code
                  WHERE di.drink_id = bmi.drink_id
-                   AND i.expense_kind = 'stock_tracked'),
+                   AND i.expense_kind = 'stock_tracked'
+                   AND i.cost_per_unit_rub IS NOT NULL),
                 0
             ) as gross_profit
         FROM vendista_tx_raw t
@@ -65,8 +95,117 @@ def upgrade():
         WHERE (t.payload->>'sum')::numeric > 0;
     """)
     
+    # Create view for daily KPIs
+    op.execute("""
+        CREATE VIEW vw_kpi_daily AS
+        SELECT
+            tx_date,
+            location_id,
+            COUNT(*) as sales_count,
+            SUM(revenue) as revenue,
+            SUM(cogs) as cogs,
+            SUM(gross_profit) as gross_profit,
+            CASE 
+                WHEN SUM(revenue) > 0 
+                THEN (SUM(gross_profit) / SUM(revenue) * 100)::numeric(5,2)
+                ELSE 0 
+            END as gross_margin_pct
+        FROM vw_tx_cogs
+        GROUP BY tx_date, location_id;
+    """)
+    
+    # Create view for product KPIs
+    op.execute("""
+        CREATE VIEW vw_kpi_product AS
+        SELECT
+            drink_id,
+            drink_name,
+            location_id,
+            COUNT(*) as sales_count,
+            SUM(revenue) as revenue,
+            SUM(cogs) as cogs,
+            SUM(gross_profit) as gross_profit,
+            CASE 
+                WHEN SUM(revenue) > 0 
+                THEN (SUM(gross_profit) / SUM(revenue) * 100)::numeric(5,2)
+                ELSE 0 
+            END as gross_margin_pct,
+            AVG(revenue) as avg_price
+        FROM vw_tx_cogs
+        WHERE drink_id IS NOT NULL
+        GROUP BY drink_id, drink_name, location_id;
+    """)
+    
+    # Create view for inventory balance
+    op.execute("""
+        CREATE VIEW vw_inventory_balance AS
+        SELECT
+            i.ingredient_code,
+            i.display_name_ru,
+            i.unit,
+            i.unit_ru,
+            i.cost_per_unit_rub,
+            i.alert_threshold,
+            i.alert_days_threshold,
+            il.location_id,
+            l.name as location_name,
+            COALESCE(SUM(il.qty), 0) as total_loaded,
+            COALESCE(
+                (SELECT SUM(di.qty_per_unit)
+                 FROM vw_tx_cogs t
+                 JOIN drink_items di ON di.drink_id = t.drink_id
+                 WHERE di.ingredient_code = i.ingredient_code
+                   AND t.location_id = il.location_id),
+                0
+            ) as total_used,
+            COALESCE(SUM(il.qty), 0) - COALESCE(
+                (SELECT SUM(di.qty_per_unit)
+                 FROM vw_tx_cogs t
+                 JOIN drink_items di ON di.drink_id = t.drink_id
+                 WHERE di.ingredient_code = i.ingredient_code
+                   AND t.location_id = il.location_id),
+                0
+            ) as balance
+        FROM ingredients i
+        LEFT JOIN ingredient_loads il ON il.ingredient_code = i.ingredient_code
+        LEFT JOIN locations l ON l.id = il.location_id
+        WHERE i.expense_kind = 'stock_tracked'
+        GROUP BY i.ingredient_code, i.display_name_ru, i.unit, i.unit_ru, 
+                 i.cost_per_unit_rub, i.alert_threshold, i.alert_days_threshold,
+                 il.location_id, l.name;
+    """)
+    
+    # Create view for owner report
+    op.execute("""
+        CREATE VIEW vw_owner_report_daily AS
+        SELECT
+            k.tx_date,
+            k.location_id,
+            k.sales_count,
+            k.revenue,
+            k.cogs,
+            k.gross_profit,
+            k.gross_margin_pct,
+            COALESCE(ve.variable_expenses, 0) as variable_expenses,
+            k.gross_profit - COALESCE(ve.variable_expenses, 0) as net_profit,
+            CASE 
+                WHEN k.revenue > 0 
+                THEN ((k.gross_profit - COALESCE(ve.variable_expenses, 0)) / k.revenue * 100)::numeric(5,2)
+                ELSE 0 
+            END as net_margin_pct
+        FROM vw_kpi_daily k
+        LEFT JOIN (
+            SELECT
+                expense_date,
+                location_id,
+                SUM(amount_rub) as variable_expenses
+            FROM variable_expenses
+            GROUP BY expense_date, location_id
+        ) ve ON ve.expense_date = k.tx_date AND ve.location_id = k.location_id;
+    """)
+    
     # Drop machine_matrix table (replaced by button_matrices system)
-    op.drop_table('machine_matrix')
+    op.execute("DROP TABLE IF EXISTS machine_matrix")
 
 
 def downgrade():
