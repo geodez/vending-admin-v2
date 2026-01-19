@@ -835,9 +835,23 @@ async def create_button_matrix(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new button matrix template."""
+    """Create a new button matrix template.
+    
+    Matrix name must be unique. Examples: "Jetinno JL24", "Jetinno JL28"
+    """
     if current_user.role != "owner":
         raise HTTPException(status_code=403, detail="Only owners can create matrices")
+    
+    # Check if matrix with this name already exists
+    existing = db.execute(
+        text("SELECT id FROM button_matrices WHERE name = :name"),
+        {"name": matrix.name}
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Matrix with name '{matrix.name}' already exists"
+        )
     
     return crud.create_button_matrix(db, matrix)
 
@@ -849,15 +863,32 @@ async def update_button_matrix(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Update button matrix."""
+    """Update button matrix.
+    
+    Matrix name must be unique. Examples: "Jetinno JL24", "Jetinno JL28"
+    """
     if current_user.role != "owner":
         raise HTTPException(status_code=403, detail="Only owners can update matrices")
     
-    matrix = crud.update_button_matrix(db, matrix_id, matrix_update)
+    # Check if matrix exists
+    matrix = crud.get_button_matrix(db, matrix_id)
     if not matrix:
         raise HTTPException(status_code=404, detail="Matrix not found")
     
-    return matrix
+    # If name is being updated, check uniqueness
+    if matrix_update.name and matrix_update.name != matrix.name:
+        existing = db.execute(
+            text("SELECT id FROM button_matrices WHERE name = :name AND id != :matrix_id"),
+            {"name": matrix_update.name, "matrix_id": matrix_id}
+        ).first()
+        if existing:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Matrix with name '{matrix_update.name}' already exists"
+            )
+    
+    updated_matrix = crud.update_button_matrix(db, matrix_id, matrix_update)
+    return updated_matrix
 
 
 @router.delete("/button-matrices/{matrix_id}", status_code=status.HTTP_204_NO_CONTENT)
