@@ -124,6 +124,10 @@ class DrinkItemCreate(DrinkItemBase):
 
 
 class DrinkItemResponse(DrinkItemBase):
+    display_name_ru: Optional[str] = None
+    cost_per_unit_rub: Optional[float] = None
+    item_cost_rub: Optional[float] = None  # Стоимость этого ингредиента в рецепте
+    
     class Config:
         from_attributes = True
 
@@ -147,6 +151,7 @@ class DrinkResponse(DrinkBase):
     id: int
     created_at: datetime
     items: List[DrinkItemResponse] = []
+    cogs_rub: Optional[float] = None  # Себестоимость напитка (COGS)
 
     class Config:
         from_attributes = True

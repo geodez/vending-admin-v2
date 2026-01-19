@@ -1,14 +1,33 @@
 import apiClient from './client';
 
+export interface DrinkItem {
+  ingredient_code: string;
+  qty_per_unit: number;
+  unit: string;
+  display_name_ru?: string;
+  cost_per_unit_rub?: number;
+  item_cost_rub?: number;  // Стоимость этого ингредиента в рецепте
+}
+
 export interface Drink {
   id: number;
   name: string;
   is_active: boolean;
+  created_at?: string;
+  items?: DrinkItem[];
+  cogs_rub?: number;  // Себестоимость напитка (COGS)
 }
 
 export interface DrinkCreate {
   name: string;
   is_active?: boolean;
+  items?: DrinkItem[];
+}
+
+export interface DrinkUpdate {
+  name?: string;
+  is_active?: boolean;
+  items?: DrinkItem[];
 }
 
 export interface MachineMatrix {
@@ -58,6 +77,23 @@ export const mappingApi = {
 
   createDrink: async (data: DrinkCreate): Promise<Drink> => {
     const response = await apiClient.post<Drink>('/mapping/drinks', data);
+    return response.data;
+  },
+
+  updateDrink: async (drinkId: number, data: DrinkUpdate): Promise<Drink> => {
+    const response = await apiClient.put<Drink>(`/mapping/drinks/${drinkId}`, data);
+    return response.data;
+  },
+
+  deleteDrink: async (drinkId: number): Promise<void> => {
+    await apiClient.delete(`/mapping/drinks/${drinkId}`);
+  },
+
+  bulkUpdateDrinks: async (drinkIds: number[], data: { is_active?: boolean }): Promise<{ updated: number; total: number }> => {
+    const response = await apiClient.put<{ updated: number; total: number }>('/mapping/drinks/bulk/update', {
+      drink_ids: drinkIds,
+      ...data
+    });
     return response.data;
   },
 
