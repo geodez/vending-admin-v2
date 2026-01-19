@@ -15,23 +15,58 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from app.config import settings
 
-def find_ingredient_by_name(db_session, search_terms: list) -> str:
+def find_ingredient_by_name(db_session, search_terms: list, exclude_terms: list = None) -> str:
     """
     Находит ингредиент по ключевым словам в названии.
     Возвращает ingredient_code или None.
+    exclude_terms - список терминов для исключения из поиска.
     """
-    # Ищем по display_name_ru и ingredient_code
+    exclude_terms = exclude_terms or []
+    # Сначала пробуем точные совпадения по ingredient_code
     for term in search_terms:
         result = db_session.execute(
             text("""
                 SELECT ingredient_code, display_name_ru 
                 FROM ingredients 
-                WHERE LOWER(display_name_ru) LIKE LOWER(:term)
-                   OR LOWER(ingredient_code) LIKE LOWER(:term)
+                WHERE LOWER(ingredient_code) = LOWER(:term)
                 LIMIT 1
             """),
-            {"term": f"%{term}%"}
+            {"term": term}
         )
+        row = result.fetchone()
+        if row:
+            # Проверяем, не содержит ли он исключающие термины
+            should_exclude = False
+            for exclude_term in exclude_terms:
+                if exclude_term.lower() in row[0].lower() or (row[1] and exclude_term.lower() in row[1].lower()):
+                    should_exclude = True
+                    break
+            if not should_exclude:
+                return row[0]
+    
+    # Затем пробуем частичные совпадения
+    for term in search_terms:
+        exclude_conditions = ""
+        if exclude_terms:
+            exclude_conditions = " AND " + " AND ".join([
+                f"LOWER(display_name_ru) NOT LIKE LOWER(:exclude_{i}) AND LOWER(ingredient_code) NOT LIKE LOWER(:exclude_{i})"
+                for i, exclude_term in enumerate(exclude_terms)
+            ])
+        
+        query = f"""
+            SELECT ingredient_code, display_name_ru 
+            FROM ingredients 
+            WHERE (LOWER(display_name_ru) LIKE LOWER(:term)
+               OR LOWER(ingredient_code) LIKE LOWER(:term))
+            {exclude_conditions}
+            LIMIT 1
+        """
+        
+        params = {"term": f"%{term}%"}
+        for i, exclude_term in enumerate(exclude_terms):
+            params[f"exclude_{i}"] = f"%{exclude_term}%"
+        
+        result = db_session.execute(text(query), params)
         row = result.fetchone()
         if row:
             return row[0]
@@ -47,11 +82,31 @@ def add_cups_and_lids_to_all_recipes():
     
     try:
         # Ищем ингредиенты "стакан" и "крышка"
-        cup_codes = ["стакан", "cup", "стаканчик"]
-        lid_codes = ["крышка", "lid", "крышечка"]
+        # Из базы данных мы знаем:
+        # - Стакан: ingredient_code = "cup" (Стакан 350 мл Роспластик d=90 50 шт)
+        # - Крышка: ingredient_code = "Cups" (Крышки GlobalCups)
         
-        cup_ingredient_code = find_ingredient_by_name(db_session, cup_codes)
-        lid_ingredient_code = find_ingredient_by_name(db_session, lid_codes)
+        # Сначала пробуем точные коды
+        cup_result = db_session.execute(
+            text("SELECT ingredient_code FROM ingredients WHERE ingredient_code = 'cup' LIMIT 1")
+        )
+        cup_row = cup_result.fetchone()
+        cup_ingredient_code = cup_row[0] if cup_row else None
+        
+        lid_result = db_session.execute(
+            text("SELECT ingredient_code FROM ingredients WHERE ingredient_code = 'Cups' LIMIT 1")
+        )
+        lid_row = lid_result.fetchone()
+        lid_ingredient_code = lid_row[0] if lid_row else None
+        
+        # Если не нашли по точным кодам, ищем по названиям
+        if not cup_ingredient_code:
+            cup_codes = ["стакан", "стаканчик"]
+            cup_ingredient_code = find_ingredient_by_name(db_session, cup_codes, exclude_terms=["крышка", "Cups"])
+        
+        if not lid_ingredient_code:
+            lid_codes = ["крышка", "крышечка", "lid"]
+            lid_ingredient_code = find_ingredient_by_name(db_session, lid_codes, exclude_terms=["стакан", "cup"])
         
         if not cup_ingredient_code:
             print("❌ Ошибка: не найден ингредиент 'стакан'")
