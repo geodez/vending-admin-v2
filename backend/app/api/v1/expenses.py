@@ -157,12 +157,14 @@ async def create_expense(
     # Use NULL for location_id since locations don't exist as entities
     # We use vendista_term_id to link expense to terminal
     
+    # Use explicit NULL for location_id in SQL, don't pass it in parameters
     query = text("""
         INSERT INTO variable_expenses (expense_date, location_id, vendista_term_id, category, amount_rub, comment, created_at, updated_at, created_by_user_id)
         VALUES (:expense_date, NULL, :vendista_term_id, :category, :amount_rub, :comment, NOW(), NOW(), :created_by_user_id)
         RETURNING id, expense_date, location_id, category, amount_rub, comment, created_at, updated_at
     """)
     
+    # Don't include location_id in params - it's set to NULL in SQL
     result = db.execute(query, {
         "expense_date": expense.expense_date,
         "vendista_term_id": vendista_term_id,  # Use terminal id
