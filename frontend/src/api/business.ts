@@ -29,13 +29,18 @@ export const deleteProduct = (id: string) =>
   apiClient.delete(`/v1/business/products/${id}`);
 
 // Ingredients
-export const getIngredients = () => apiClient.get<Ingredient[]>('/v1/business/ingredients');
+export const getIngredients = () => apiClient.get<Ingredient[]>('/ingredients');
 export const createIngredient = (data: Partial<Ingredient>) =>
-  apiClient.post<Ingredient>('/v1/business/ingredients', data);
+  apiClient.post<Ingredient>('/ingredients', data);
 export const updateIngredient = (code: string, data: Partial<Ingredient>) =>
-  apiClient.put<Ingredient>(`/v1/business/ingredients/${code}`, data);
+  apiClient.put<Ingredient>(`/ingredients/${code}`, data);
+export const bulkUpdateIngredients = (codes: string[], data: Partial<Ingredient>) =>
+  apiClient.put<{ updated: number; total: number; errors?: string[] }>('/ingredients/bulk/update', {
+    ingredient_codes: codes,
+    ...data
+  });
 export const deleteIngredient = (code: string) =>
-  apiClient.delete(`/v1/business/ingredients/${code}`);
+  apiClient.delete(`/ingredients/${code}`);
 
 // Drinks (Recipes)
 export const getDrinks = () => apiClient.get<Drink[]>('/v1/business/drinks');

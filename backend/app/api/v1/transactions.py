@@ -96,20 +96,26 @@ async def get_transactions(
     total = db.execute(count_query, params).scalar_one()
     total_pages = (total + page_size - 1) // page_size if total > 0 else 0
     
-    # Data query with pagination
+    # Data query with pagination and drink name from machine_matrix
     data_query = text(f"""
         SELECT
-            id,
-            (payload->>'term_id')::int as term_id,
-            vendista_tx_id,
-            tx_time,
-            (payload->>'sum')::numeric as sum_kopecks,
-            (payload->>'sum')::numeric / 100.0 as sum_rub,
-            (payload->'machine_item'->0->>'machine_item_id')::int as machine_item_id,
-            payload->>'terminal_comment' as terminal_comment,
-            (payload->>'status')::text as status,
-            payload
-        FROM vendista_tx_raw
+            v.id,
+            (v.payload->>'term_id')::int as term_id,
+            v.vendista_tx_id,
+            v.tx_time,
+            (v.payload->>'sum')::numeric as sum_kopecks,
+            (v.payload->>'sum')::numeric / 100.0 as sum_rub,
+            (v.payload->'machine_item'->0->>'machine_item_id')::int as machine_item_id,
+            v.payload->>'terminal_comment' as terminal_comment,
+            (v.payload->>'status')::text as status,
+            d.name as drink_name,
+            v.payload
+        FROM vendista_tx_raw v
+        LEFT JOIN machine_matrix mm ON 
+            mm.vendista_term_id = (v.payload->>'term_id')::int 
+            AND mm.machine_item_id = (v.payload->'machine_item'->0->>'machine_item_id')::int
+            AND mm.is_active = true
+        LEFT JOIN drinks d ON d.id = mm.drink_id
         WHERE {where_sql}
         {order_clause}
         LIMIT :limit OFFSET :offset
@@ -130,7 +136,8 @@ async def get_transactions(
             "machine_item_id": row[6],
             "terminal_comment": row[7],
             "status": row[8],
-            "raw_payload": row[9]
+            "drink_name": row[9],  # Drink name from machine_matrix
+            "raw_payload": row[10]
         })
     
     logger.info(f"Transactions: period={period_start}..{period_end}, sum_type={sum_type}, term_id={term_id}, total={total}")
@@ -203,20 +210,26 @@ async def export_transactions(
     
     where_sql = " AND ".join(where_clauses)
     
-    # Fetch all data (no pagination for export)
+    # Fetch all data (no pagination for export) with drink name
     data_query = text(f"""
         SELECT
-            tx_time,
-            (payload->>'term_id')::int as term_id,
-            vendista_tx_id,
-            (payload->>'sum')::numeric / 100.0 as sum_rub,
-            (payload->>'sum')::numeric as sum_kopecks,
-            (payload->'machine_item'->0->>'machine_item_id')::int as machine_item_id,
-            payload->>'terminal_comment' as terminal_comment,
-            (payload->>'status')::text as status
-        FROM vendista_tx_raw
+            v.tx_time,
+            (v.payload->>'term_id')::int as term_id,
+            v.vendista_tx_id,
+            (v.payload->>'sum')::numeric / 100.0 as sum_rub,
+            (v.payload->>'sum')::numeric as sum_kopecks,
+            (v.payload->'machine_item'->0->>'machine_item_id')::int as machine_item_id,
+            v.payload->>'terminal_comment' as terminal_comment,
+            (v.payload->>'status')::text as status,
+            d.name as drink_name
+        FROM vendista_tx_raw v
+        LEFT JOIN machine_matrix mm ON 
+            mm.vendista_term_id = (v.payload->>'term_id')::int 
+            AND mm.machine_item_id = (v.payload->'machine_item'->0->>'machine_item_id')::int
+            AND mm.is_active = true
+        LEFT JOIN drinks d ON d.id = mm.drink_id
         WHERE {where_sql}
-        ORDER BY tx_time DESC
+        ORDER BY v.tx_time DESC
     """)
     
     result = db.execute(data_query, params)
@@ -226,7 +239,7 @@ async def export_transactions(
     output = StringIO()
     writer = csv.DictWriter(
         output,
-        fieldnames=["tx_time", "term_id", "vendista_tx_id", "sum_rub", "sum_kopecks", "machine_item_id", "terminal_comment", "status"]
+        fieldnames=["tx_time", "term_id", "vendista_tx_id", "sum_rub", "sum_kopecks", "machine_item_id", "drink_name", "terminal_comment", "status"]
     )
     writer.writeheader()
     
@@ -238,6 +251,7 @@ async def export_transactions(
             "sum_rub": f"{row[3]:.2f}" if row[3] else "",
             "sum_kopecks": int(row[4]) if row[4] else "",
             "machine_item_id": row[5] or "",
+            "drink_name": row[8] or "",  # Drink name
             "terminal_comment": row[6] or "",
             "status": row[7] or ""
         })

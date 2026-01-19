@@ -1,0 +1,177 @@
+ingredient_code,display_name_ru,ingredient_group,brand_name,unit,unit_ru,cost_per_unit_rub,expense_kind,is_active
+COFFEE_COLOMBIA_SUPREME_1KG,Кофе Aloha Vend Colombia Supreme 1000 гр.,Кофе,Aloha Vend,kg,кг,1380.00,stock_tracked,true
+COFFEE_BRAZIL_ARABICA_1KG,Кофе Aloha Vend Brazil 100% Arabica 1000 гр.,Кофе,Aloha Vend,kg,кг,1520.00,stock_tracked,true
+COFFEE_ESPRESSO_BLEND_1_1KG,Кофе Aloha Vend Espresso Blend №1 80%/20% 1000 гр.,Кофе,Aloha Vend,kg,кг,1440.00,stock_tracked,true
+COFFEE_ESPRESSO_BLEND_2_1KG,Кофе Aloha Vend Espresso Blend №2 60%/40% 1000 гр.,Кофе,Aloha Vend,kg,кг,1420.00,stock_tracked,true
+COFFEE_ESPRESSO_BLEND_3_1KG,Кофе Aloha Vend Espresso Blend №3 80%/20% 1000 гр.,Кофе,Aloha Vend,kg,кг,1380.00,stock_tracked,true
+COFFEE_PREMIUM_ROBUSTA_1KG,Кофе Aloha Vend Premium Robusta 100% 1000 гр.,Кофе,Aloha Vend,kg,кг,1420.00,stock_tracked,true
+COFFEE_VENDING_LINE_ROBUSTA_1KG,Кофе Vending Line Robusta 100% 1000 гр.,Кофе,Aloha Vend,kg,кг,1210.00,stock_tracked,true
+COFFEE_VENDING_LINE_BLEND_1KG,Кофе Vending Line Blend Coffee 80%/20% 1000 гр.,Кофе,Aloha Vend,kg,кг,1210.00,stock_tracked,true
+COFFEE_VENDING_LINE_BRAZIL_1KG,Кофе Vending Line Brazil 100% Arabica 1000 гр.,Кофе,Aloha Vend,kg,кг,990.00,stock_tracked,true
+CREAM_ARISTOCRAT_WHITENER_BUDGET_1KG,Aristocrat Whitener Budget 1000г,Заменитель сливок,Aristocrat,kg,кг,360.00,stock_tracked,true
+CREAM_ARISTOCRAT_WHITENER_1KG,Aristocrat Whitener 1000г,Заменитель сливок,Aristocrat,kg,кг,390.00,stock_tracked,true
+CREAM_ARISTOCRAT_TOPPING_1KG,Aristocrat Топпинг 1000г,Заменитель сливок,Aristocrat,kg,кг,475.00,stock_tracked,true
+CREAM_ARISTOCRAT_MONTE_BELLA_1KG,Aristocrat Monte Bella 1000г,Заменитель сливок,Aristocrat,kg,кг,495.00,stock_tracked,true
+CREAM_ARISTOCRAT_TOPPING_MEGGLE_1KG,Aristocrat Топпинг Meggle 1000г,Заменитель сливок,Aristocrat,kg,кг,495.00,stock_tracked,true
+CREAM_ARISTOCRAT_TOPPING_CREAMY_1KG,Aristocrat Топпинг Creamy 1000г,Заменитель сливок,Aristocrat,kg,кг,520.00,stock_tracked,true
+CREAM_ALMAFOOD_TOPPING_MILK_1KG,Almafood Topping Milk Drink 1000г,Заменитель сливок,Almafood,kg,кг,515.00,stock_tracked,true
+CREAM_ALMAFOOD_SPESSO_1KG,Almafood Spesso 1000г,Заменитель сливок,Almafood,kg,кг,530.00,stock_tracked,true
+CREAM_ALMAFOOD_TOPPING_NEW_LINE_1KG,Almafood Topping New Line 1000г,Заменитель сливок,Almafood,kg,кг,605.00,stock_tracked,true
+CREAM_ALMAFOOD_TOPPING_PERFETTO_1KG,Almafood Topping Perfetto 1000г,Заменитель сливок,Almafood,kg,кг,635.00,stock_tracked,true
+CREAM_ALMAFOOD_TOPPING_SATURATO_1KG,Almafood Topping Saturato 1000г,Заменитель сливок,Almafood,kg,кг,670.00,stock_tracked,true
+CREAM_ALMAFOOD_TOPPING_1KG,Almafood Topping 1000г,Заменитель сливок,Almafood,kg,кг,725.00,stock_tracked,true
+CREAM_VENDLINE_GOLD_TOPPING_01_1KG,Топпинг 01 VendLine GOLD 1000г,Заменитель сливок,VendLine GOLD,kg,кг,640.00,stock_tracked,true
+CREAM_VENDLINE_GOLD_TOPPING_02_1KG,Топпинг 02 VendLine GOLD 1000г,Заменитель сливок,VendLine GOLD,kg,кг,520.00,stock_tracked,true
+CREAM_VENDLINE_GOLD_TOPPING_04_1KG,Топпинг 04 VendLine GOLD 1000г,Заменитель сливок,VendLine GOLD,kg,кг,570.00,stock_tracked,true
+CHOCOLATE_ARISTOCRAT_BLAGORODNY_1KG,Aristocrat Благородный 1000г,Горячий шоколад,Aristocrat,kg,кг,535.00,stock_tracked,true
+CHOCOLATE_ARISTOCRAT_BLAGORODNY_GRANULES_500G,Aristocrat Благородный гранулы 500г,Горячий шоколад,Aristocrat,g,г,285.00,stock_tracked,true
+CHOCOLATE_ARISTOCRAT_PREMIUM_1KG,Aristocrat PREMIUM 1000г,Горячий шоколад,Aristocrat,kg,кг,545.00,stock_tracked,true
+CHOCOLATE_OLY_RAY_DARK_1KG,OLY RAY Dark 1000г,Горячий шоколад,OLY RAY,kg,кг,620.00,stock_tracked,true
+CHOCOLATE_ALMAFOOD_CHOCO_01_RICH_1KG,Almafood Choco 01 Rich Granules 1000г,Горячий шоколад,Almafood,kg,кг,675.00,stock_tracked,true
+CHOCOLATE_ALMAFOOD_CHOCO_02_MILD_1KG,Almafood Choco 02 Mild 1000г,Горячий шоколад,Almafood,kg,кг,760.00,stock_tracked,true
+CHOCOLATE_ALMAFOOD_CHOCO_04_MISTERO_1KG,Almafood Choco 04 Mistero 1000г,Горячий шоколад,Almafood,kg,кг,830.00,stock_tracked,true
+CHOCOLATE_ZNAK_VENDING_1KG,Znak Горячий шоколад «Vending» 1000г,Горячий шоколад,Znak,kg,кг,580.00,stock_tracked,true
+CHOCOLATE_ZNAK_VENDING_BASIC_1KG,Znak Горячий шоколад «Vending Basic» 1000г,Горячий шоколад,Znak,kg,кг,670.00,stock_tracked,true
+CHOCOLATE_ZNAK_HOT_CHOCOLATE_1KG,Горячий шоколад Znak 1000 гр.,Горячий шоколад,Znak,kg,кг,1338.00,stock_tracked,true
+CHOCOLATE_ZNAK_COCOA_1KG,Какао Znak 1000 гр.,Горячий шоколад,Znak,kg,кг,1275.00,stock_tracked,true
+CHOCOLATE_ZNAK_PUDDING_MALINA_CITRUS_1KG,Шоколадный пудинг «Малина-цитрус» Znak 1000 гр.,Горячий шоколад,Znak,kg,кг,1547.00,stock_tracked,true
+CHOCOLATE_ZNAK_COCOA_POWDER_500G,Какао-порошок 100% Znak 500 гр.,Горячий шоколад,Znak,g,г,1254.00,stock_tracked,true
+CHOCOLATE_SATRO_CLASSIC_CHOC_15_1KG,Горячий шоколад Satro Classic Choc 15 1000г,Горячий шоколад,Satro,kg,кг,920.00,stock_tracked,true
+CHOCOLATE_SATRO_PREMIUM_CHOC_01_1KG,Горький шоколад Satro Premium Choc 01 1000г,Горячий шоколад,Satro,kg,кг,880.00,stock_tracked,true
+CHOCOLATE_SATRO_PREMIUM_CHOC_08_1KG,Горячий шоколад Satro Premium Choc 08 1000г,Горячий шоколад,Satro,kg,кг,700.00,stock_tracked,true
+RAF_ARISTOCRAT_BANANA_1KG,Aristocrat Rapf-coffe Банан 1000г,РАФ смеси,Aristocrat,kg,кг,570.00,stock_tracked,true
+RAF_ARISTOCRAT_STRAWBERRY_BANANA_1KG,Aristocrat Rapf-coffe Клубника-Банан 1000г,РАФ смеси,Aristocrat,kg,кг,570.00,stock_tracked,true
+RAF_ARISTOCRAT_COCONUT_1KG,Aristocrat Rapf-coffe Кокос 1000г,РАФ смеси,Aristocrat,kg,кг,570.00,stock_tracked,true
+RAF_ARISTOCRAT_RASPBERRY_PLOMBIR_1KG,Aristocrat Rapf-coffe Малиновый пломбир 1000г,РАФ смеси,Aristocrat,kg,кг,570.00,stock_tracked,true
+RAF_ARISTOCRAT_SALTED_PISTACHIO_1KG,Aristocrat Rapf-coffe Солёная фисташка 1000г,РАФ смеси,Aristocrat,kg,кг,570.00,stock_tracked,true
+RAF_ARISTOCRAT_APPLE_PIE_1KG,Aristocrat Rapf-coffe Яблочный пирог 1000г,РАФ смеси,Aristocrat,kg,кг,570.00,stock_tracked,true
+RAF_ARISTOCRAT_CHERRY_LIQUEUR_1KG,Aristocrat Rapf-coffe Вишневый ликер 1000г,РАФ смеси,Aristocrat,kg,кг,570.00,stock_tracked,true
+RAF_ARISTOCRAT_SALTED_CARAMEL_1KG,Aristocrat Rapf-coffe Соленая карамель 1000г,РАФ смеси,Aristocrat,kg,кг,570.00,stock_tracked,true
+RAF_ARISTOCRAT_CARAMEL_1KG,Aristocrat Rapf-coffe Карамель 1000г,РАФ смеси,Aristocrat,kg,кг,570.00,stock_tracked,true
+RAF_ARISTOCRAT_PEACH_1KG,Aristocrat Rapf-coffe Персик 1000г,РАФ смеси,Aristocrat,kg,кг,570.00,stock_tracked,true
+RAF_ARISTOCRAT_CREME_BRULEE_1KG,Aristocrat Rapf-coffe Крем-Брюле 1000г,РАФ смеси,Aristocrat,kg,кг,570.00,stock_tracked,true
+RAF_ARISTOCRAT_CRANBERRY_1KG,Aristocrat Rapf-coffe Клюква 1000г,РАФ смеси,Aristocrat,kg,кг,570.00,stock_tracked,true
+RAF_ARISTOCRAT_MAPLE_PECAN_1KG,Aristocrat Rapf-coffe Кленовый пекан 1000г,РАФ смеси,Aristocrat,kg,кг,570.00,stock_tracked,true
+RAF_ARISTOCRAT_CHEESE_CRACKER_1KG,Aristocrat Rapf-coffe Сырный крекер 1000г,РАФ смеси,Aristocrat,kg,кг,570.00,stock_tracked,true
+RAF_ARISTOCRAT_RASPBERRY_CHEESECAKE_1KG,Aristocrat Rapf-coffe Малиновый чизкейк 1000г,РАФ смеси,Aristocrat,kg,кг,570.00,stock_tracked,true
+RAF_ZNAK_BANANA_1KG,Znak Rapf-coffe Банан 1000г,РАФ смеси,Znak,kg,кг,580.00,stock_tracked,true
+RAF_ZNAK_CHOCOLATE_NUT_DESSERT_1KG,Znak Rapf-coffe Шоколадно-ореховый десерт 1000г,РАФ смеси,Znak,kg,кг,580.00,stock_tracked,true
+RAF_ZNAK_PLOMBIR_ALMOND_1KG,Znak Rapf-coffe Пломбир со вкусом миндаля 1000г,РАФ смеси,Znak,kg,кг,580.00,stock_tracked,true
+RAF_ZNAK_SALTED_CARAMEL_1KG,Znak Rapf-coffe Солёная карамель 1000г,РАФ смеси,Znak,kg,кг,580.00,stock_tracked,true
+RAF_ZNAK_APPLE_CRUMBLE_1KG,Znak Rapf-coffe Яблочный крамбл 1000г,РАФ смеси,Znak,kg,кг,580.00,stock_tracked,true
+RAF_ZNAK_RASPBERRY_MINT_CARAMEL_1KG,Znak Rapf-coffe Малина-мята с карамелью 1000г,РАФ смеси,Znak,kg,кг,580.00,stock_tracked,true
+RAF_ZNAK_CHOCOLATE_ORANGE_1KG,Znak Rapf-coffe Шоколад и апельсин 1000г,РАФ смеси,Znak,kg,кг,580.00,stock_tracked,true
+RAF_ZNAK_COCONUT_1KG,Znak Rapf-coffe Кокос 1000г,РАФ смеси,Znak,kg,кг,580.00,stock_tracked,true
+RAF_ZNAK_BLUEBERRY_BASIL_1KG,Znak Rapf-coffe «Голубика-Базилик (Special)» 1000г,РАФ смеси,Znak,kg,кг,680.00,stock_tracked,true
+RAF_ZNAK_SPICY_ORANGE_500G,Раф «Пряный апельсин» Znak 500 гр.,РАФ смеси,Znak,g,г,618.00,stock_tracked,true
+RAF_ZNAK_BANANELLA_500G,Раф «Бананелла» Znak 500 гр.,РАФ смеси,Znak,g,г,679.00,stock_tracked,true
+RAF_ZNAK_PISTACHIO_CHEESECAKE_500G,Раф «Фисташковый чизкейк» Znak 500 гр.,РАФ смеси,Znak,g,г,716.00,stock_tracked,true
+RAF_ZNAK_CAKE_CRANBERRY_500G,Раф «Кекс-клюква» Znak 500 гр.,РАФ смеси,Znak,g,г,741.00,stock_tracked,true
+RAF_ZNAK_ALMOND_COCONUT_500G,Раф «Миндаль-Кокос» Znak 500 гр.,РАФ смеси,Znak,g,г,741.00,stock_tracked,true
+RAF_ZNAK_VANILLA_500G,Раф «Ванильный» Znak 500 гр.,РАФ смеси,Znak,g,г,642.00,stock_tracked,true
+RAF_ZNAK_RASPBERRY_COCONUT_500G,Раф «Малина Кокос» Znak 500 гр.,РАФ смеси,Znak,g,г,766.00,stock_tracked,true
+RAF_ZNAK_BIRD_MILK_500G,Раф «Птичье Молоко» Znak 500 гр.,РАФ смеси,Znak,g,г,852.00,stock_tracked,true
+RAF_ZNAK_CHEESE_500G,Раф «Сырный» Znak 500 гр.,РАФ смеси,Znak,g,г,667.00,stock_tracked,true
+RAF_ZNAK_HONEY_CAKE_BLUEBERRY_500G,Раф «Медовик с черникой» Znak 500 гр.,РАФ смеси,Znak,g,г,815.00,stock_tracked,true
+RAF_ZNAK_PUMPKIN_500G,Раф «Тыква» Znak 500 гр.,РАФ смеси,Znak,g,г,1136.00,stock_tracked,true
+RAF_ZNAK_SNICKERS_500G,Раф «Сникерс» Znak 500 гр.,РАФ смеси,Znak,g,г,741.00,stock_tracked,true
+RAF_ZNAK_HONEY_DESSERT_WALNUT_500G,Раф «Медовый десерт с грецким орехом» Znak 500 гр.,РАФ смеси,Znak,g,г,667.00,stock_tracked,true
+RAF_ZNAK_ALMOND_COOKIE_500G,Раф «Миндальное печенье» Znak 500 гр.,РАФ смеси,Znak,g,г,704.00,stock_tracked,true
+RAF_ZNAK_LEMON_TART_500G,Раф «Лимонный тарт» Znak 500 гр.,РАФ смеси,Znak,g,г,729.00,stock_tracked,true
+RAF_ZNAK_POPCORN_500G,Раф «Попкорн» Znak 500 гр.,РАФ смеси,Znak,g,г,630.00,stock_tracked,true
+RAF_ZNAK_WAFFLE_CONE_500G,Раф «Вафельный рожок» Znak 500 гр.,РАФ смеси,Znak,g,г,618.00,stock_tracked,true
+RAF_ZNAK_DATE_SALTED_CARAMEL_500G,Раф «Финиковый раф с соленой карамелью» Znak 500 гр.,РАФ смеси,Znak,g,г,667.00,stock_tracked,true
+RAF_ZNAK_HALVA_PEANUT_500G,Раф «Халва с арахисом» Znak 500 гр.,РАФ смеси,Znak,g,г,963.00,stock_tracked,true
+RAF_ZNAK_CHOCOLATE_COOKIE_500G,Раф «Шоколадный кукис» Znak 500 гр.,РАФ смеси,Znak,g,г,840.00,stock_tracked,true
+LATTE_ZNAK_STRAWBERRY_BASIL_500G,Латте «Клубника-Базилик» Znak 500 гр.,Латте основы,Znak,g,г,642.00,stock_tracked,true
+LATTE_ZNAK_MINT_BARBERRY_500G,Латте «Мята Барбарис» Znak 500 гр.,Латте основы,Znak,g,г,568.00,stock_tracked,true
+LATTE_ZNAK_SPICY_RUM_CHERRY_500G,Латте «Пряный ром» с вишней Znak 500 гр.,Латте основы,Znak,g,г,692.00,stock_tracked,true
+LATTE_ZNAK_CURRANT_MINT_CHOCOLATE_500G,Латте «Смородина в мятном шоколаде» Znak 500 гр.,Латте основы,Znak,g,г,605.00,stock_tracked,true
+LATTE_ZNAK_PEACH_CHILI_500G,Латте «Персик с чили» Znak 500 гр.,Латте основы,Znak,g,г,741.00,stock_tracked,true
+LATTE_ZNAK_APRICOT_JAM_MANDARIN_500G,Латте «Абрикосовый джем с мандарином» Znak 500 гр.,Латте основы,Znak,g,г,729.00,stock_tracked,true
+LATTE_ZNAK_EARL_GREY_RASPBERRY_500G,Латте «Эрл грей с малиной» Znak 500 гр.,Латте основы,Znak,g,г,667.00,stock_tracked,true
+LATTE_ZNAK_PEAR_MOUSSE_VANILLA_500G,Латте «Грушевый мусс с французской ванилью» Znak 500 гр.,Латте основы,Znak,g,г,679.00,stock_tracked,true
+LATTE_ZNAK_APPLE_PIE_500G,Латте «Яблочный пирог» Znak 500 гр.,Латте основы,Znak,g,г,753.00,stock_tracked,true
+LATTE_ZNAK_GINGERBREAD_500G,Латте «Имбирный пряник» Znak 500 гр.,Латте основы,Znak,g,г,753.00,stock_tracked,true
+LATTE_ZNAK_CHERRY_SAKURA_500G,Латте «Вишня-Сакура» Znak 500 гр.,Латте основы,Znak,g,г,716.00,stock_tracked,true
+LATTE_ZNAK_BLUEBERRY_MARSHMALLOW_500G,Латте «Черничный зефир» Znak 500 гр.,Латте основы,Znak,g,г,741.00,stock_tracked,true
+LATTE_ZNAK_RUM_BABA_500G,Латте «Ромовая баба» Znak 500 гр.,Латте основы,Znak,g,г,1112.00,stock_tracked,true
+MATCHA_ZNAK_BLUEBERRY_IRIS_500G,Голубая матча со вкусом черники «Ирис» Znak 500 гр.,Матча,Znak,g,г,925.00,stock_tracked,true
+MATCHA_ZNAK_PINK_HIBISCUS_NUTMEG_500G,Розовая матча со вкусом гибискуса и муската «Розовое небо» Znak 500 гр.,Матча,Znak,g,г,965.00,stock_tracked,true
+MATCHA_ZNAK_GREEN_PINEAPPLE_COCONUT_500G,Зеленая матча со вкусом ананаса и кокоса «Пилигримм» Znak 500 гр.,Матча,Znak,g,г,1020.00,stock_tracked,true
+CITRUS_BASE_ZNAK_500G,Цитрусовая основа Znak 500 гр.,Латте основы,Znak,g,г,790.00,stock_tracked,true
+TOPPING_ZNAK_BLUEBERRY_1KG,Посыпка «Черника» Znak 1000 гр.,Посыпки на кофе,Znak,kg,кг,1350.00,stock_tracked,true
+TOPPING_ZNAK_RASPBERRY_1KG,Посыпка «Малина» Znak 1000 гр.,Посыпки на кофе,Znak,kg,кг,1400.00,stock_tracked,true
+TOPPING_ZNAK_CRANBERRY_1KG,Посыпка «Клюква» Znak 1000 гр.,Посыпки на кофе,Znak,kg,кг,1290.00,stock_tracked,true
+TOPPING_ZNAK_STRAWBERRY_1KG,Посыпка «Клубника» Znak 1000 гр.,Посыпки на кофе,Znak,kg,кг,1450.00,stock_tracked,true
+TOPPING_ZNAK_SPICY_PEAR_1KG,Посыпка «Пряная груша» Znak 1000 гр.,Посыпки на кофе,Znak,kg,кг,1420.00,stock_tracked,true
+TOPPING_ZNAK_CURRANT_1KG,Посыпка «Смородина» Znak 1000 гр.,Посыпки на кофе,Znak,kg,кг,1280.00,stock_tracked,true
+TOPPING_ZNAK_EXPLOSIVE_POPCORN_1KG,Посыпка «Взрывной Попкорн» Znak 1000 гр.,Посыпки на кофе,Znak,kg,кг,1507.00,stock_tracked,true
+TOPPING_ZNAK_EXPLOSIVE_CARAMEL_1KG,Посыпка «Взрывная Карамель» Znak 1000 гр.,Посыпки на кофе,Znak,kg,кг,1507.00,stock_tracked,true
+TOPPING_ZNAK_CHAMOMILE_1KG,Посыпка «Ромашка» Znak 1000 гр.,Посыпки на кофе,Znak,kg,кг,1235.00,stock_tracked,true
+TOPPING_ZNAK_BIRD_CHERRY_1KG,Посыпка «Черемуха» Znak 1000 гр.,Посыпки на кофе,Znak,kg,кг,1235.00,stock_tracked,true
+CAPPUCCINO_ARISTOCRAT_AMARETTO_1KG,Капучино ARISTOCRAT Амаретто/ Лесной Орех/ Ванильный 1000г,Капучино смеси,Aristocrat,kg,кг,510.00,stock_tracked,true
+CAPPUCCINO_ARISTOCRAT_MOKKA_BANANA_1KG,Капучино ARISTOCRAT Mokka Банан/ Mokka Toffee 1000г,Капучино смеси,Aristocrat,kg,кг,540.00,stock_tracked,true
+CAPPUCCINO_TORINO_FOREST_NUT_1KG,Капучино TORINO Лесной Орех/ Карамель 1000г,Капучино смеси,TORINO,kg,кг,560.00,stock_tracked,true
+MILKSHAKE_ARISTOCRAT_COLD_1KG,Молочный коктейль Банан/Клубника/Ваниль/Малина (Холодный) Aristocrat 1000г,Молочные коктейли,Aristocrat,kg,кг,650.00,stock_tracked,true
+KISSEL_VALETEC_500G,Кисель Valetec Вишня/ Клюква/ Клубника/ Малина 500 г,Прочие сухие напитки,Valetec,g,г,220.00,stock_tracked,true
+TEA_ARISTOCRAT_INSTANT_1KG,Aristocrat Чай растворимый Лимон/ Лесные ягоды 1000г,Прочие сухие напитки,Aristocrat,kg,кг,400.00,stock_tracked,true
+CINNAMON_STICKS_03G,Корица молотая в стиках 0,3 гр.,Сахар и специи,,g,г,1.30,stock_tracked,true
+SUGAR_STICK_5G,Сахар в стик-упаковке 5 гр.,Сахар и специи,,g,г,160.00,stock_tracked,true
+SUGAR_STICK_5G_NEW_YEAR,Сахар в стик-упаковке 5 гр. Новогодний,Сахар и специи,,g,г,180.00,stock_tracked,true
+SUGAR_STICK_35G,Сахар в стик-упаковке 3,5 гр.,Сахар и специи,,g,г,180.00,stock_tracked,true
+VANILLA_SUGAR_ZNAK_1KG,Ванильный сахар Znak 1000 гр.,Сахар и специи,Znak,kg,кг,410.00,stock_tracked,true
+SYRUP_BARLINE_FITNESS_VANILLA_1L,Сироп фитнес Ваниль Barline 1,0 стекло,Сиропы,Barline,L,л,370.00,stock_tracked,true
+SYRUP_BARLINE_FITNESS_CARAMEL_1L,Сироп фитнес Карамель Barline 1,0 стекло,Сиропы,Barline,L,л,370.00,stock_tracked,true
+SYRUP_BARLINE_FITNESS_CHOCOLATE_1L,Сироп фитнес Шоколад Barline 1,0 стекло,Сиропы,Barline,L,л,370.00,stock_tracked,true
+SYRUP_BARLINE_PET_BUBBLE_GUM_1L,Сироп Bubble Gum Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_APEROL_1L,Сироп Aperol Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_AMARETTO_1L,Сироп Amaretto Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_PINEAPPLE_1L,Сироп Ананас Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_ORANGE_1L,Сироп Апельсин Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_PEANUT_1L,Сироп Арахис Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_WATERMELON_1L,Сироп Арбуз Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_BROWNIE_1L,Сироп Брауни Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_BANANA_1L,Сироп Банан Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_BLUE_CURACAO_1L,Сироп Блю Кюрасао Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_VANILLA_1L,Сироп Ваниль Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_CHERRY_1L,Сироп Вишня Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_POMEGRANATE_1L,Сироп Гранат Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_PEAR_1L,Сироп Груша Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_YELLOW_MELON_1L,Сироп Желтая дыня Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_BLACKBERRY_1L,Сироп Ежевика Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_MAPLE_1L,Сироп Кленовый Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_COCONUT_1L,Сироп Кокос Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_CARAMEL_1L,Сироп Карамель Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_STRAWBERRY_1L,Сироп Клубника Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_LIME_1L,Сироп Лайм Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_LEMONGRASS_1L,Сироп Лемонграсс Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_LEMON_PIE_1L,Сироп Лимонный пирог Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_MACADAMIA_1L,Сироп Макадамия Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_RASPBERRY_1L,Сироп Малина Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_MANGO_1L,Сироп Манго Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_PASSION_FRUIT_1L,Сироп Маракуйя Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_MOJITO_MINT_1L,Сироп Мохито Мята Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_MINT_1L,Сироп Мята Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_PEACH_1L,Сироп Персик Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_POPCORN_1L,Сироп Попкорн Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_SUGAR_CANE_1L,Сироп Сахарный тростник Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_SALTED_CARAMEL_1L,Сироп Соленая карамель Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_TOFFEE_1L,Сироп Тоффи Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_HAZELNUT_1L,Сироп Фундук Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_ELDERFLOWER_1L,Сироп Бузина Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_CHOCOLATE_1L,Сироп Шоколад Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_WHITE_CHOCOLATE_1L,Сироп Белый шоколад Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_PINA_COLADA_1L,Сироп Пина Колада Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_CHEESECAKE_1L,Сироп Чизкейк Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_BLUEBERRY_1L,Сироп Черника Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_GINGERBREAD_1L,Сироп Пряник Barline 1,0 ПЭТ,Сиропы,Barline,L,л,350.00,stock_tracked,true
+SYRUP_BARLINE_PET_IRISH_CREAM_1L,Сироп Айриш Крим Barline 1,0 ПЭТ,Сиропы,Barline,L,л,390.00,stock_tracked,true
+SYRUP_BARLINE_PET_BAILEYS_1L,Сироп Бейлис Barline 1,0 ПЭТ,Сиропы,Barline,L,л,390.00,stock_tracked,true
+SYRUP_BARLINE_PET_CINNAMON_1L,Сироп Корица Barline 1,0 ПЭТ,Сиропы,Barline,L,л,390.00,stock_tracked,true
+SYRUP_BARLINE_PET_KIWI_1L,Сироп Киви Barline 1,0 ПЭТ,Сиропы,Barline,L,л,390.00,stock_tracked,true
+SYRUP_BARLINE_PET_GRENADINE_1L,Сироп Гренадин Barline 1,0 ПЭТ,Сиропы,Barline,L,л,390.00,stock_tracked,true
+SYRUP_BARLINE_PET_GREEN_APPLE_1L,Сироп Зеленое яблоко Barline 1,0 ПЭТ,Сиропы,Barline,L,л,390.00,stock_tracked,true
+SYRUP_BARLINE_PET_CHOCOLATE_COOKIE_1L,Сироп Шоколадное печенье Barline 1,0 ПЭТ,Сиропы,Barline,L,л,390.00,stock_tracked,true
+SYRUP_BARLINE_PET_GREEN_BANANA_1L,Сироп Зеленый банан Barline 1,0 ПЭТ,Сиропы,Barline,L,л,390.00,stock_tracked,true
+SYRUP_BARLINE_PET_COGNAC_1L,Сироп Коньяк Barline 1,0 ПЭТ,Сиропы,Barline,L,л,390.00,stock_tracked,true

@@ -212,6 +212,22 @@ def bulk_update_ingredients(
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
+@router.delete("/ingredients/{ingredient_code}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_ingredient(
+    ingredient_code: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete ingredient."""
+    try:
+        deleted = crud.delete_ingredient(db, ingredient_code)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Ingredient not found")
+    except ValueError as e:
+        # Ингредиент используется в рецептах
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.get("/ingredients/{ingredient_code}", response_model=IngredientResponse)
 def get_ingredient(
     ingredient_code: str,
@@ -237,22 +253,6 @@ def update_ingredient(
     if not ingredient:
         raise HTTPException(status_code=404, detail="Ingredient not found")
     return ingredient
-
-
-@router.delete("/ingredients/{ingredient_code}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_ingredient(
-    ingredient_code: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Delete ingredient."""
-    try:
-        deleted = crud.delete_ingredient(db, ingredient_code)
-        if not deleted:
-            raise HTTPException(status_code=404, detail="Ingredient not found")
-    except ValueError as e:
-        # Ингредиент используется в рецептах
-        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ============================================================================

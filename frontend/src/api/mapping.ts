@@ -36,6 +36,9 @@ export interface MachineMatrix {
   drink_id: number | null;
   location_id: number | null;
   is_active: boolean;
+  term_name?: string | null;  // Название терминала
+  drink_name?: string | null;  // Название напитка
+  location_name?: string | null;  // Название локации
 }
 
 export interface MachineMatrixCreate {
@@ -101,6 +104,11 @@ export const mappingApi = {
   getMachineMatrix: async (termId?: number): Promise<MachineMatrix[]> => {
     const params = termId !== undefined ? `?term_id=${termId}` : '';
     const response = await apiClient.get<MachineMatrix[]>(`/mapping/machine-matrix${params}`);
+    return response.data;
+  },
+
+  createMachineMatrix: async (data: MachineMatrixCreate): Promise<MachineMatrix> => {
+    const response = await apiClient.post<MachineMatrix>('/mapping/machine-matrix', data);
     return response.data;
   },
 

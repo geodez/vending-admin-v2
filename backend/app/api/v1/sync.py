@@ -237,7 +237,7 @@ async def get_sync_runs(
     if date_from:
         try:
             parsed_date = datetime.strptime(date_from, "%Y-%m-%d").date()
-            where_conditions.append("started_at >= :date_from::date")
+            where_conditions.append("started_at >= :date_from")
             params["date_from"] = parsed_date
         except ValueError:
             raise HTTPException(
@@ -248,7 +248,7 @@ async def get_sync_runs(
     if date_to:
         try:
             parsed_date = datetime.strptime(date_to, "%Y-%m-%d").date()
-            where_conditions.append("started_at < :date_to::date + interval '1 day'")
+            where_conditions.append("started_at < :date_to + interval '1 day'")
             params["date_to"] = parsed_date
         except ValueError:
             raise HTTPException(

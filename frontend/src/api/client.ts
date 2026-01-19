@@ -2,8 +2,18 @@ import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'ax
 import { TOKEN_STORAGE_KEY } from '@/utils/constants';
 
 // Create axios instance with /api/v1 baseURL
+// Use relative path to automatically use current page protocol (HTTPS)
+const getBaseURL = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl) {
+    return envUrl;
+  }
+  // Use relative path - it will automatically use current page protocol
+  return '/api/v1';
+};
+
 const apiClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
+  baseURL: getBaseURL(),
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',

@@ -13,7 +13,8 @@ export const terminalsApi = {
     if (periodStart) params.append('period_start', periodStart);
     if (periodEnd) params.append('period_end', periodEnd);
     
-    const response = await apiClient.get<Terminal[]>(`/terminals?${params.toString()}`);
+    // Добавляем trailing slash чтобы избежать редиректа
+    const response = await apiClient.get<Terminal[]>(`/terminals/?${params.toString()}`);
     return response.data;
   },
 };

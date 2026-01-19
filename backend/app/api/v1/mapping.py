@@ -35,6 +35,9 @@ class MachineMatrixResponse(BaseModel):
     drink_id: Optional[int]
     location_id: Optional[int]
     is_active: bool
+    term_name: Optional[str] = None  # Название терминала
+    drink_name: Optional[str] = None  # Название напитка
+    location_name: Optional[str] = None  # Название локации
 
 
 # ===== IMPORT SCHEMAS =====
@@ -375,10 +378,21 @@ async def get_machine_matrix(
     params = {"term_id": term_id} if term_id else {}
     
     query = text(f"""
-        SELECT vendista_term_id, machine_item_id, drink_id, location_id, is_active
-        FROM machine_matrix
+        SELECT 
+            mm.vendista_term_id,
+            mm.machine_item_id,
+            mm.drink_id,
+            mm.location_id,
+            mm.is_active,
+            vt.comment as term_name,
+            d.name as drink_name,
+            l.name as location_name
+        FROM machine_matrix mm
+        LEFT JOIN vendista_terminals vt ON vt.id = mm.vendista_term_id
+        LEFT JOIN drinks d ON d.id = mm.drink_id
+        LEFT JOIN locations l ON l.id = mm.location_id
         {where_clause}
-        ORDER BY vendista_term_id, machine_item_id
+        ORDER BY mm.vendista_term_id, mm.machine_item_id
     """)
     
     result = db.execute(query, params)
@@ -391,10 +405,102 @@ async def get_machine_matrix(
             "machine_item_id": row[1],
             "drink_id": row[2],
             "location_id": row[3],
-            "is_active": row[4]
+            "is_active": row[4],
+            "term_name": row[5],
+            "drink_name": row[6],
+            "location_name": row[7]
         })
     
     return matrix
+
+
+@router.post("/machine-matrix", response_model=MachineMatrixResponse, status_code=status.HTTP_201_CREATED)
+async def create_machine_matrix(
+    item: MachineMatrixCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Create or update a single machine matrix record.
+    
+    Uses ON CONFLICT to upsert by (term_id, machine_item_id).
+    Owner-only access.
+    """
+    if current_user.role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owners can modify machine matrix"
+        )
+    
+    # Validate drink_id exists
+    drink_check = text("SELECT id FROM drinks WHERE id = :drink_id")
+    drink_result = db.execute(drink_check, {"drink_id": item.drink_id})
+    if not drink_result.first():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Drink with id {item.drink_id} not found"
+        )
+    
+    # Validate location_id exists
+    location_check = text("SELECT id FROM locations WHERE id = :location_id")
+    location_result = db.execute(location_check, {"location_id": item.location_id})
+    if not location_result.first():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Location with id {item.location_id} not found"
+        )
+    
+    # Insert or update
+    query = text("""
+        INSERT INTO machine_matrix (vendista_term_id, machine_item_id, drink_id, location_id, is_active)
+        VALUES (:term_id, :machine_item_id, :drink_id, :location_id, :is_active)
+        ON CONFLICT (vendista_term_id, machine_item_id)
+        DO UPDATE SET
+            drink_id = EXCLUDED.drink_id,
+            location_id = EXCLUDED.location_id,
+            is_active = EXCLUDED.is_active
+        RETURNING vendista_term_id, machine_item_id, drink_id, location_id, is_active
+    """)
+    
+    result = db.execute(query, {
+        "term_id": item.term_id,
+        "machine_item_id": item.machine_item_id,
+        "drink_id": item.drink_id,
+        "location_id": item.location_id,
+        "is_active": item.is_active
+    })
+    
+    db.commit()
+    row = result.first()
+    
+    # Get names for response
+    names_query = text("""
+        SELECT 
+            vt.comment as term_name,
+            d.name as drink_name,
+            l.name as location_name
+        FROM machine_matrix mm
+        LEFT JOIN vendista_terminals vt ON vt.id = mm.vendista_term_id
+        LEFT JOIN drinks d ON d.id = mm.drink_id
+        LEFT JOIN locations l ON l.id = mm.location_id
+        WHERE mm.vendista_term_id = :term_id AND mm.machine_item_id = :machine_item_id
+    """)
+    names_result = db.execute(names_query, {
+        "term_id": row[0],
+        "machine_item_id": row[1]
+    })
+    names_row = names_result.first()
+    
+    return {
+        "term_id": row[0],
+        "machine_item_id": row[1],
+        "drink_id": row[2],
+        "location_id": row[3],
+        "is_active": row[4],
+        "term_name": names_row[0] if names_row else None,
+        "drink_name": names_row[1] if names_row else None,
+        "location_name": names_row[2] if names_row else None
+    }
 
 
 @router.post("/machine-matrix/bulk", status_code=status.HTTP_201_CREATED)

@@ -105,6 +105,13 @@ const InventoryPage = () => {
       width: 80,
     },
     {
+      title: 'Напиток',
+      dataIndex: 'drink_name',
+      key: 'drink_name',
+      render: (value: string | null) => value || '-',
+      width: 150,
+    },
+    {
       title: 'Комментарий',
       dataIndex: 'terminal_comment',
       key: 'terminal_comment',
