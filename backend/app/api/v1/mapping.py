@@ -801,10 +801,11 @@ async def get_button_matrix(
         item_dict = {
             "machine_item_id": item.machine_item_id,
             "drink_id": item.drink_id,
-            "location_id": item.location_id,
+        item_dict = {
+            "machine_item_id": item.machine_item_id,
+            "drink_id": item.drink_id,
             "is_active": item.is_active,
-            "drink_name": None,
-            "location_name": None
+            "drink_name": None
         }
         
         if item.drink_id:
@@ -814,13 +815,7 @@ async def get_button_matrix(
             if drink_row:
                 item_dict["drink_name"] = drink_row[0]
         
-        if item.location_id:
-            location_query = text("SELECT name FROM locations WHERE id = :location_id")
-            location_result = db.execute(location_query, {"location_id": item.location_id})
-            location_row = location_result.first()
-            if location_row:
-                item_dict["location_name"] = location_row[0]
-        
+        items_with_names.append(ButtonMatrixItemResponse(**item_dict))        
         items_with_names.append(ButtonMatrixItemResponse(**item_dict))
     
     return ButtonMatrixWithItems(
