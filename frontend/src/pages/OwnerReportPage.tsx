@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Spin, Result, Button, Typography, Card, Row, Col, Table, Space, Statistic, Alert, Modal, message } from 'antd';
-import { DollarOutlined, CreditCardOutlined, ShoppingOutlined, LineChartOutlined, ReloadOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { Spin, Result, Button, Typography, Card, Row, Col, Table, Space, Statistic, Alert, Modal, message, Tooltip } from 'antd';
+import { DollarOutlined, CreditCardOutlined, ShoppingOutlined, LineChartOutlined, ReloadOutlined, CheckCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import apiClient from '../api/client';
 
 const { Paragraph, Title, Text } = Typography;
@@ -171,6 +171,55 @@ export default function OwnerReportPage() {
         title: 'Параметр',
         dataIndex: 'param',
         key: 'param',
+        render: (text: string, record: any) => {
+          if (record.key === 'margin') {
+            return (
+              <Space>
+                {text}
+                <Tooltip title={
+                  <div>
+                    <div><strong>Маржа прибыли</strong></div>
+                    <div style={{ marginTop: 8 }}>
+                      Процент чистой прибыли от выручки.
+                    </div>
+                    <div style={{ marginTop: 8 }}>
+                      <strong>Формула:</strong> (Чистая прибыль / Выручка) × 100%
+                    </div>
+                    <div style={{ marginTop: 4, fontSize: '12px', color: '#999' }}>
+                      Показывает эффективность бизнеса
+                    </div>
+                  </div>
+                }>
+                  <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help' }} />
+                </Tooltip>
+              </Space>
+            );
+          }
+          if (record.key === 'transactions') {
+            return (
+              <Space>
+                {text}
+                <Tooltip title={
+                  <div>
+                    <div><strong>Количество транзакций</strong></div>
+                    <div style={{ marginTop: 8 }}>
+                      Общее количество успешных продаж за период.
+                    </div>
+                    <div style={{ marginTop: 8 }}>
+                      <strong>Источник:</strong> COUNT(*) из vw_owner_report_daily
+                    </div>
+                    <div style={{ marginTop: 4, fontSize: '12px', color: '#999' }}>
+                      Учитываются только транзакции с суммой > 0
+                    </div>
+                  </div>
+                }>
+                  <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help' }} />
+                </Tooltip>
+              </Space>
+            );
+          }
+          return text;
+        },
       },
       {
         title: 'Значение',
@@ -204,7 +253,27 @@ export default function OwnerReportPage() {
       <div style={{ padding: 24 }}>
         <Space direction="vertical" style={{ width: '100%' }} size="large">
           <div>
-            <Title level={2}>Отчёт собственника</Title>
+            <Space align="center" style={{ marginBottom: 8 }}>
+              <Title level={2} style={{ margin: 0 }}>Отчёт собственника</Title>
+              <Tooltip title={
+                <div style={{ maxWidth: '350px' }}>
+                  <div><strong>Источник данных</strong></div>
+                  <div style={{ marginTop: 8, fontSize: '12px' }}>
+                    Данные рассчитываются из транзакций Vendista через систему шаблонов матриц:
+                  </div>
+                  <div style={{ marginTop: 8, fontSize: '12px', paddingLeft: '8px' }}>
+                    • Транзакции → vw_tx_cogs (с COGS)<br/>
+                    • Агрегация → vw_kpi_daily<br/>
+                    • Итоговый отчёт → vw_owner_report_daily
+                  </div>
+                  <div style={{ marginTop: 8, fontSize: '11px', color: '#999' }}>
+                    Связь транзакций с напитками происходит через шаблоны матриц (раздел "Шаблоны матриц")
+                  </div>
+                </div>
+              }>
+                <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help', fontSize: '18px' }} />
+              </Tooltip>
+            </Space>
             <Paragraph type="secondary">
               Финансовые метрики за период {data.period_start} — {data.period_end}
             </Paragraph>
@@ -256,7 +325,35 @@ export default function OwnerReportPage() {
             <Col xs={24} sm={12} lg={6}>
               <Card hoverable>
                 <Statistic
-                  title="Выручка"
+                  title={
+                    <Space>
+                      Выручка
+                      <Tooltip title={
+                        <div style={{ maxWidth: '350px' }}>
+                          <div><strong>Выручка (валовая)</strong></div>
+                          <div style={{ marginTop: 8 }}>
+                            Сумма всех продаж за период из транзакций Vendista.
+                          </div>
+                          <div style={{ marginTop: 8 }}>
+                            <strong>Формула:</strong> SUM(revenue) из vw_owner_report_daily
+                          </div>
+                          <div style={{ marginTop: 8, fontSize: '12px', padding: '8px', background: '#f5f5f5', borderRadius: '4px' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Расчет revenue:</div>
+                            <div style={{ marginLeft: '8px' }}>
+                              • Из транзакций: (payload->>'sum') / 100<br/>
+                              • Конвертация из копеек в рубли<br/>
+                              • Агрегация по датам и локациям
+                            </div>
+                          </div>
+                          <div style={{ marginTop: 4, fontSize: '11px', color: '#999' }}>
+                            Данные берутся из view vw_tx_cogs → vw_kpi_daily → vw_owner_report_daily
+                          </div>
+                        </div>
+                      }>
+                        <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help' }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   value={data.revenue_gross}
                   formatter={(val) => formatRub(val as number)}
                   prefix={<DollarOutlined />}
@@ -267,7 +364,35 @@ export default function OwnerReportPage() {
             <Col xs={24} sm={12} lg={6}>
               <Card hoverable>
                 <Statistic
-                  title="Комиссии и налоги"
+                  title={
+                    <Space>
+                      Комиссии и налоги
+                      <Tooltip title={
+                        <div style={{ maxWidth: '300px' }}>
+                          <div><strong>Комиссии платформы</strong></div>
+                          <div style={{ marginTop: 8 }}>
+                            Комиссия платформы Vendista за обработку платежей.
+                          </div>
+                          <div style={{ marginTop: 8 }}>
+                            <strong>Формула:</strong> Выручка × 8.95%
+                          </div>
+                          <div style={{ marginTop: 8, fontSize: '12px', padding: '8px', background: '#f5f5f5', borderRadius: '4px' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Применяется:</div>
+                            <div style={{ marginLeft: '8px' }}>
+                              • Ко всем транзакциям<br/>
+                              • Автоматически при расчете<br/>
+                              • Вычитается из выручки
+                            </div>
+                          </div>
+                          <div style={{ marginTop: 4, fontSize: '11px', color: '#999' }}>
+                            Стандартная комиссия платформы Vendista
+                          </div>
+                        </div>
+                      }>
+                        <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help' }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   value={data.fees_total}
                   formatter={(val) => formatRub(val as number)}
                   prefix={<CreditCardOutlined />}
@@ -278,7 +403,36 @@ export default function OwnerReportPage() {
             <Col xs={24} sm={12} lg={6}>
               <Card hoverable>
                 <Statistic
-                  title="Расходы"
+                  title={
+                    <Space>
+                      Расходы
+                      <Tooltip title={
+                        <div>
+                          <div><strong>Переменные расходы</strong></div>
+                          <div style={{ marginTop: 8 }}>
+                            Переменные расходы, введенные вручную в разделе "Расходы".
+                          </div>
+                          <div style={{ marginTop: 8 }}>
+                            <strong>Формула:</strong> SUM(amount_rub) из variable_expenses
+                          </div>
+                          <div style={{ marginTop: 8, fontSize: '12px', padding: '8px', background: '#f5f5f5', borderRadius: '4px' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Включает:</div>
+                            <div style={{ marginLeft: '8px' }}>
+                              • Аренду помещений<br/>
+                              • Коммунальные услуги<br/>
+                              • Обслуживание оборудования<br/>
+                              • Другие переменные расходы
+                            </div>
+                          </div>
+                          <div style={{ marginTop: 4, fontSize: '11px', color: '#999' }}>
+                            Добавляются вручную в разделе "Расходы" за выбранный период
+                          </div>
+                        </div>
+                      }>
+                        <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help' }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   value={data.expenses_total}
                   formatter={(val) => formatRub(val as number)}
                   prefix={<ShoppingOutlined />}
@@ -291,7 +445,40 @@ export default function OwnerReportPage() {
                 background: data.net_profit >= 0 ? '#f0f7ff' : '#fef0f0'
               }}>
                 <Statistic
-                  title="Чистая прибыль"
+                  title={
+                    <Space>
+                      Чистая прибыль
+                      <Tooltip title={
+                        <div style={{ maxWidth: '400px' }}>
+                          <div><strong>Чистая прибыль</strong></div>
+                          <div style={{ marginTop: 8 }}>
+                            Итоговая прибыль после вычета всех расходов.
+                          </div>
+                          <div style={{ marginTop: 8 }}>
+                            <strong>Формула:</strong> Выручка - COGS - Комиссии - Расходы
+                          </div>
+                          <div style={{ marginTop: 12, padding: '8px', background: '#f5f5f5', borderRadius: '4px', fontSize: '12px' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>COGS (себестоимость):</div>
+                            <div style={{ marginLeft: '8px' }}>
+                              • Рассчитывается из ингредиентов рецептов напитков<br/>
+                              • Только ингредиенты с expense_kind = 'stock_tracked'<br/>
+                              • С учетом конвертации единиц:<br/>
+                              <div style={{ marginLeft: '12px', marginTop: '4px' }}>
+                                - г → кг: qty × (cost / 1000)<br/>
+                                - мл → л: qty × (cost / 1000)<br/>
+                                - одинаковые единицы: qty × cost
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ marginTop: 8, fontSize: '11px', color: '#999' }}>
+                            Данные берутся из view vw_tx_cogs через шаблоны матриц
+                          </div>
+                        </div>
+                      }>
+                        <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help' }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   value={data.net_profit}
                   formatter={(val) => formatRub(val as number)}
                   prefix={<LineChartOutlined />}
