@@ -293,9 +293,11 @@ const RecipesPage = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <Tag color="blue" style={{ margin: 0 }}>{ingredientName}</Tag>
                     <Text type="secondary" style={{ fontSize: '12px' }}>
-                      {item.qty_per_unit != null ? item.qty_per_unit.toFixed(item.unit === 'g' || item.unit === 'ml' ? 0 : 2) : 0} {item.unit || ''}
+                      {item.qty_per_unit != null && item.qty_per_unit !== undefined 
+                        ? (typeof item.qty_per_unit === 'number' ? item.qty_per_unit.toFixed(item.unit === 'g' || item.unit === 'ml' ? 0 : 2) : String(item.qty_per_unit))
+                        : '0'} {item.unit || ''}
                     </Text>
-                    {item.item_cost_rub != null && item.item_cost_rub > 0 && (
+                    {item.item_cost_rub != null && item.item_cost_rub !== undefined && item.item_cost_rub > 0 && (
                       <Tag 
                         color="success" 
                         style={{ 
@@ -306,7 +308,7 @@ const RecipesPage = () => {
                           borderRadius: 4
                         }}
                       >
-                        {item.item_cost_rub.toFixed(2)}₽
+                        {typeof item.item_cost_rub === 'number' ? item.item_cost_rub.toFixed(2) : String(item.item_cost_rub)}₽
                       </Tag>
                     )}
                   </div>
@@ -325,7 +327,7 @@ const RecipesPage = () => {
               }}>
                 <Text type="secondary" style={{ fontSize: '11px' }}>Итого:</Text>
                 <Text strong style={{ color: '#1890ff', fontSize: '13px', fontWeight: 600 }}>
-                  {totalCost.toFixed(2)}₽
+                  {typeof totalCost === 'number' ? totalCost.toFixed(2) : '0.00'}₽
                 </Text>
               </div>
             )}
@@ -347,7 +349,7 @@ const RecipesPage = () => {
       width: 140,
       align: 'right' as const,
       render: (cogs: number | undefined, record: Drink) => {
-        if (cogs === undefined || cogs === null || cogs === 0) {
+        if (cogs === undefined || cogs === null || (typeof cogs === 'number' && cogs === 0)) {
           return (
             <Text type="secondary" style={{ fontSize: '13px' }}>
               —
@@ -361,18 +363,20 @@ const RecipesPage = () => {
           return '#fa8c16'; // Оранжевый для высокой
         };
         
+        const cogsValue = typeof cogs === 'number' ? cogs : 0;
+        
         return (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
             <Text 
               strong 
               style={{ 
-                color: getColor(cogs),
+                color: getColor(cogsValue),
                 fontSize: '15px',
                 fontWeight: 600,
                 lineHeight: 1.2
               }}
             >
-              {cogs.toFixed(2)}₽
+              {cogsValue.toFixed(2)}₽
             </Text>
             {record.items && record.items.length > 0 && (
               <Text 
