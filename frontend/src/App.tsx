@@ -12,6 +12,7 @@ import InventoryPage from './pages/InventoryPage';
 import RecipesPage from './pages/RecipesPage';
 import IngredientsPage from './pages/IngredientsPage';
 import ButtonsPage from './pages/ButtonsPage';
+import MatrixTemplatesPage from './pages/MatrixTemplatesPage';
 import ExpensesPage from './pages/ExpensesPage';
 import OwnerReportPage from './pages/OwnerReportPage';
 import SettingsPage from './pages/SettingsPage';
@@ -85,6 +86,7 @@ function App() {
             <Route path={ROUTES.RECIPES} element={<RecipesPage />} />
             <Route path={ROUTES.INGREDIENTS} element={<IngredientsPage />} />
             <Route path={ROUTES.BUTTONS} element={<ButtonsPage />} />
+            <Route path={ROUTES.MATRIX_TEMPLATES} element={<MatrixTemplatesPage />} />
             <Route path={ROUTES.EXPENSES} element={<ExpensesPage />} />
             <Route path={ROUTES.OWNER_REPORT} element={<OwnerReportPage />} />
             <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />

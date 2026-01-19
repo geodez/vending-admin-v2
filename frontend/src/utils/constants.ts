@@ -44,6 +44,7 @@ export const ROUTES = {
   RECIPES: '/recipes',
   INGREDIENTS: '/ingredients',
   BUTTONS: '/buttons',
+  MATRIX_TEMPLATES: '/matrix-templates',
   EXPENSES: '/expenses',
   OWNER_REPORT: '/owner-report',
   SETTINGS: '/settings',
@@ -91,6 +92,13 @@ export const NAV_ITEMS = [
     path: ROUTES.BUTTONS,
     icon: 'AppstoreOutlined',
     roles: ['owner', 'operator'],
+  },
+  {
+    key: 'matrix-templates',
+    label: 'Шаблоны матриц',
+    path: ROUTES.MATRIX_TEMPLATES,
+    icon: 'AppstoreOutlined',
+    roles: ['owner'],
   },
   {
     key: 'expenses',

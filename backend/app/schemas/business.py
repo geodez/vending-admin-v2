@@ -248,7 +248,6 @@ class ButtonMatrixWithItems(ButtonMatrixResponse):
 
 
 class TerminalMatrixMapCreate(BaseModel):
-    matrix_id: int
     vendista_term_ids: List[int]  # List of terminal IDs to assign
 
 
