@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, Typography, Table, DatePicker, Button, Empty, message, Spin, Modal, Form, Input, InputNumber, Select, Space } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined } from '@ant-design/icons';
 import { expensesApi, Expense, ExpenseCreate } from '../api/expenses';
-import { getLocations } from '../api/business';
-import type { Location } from '@/types/api';
+import { getTerminals, VendistaTerminal } from '../api/sync';
 import { EXPENSE_CATEGORIES } from '../utils/constants';
 import dayjs, { Dayjs } from 'dayjs';
 
@@ -20,8 +19,8 @@ const ExpensesPage = () => {
     dayjs().startOf('month'),
     dayjs()
   ]);
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [locationsLoading, setLocationsLoading] = useState(false);
+  const [terminals, setTerminals] = useState<VendistaTerminal[]>([]);
+  const [terminalsLoading, setTerminalsLoading] = useState(false);
   const [categories, setCategories] = useState<string[]>([...EXPENSE_CATEGORIES]);
   const [newCategoryInput, setNewCategoryInput] = useState('');
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
@@ -41,21 +40,24 @@ const ExpensesPage = () => {
     }
   };
 
-  const fetchLocations = async () => {
-    setLocationsLoading(true);
+  const fetchTerminals = async () => {
+    setTerminalsLoading(true);
     try {
-      const response = await getLocations();
-      setLocations(response.data);
+      const response = await getTerminals();
+      setTerminals(response.data);
     } catch (error: any) {
-      message.error(error.response?.data?.detail || 'Ошибка загрузки локаций');
+      // Ignore error if terminals not synced yet
+      if (error.response?.status !== 404) {
+        console.error('Error fetching terminals:', error);
+      }
     } finally {
-      setLocationsLoading(false);
+      setTerminalsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchExpenses();
-    fetchLocations();
+    fetchTerminals();
   }, []);
 
   const handleCreate = () => {
@@ -128,12 +130,16 @@ const ExpensesPage = () => {
       sorter: (a: Expense, b: Expense) => a.expense_date.localeCompare(b.expense_date),
     },
     {
-      title: 'Локация',
+      title: 'Терминал',
       dataIndex: 'location_id',
       key: 'location_id',
       render: (locationId: number) => {
-        const location = locations.find(l => l.id === locationId);
-        return location ? `${location.name} (ID: ${locationId})` : `ID: ${locationId}`;
+        // Find terminal by location_id (terminals have location_id field)
+        const terminal = terminals.find(t => t.location_id === locationId);
+        if (terminal) {
+          return `${terminal.comment || terminal.title || 'Терминал'} (ID: ${locationId})`;
+        }
+        return `ID: ${locationId}`;
       },
     },
     {
@@ -225,19 +231,23 @@ const ExpensesPage = () => {
           <Form.Item name="expense_date" label="Дата" rules={[{ required: true }]}>
             <DatePicker format="DD.MM.YYYY" style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item name="location_id" label="Локация" rules={[{ required: true, message: 'Выберите локацию' }]}>
+          <Form.Item name="location_id" label="Терминал" rules={[{ required: true, message: 'Выберите терминал' }]}>
             <Select
-              placeholder="Выберите локацию"
-              loading={locationsLoading}
+              placeholder="Выберите терминал"
+              loading={terminalsLoading}
               showSearch
               allowClear
               filterOption={(input, option) =>
                 (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
               }
-              options={locations.map(loc => ({
-                value: loc.id,
-                label: `${loc.name} (ID: ${loc.id})`
-              }))}
+              options={terminals.map(term => {
+                // Use location_id if available, otherwise use terminal id as location_id
+                const locationId = term.location_id || term.id;
+                return {
+                  value: locationId,
+                  label: `${term.comment || term.title || `Терминал #${term.id}`} (ID: ${locationId})`
+                };
+              })}
             />
           </Form.Item>
           <Form.Item name="category" label="Категория" rules={[{ required: true, message: 'Выберите категорию' }]}>
