@@ -55,7 +55,7 @@ export const getSyncStatus = (terminalId?: number) =>
 
 // Get terminals
 export const getTerminals = () =>
-  apiClient.get<VendistaTerminal[]>('/v1/sync/terminals');
+  apiClient.get<VendistaTerminal[]>('/sync/terminals');
 
 // Get transactions
 export const getTransactions = (params?: {
