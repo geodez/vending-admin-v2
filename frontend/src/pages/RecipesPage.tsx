@@ -417,31 +417,35 @@ const RecipesPage = () => {
       fixed: 'right' as const,
       align: 'right' as const,
       render: (_: any, record: Drink) => (
-        <Space>
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-            size="small"
-          >
-            Изменить
-          </Button>
-          <Popconfirm
-            title="Удалить рецепт?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Да"
-            cancelText="Нет"
-          >
+        <div style={{ padding: '4px 0', display: 'flex', justifyContent: 'flex-end' }}>
+          <Space size="small">
             <Button
               type="link"
-              danger
-              icon={<DeleteOutlined />}
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
               size="small"
+              style={{ padding: '0 4px' }}
             >
-              Удалить
+              Изменить
             </Button>
-          </Popconfirm>
-        </Space>
+            <Popconfirm
+              title="Удалить рецепт?"
+              onConfirm={() => handleDelete(record.id)}
+              okText="Да"
+              cancelText="Нет"
+            >
+              <Button
+                type="link"
+                danger
+                icon={<DeleteOutlined />}
+                size="small"
+                style={{ padding: '0 4px' }}
+              >
+                Удалить
+              </Button>
+            </Popconfirm>
+          </Space>
+        </div>
       ),
     },
   ];
