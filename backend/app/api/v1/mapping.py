@@ -1055,4 +1055,3 @@ async def remove_terminal_from_matrix(
     
     if not crud.remove_terminal_from_matrix(db, matrix_id, term_id):
         raise HTTPException(status_code=404, detail="Terminal assignment not found")
-
