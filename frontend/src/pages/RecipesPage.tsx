@@ -275,7 +275,7 @@ const RecipesPage = () => {
         }
         
         return (
-          <Space direction="vertical" size={4} style={{ width: '100%', padding: 0 }}>
+          <div style={{ width: '100%', padding: '4px 0' }}>
             {items.map((item, idx) => {
               // Используем display_name_ru из item, если есть, иначе ищем в списке ингредиентов
               const ingredientName = item.display_name_ru || (() => {
@@ -287,10 +287,10 @@ const RecipesPage = () => {
               })();
               
               return (
-                <div key={idx} style={{ fontSize: '12px', lineHeight: '1.5', marginBottom: 2 }}>
+                <div key={idx} style={{ fontSize: '12px', lineHeight: '1.6', marginBottom: 4, minHeight: 20 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <Tag color="blue" style={{ margin: 0, fontSize: '11px', padding: '1px 6px' }}>{ingredientName}</Tag>
-                    <Text type="secondary" style={{ fontSize: '11px' }}>
+                    <Tag color="blue" style={{ margin: 0, fontSize: '11px', padding: '2px 6px', lineHeight: '1.4' }}>{ingredientName}</Tag>
+                    <Text type="secondary" style={{ fontSize: '11px', lineHeight: '1.4' }}>
                       {(() => {
                         const qty = item.qty_per_unit;
                         if (qty == null || qty === undefined) return '0';
@@ -310,8 +310,9 @@ const RecipesPage = () => {
                             margin: 0, 
                             fontWeight: 600,
                             fontSize: '10px',
-                            padding: '1px 6px',
-                            borderRadius: 3
+                            padding: '2px 6px',
+                            borderRadius: 3,
+                            lineHeight: '1.4'
                           }}
                         >
                           {typeof cost === 'number' ? cost.toFixed(2) : String(cost)}₽
@@ -322,7 +323,7 @@ const RecipesPage = () => {
                 </div>
               );
             })}
-          </Space>
+          </div>
         );
       },
     },
@@ -357,14 +358,15 @@ const RecipesPage = () => {
         const cogsValue = typeof cogs === 'number' ? cogs : 0;
         
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, padding: '4px 0' }}>
             <Text 
               strong 
               style={{ 
                 color: getColor(cogsValue),
                 fontSize: '15px',
                 fontWeight: 600,
-                lineHeight: 1.2
+                lineHeight: 1.3,
+                whiteSpace: 'nowrap'
               }}
             >
               {cogsValue.toFixed(2)}₽
@@ -374,7 +376,8 @@ const RecipesPage = () => {
                 type="secondary" 
                 style={{ 
                   fontSize: '10px',
-                  lineHeight: 1
+                  lineHeight: 1.2,
+                  whiteSpace: 'nowrap'
                 }}
               >
                 {record.items.filter(item => item.item_cost_rub && item.item_cost_rub > 0).length} ингр.
@@ -397,11 +400,14 @@ const RecipesPage = () => {
       ),
       dataIndex: 'is_active',
       key: 'is_active',
-      width: 100,
+      width: 90,
+      align: 'center' as const,
       render: (active: boolean) => (
-        <Tag color={active ? 'green' : 'red'}>
-          {active ? 'Активен' : 'Неактивен'}
-        </Tag>
+        <div style={{ padding: '4px 0' }}>
+          <Tag color={active ? 'green' : 'red'} style={{ margin: 0 }}>
+            {active ? 'Активен' : 'Неактивен'}
+          </Tag>
+        </div>
       ),
     },
     {
