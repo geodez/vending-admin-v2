@@ -11,7 +11,7 @@ import type {
 } from '@/types/api';
 
 // Locations
-export const getLocations = () => apiClient.get<Location[]>('/business/locations/');
+export const getLocations = () => apiClient.get<Location[]>('/locations');
 export const createLocation = (data: { name: string }) => 
   apiClient.post<Location>('/v1/business/locations', data);
 export const updateLocation = (id: number, data: { name: string }) =>
