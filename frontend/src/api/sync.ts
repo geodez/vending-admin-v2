@@ -30,11 +30,11 @@ export interface SyncRun {
 
 export interface VendistaTerminal {
   id: number;
-  vendista_term_id: number;
-  title: string;
+  title: string | null;
   comment: string | null;
   is_active: boolean;
-  location_id: number | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface VendistaTransaction {
