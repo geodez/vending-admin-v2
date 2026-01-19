@@ -11,6 +11,8 @@ from app.api.deps import get_current_user
 from app.models.user import User
 from app.services.vendista_sync import sync_service
 from app.services.vendista_client import vendista_client
+from app.crud import vendista as crud_vendista
+from app.schemas.vendista import VendistaTerminalResponse
 import logging
 
 logger = logging.getLogger(__name__)
@@ -292,6 +294,23 @@ async def get_sync_runs(
         })
     
     return runs
+
+
+@router.get("/terminals", response_model=List[VendistaTerminalResponse])
+async def get_vendista_terminals(
+    is_active: Optional[bool] = Query(None, description="Filter by active status"),
+    skip: int = Query(0, ge=0, description="Skip records"),
+    limit: int = Query(1000, ge=1, le=10000, description="Limit records"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get list of Vendista terminals from vendista_terminals table.
+    
+    Returns terminals with id, title, comment, and is_active status.
+    """
+    terminals = crud_vendista.get_terminals(db, skip=skip, limit=limit, is_active=is_active)
+    return terminals
 
 
 @router.post("/runs/{run_id}/rerun")
