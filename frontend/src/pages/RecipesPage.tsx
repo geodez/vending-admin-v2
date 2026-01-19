@@ -249,14 +249,14 @@ const RecipesPage = () => {
       dataIndex: 'id',
       key: 'id',
       width: 60,
-      fixed: 'left' as const,
+      align: 'center' as const,
     },
     {
       title: 'Название',
       dataIndex: 'name',
       key: 'name',
-      width: 200,
-      fixed: 'left' as const,
+      width: 220,
+      align: 'left' as const,
       render: (text: string) => text || '-',
     },
     {
@@ -267,8 +267,9 @@ const RecipesPage = () => {
       ),
       dataIndex: 'items',
       key: 'items',
+      width: 400,
       align: 'left' as const,
-      ellipsis: true,
+      ellipsis: false,
       render: (items: DrinkItem[] | undefined) => {
         if (!items || items.length === 0) {
           return <Text type="secondary" style={{ fontSize: '13px' }}>Нет ингредиентов</Text>;
@@ -337,7 +338,7 @@ const RecipesPage = () => {
       ),
       dataIndex: 'cogs_rub',
       key: 'cogs_rub',
-      width: 120,
+      width: 140,
       align: 'right' as const,
       render: (cogs: number | undefined, record: Drink) => {
         if (cogs === undefined || cogs === null || (typeof cogs === 'number' && cogs === 0)) {
@@ -397,7 +398,7 @@ const RecipesPage = () => {
       ),
       dataIndex: 'is_active',
       key: 'is_active',
-      width: 90,
+      width: 100,
       align: 'center' as const,
       render: (active: boolean) => (
         <Tag color={active ? 'green' : 'red'} style={{ margin: 0 }}>
@@ -408,8 +409,7 @@ const RecipesPage = () => {
     {
       title: 'Действия',
       key: 'actions',
-      width: 120,
-      fixed: 'right' as const,
+      width: 150,
       align: 'right' as const,
       render: (_: any, record: Drink) => (
         <Space size="small">
@@ -531,7 +531,7 @@ const RecipesPage = () => {
                     rowKey="id"
                     rowSelection={rowSelection}
                     pagination={false}
-                    scroll={{ x: 'max-content' }}
+                    scroll={{ x: 1030 }}
                     size="small"
                   />
                 </Card>
@@ -545,7 +545,7 @@ const RecipesPage = () => {
               rowKey="id"
               rowSelection={rowSelection}
               pagination={{ pageSize: 20 }}
-              scroll={{ x: 800 }}
+              scroll={{ x: 1030 }}
             />
           )
         ) : (
