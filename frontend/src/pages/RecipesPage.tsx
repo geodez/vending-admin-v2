@@ -248,12 +248,15 @@ const RecipesPage = () => {
       title: 'ID',
       dataIndex: 'id',
       key: 'id',
-      width: 80,
+      width: 60,
+      fixed: 'left' as const,
     },
     {
       title: 'Название',
       dataIndex: 'name',
       key: 'name',
+      width: 200,
+      fixed: 'left' as const,
       render: (text: string) => text || '-',
     },
     {
@@ -264,15 +267,15 @@ const RecipesPage = () => {
       ),
       dataIndex: 'items',
       key: 'items',
-      width: 350,
       align: 'left' as const,
+      ellipsis: true,
       render: (items: DrinkItem[] | undefined) => {
         if (!items || items.length === 0) {
           return <Text type="secondary" style={{ fontSize: '13px' }}>Нет ингредиентов</Text>;
         }
         
         return (
-          <Space direction="vertical" size={6} style={{ width: '100%' }}>
+          <Space direction="vertical" size={4} style={{ width: '100%', padding: 0 }}>
             {items.map((item, idx) => {
               // Используем display_name_ru из item, если есть, иначе ищем в списке ингредиентов
               const ingredientName = item.display_name_ru || (() => {
@@ -284,10 +287,10 @@ const RecipesPage = () => {
               })();
               
               return (
-                <div key={idx} style={{ fontSize: '12px', lineHeight: '1.6', marginBottom: 4 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <Tag color="blue" style={{ margin: 0 }}>{ingredientName}</Tag>
-                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                <div key={idx} style={{ fontSize: '12px', lineHeight: '1.5', marginBottom: 2 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <Tag color="blue" style={{ margin: 0, fontSize: '11px', padding: '1px 6px' }}>{ingredientName}</Tag>
+                    <Text type="secondary" style={{ fontSize: '11px' }}>
                       {(() => {
                         const qty = item.qty_per_unit;
                         if (qty == null || qty === undefined) return '0';
@@ -306,9 +309,9 @@ const RecipesPage = () => {
                           style={{ 
                             margin: 0, 
                             fontWeight: 600,
-                            fontSize: '11px',
-                            padding: '2px 8px',
-                            borderRadius: 4
+                            fontSize: '10px',
+                            padding: '1px 6px',
+                            borderRadius: 3
                           }}
                         >
                           {typeof cost === 'number' ? cost.toFixed(2) : String(cost)}₽
@@ -334,7 +337,7 @@ const RecipesPage = () => {
       ),
       dataIndex: 'cogs_rub',
       key: 'cogs_rub',
-      width: 140,
+      width: 120,
       align: 'right' as const,
       render: (cogs: number | undefined, record: Drink) => {
         if (cogs === undefined || cogs === null || (typeof cogs === 'number' && cogs === 0)) {
@@ -404,8 +407,9 @@ const RecipesPage = () => {
     {
       title: 'Действия',
       key: 'actions',
-      width: 150,
+      width: 120,
       fixed: 'right' as const,
+      align: 'right' as const,
       render: (_: any, record: Drink) => (
         <Space>
           <Button
@@ -526,7 +530,7 @@ const RecipesPage = () => {
                     rowKey="id"
                     rowSelection={rowSelection}
                     pagination={false}
-                    scroll={{ x: 800 }}
+                    scroll={{ x: 'max-content' }}
                     size="small"
                   />
                 </Card>
