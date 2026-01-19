@@ -265,20 +265,15 @@ const RecipesPage = () => {
       dataIndex: 'items',
       key: 'items',
       width: 350,
+      align: 'left' as const,
       render: (items: DrinkItem[] | undefined) => {
         if (!items || items.length === 0) {
           return <Text type="secondary" style={{ fontSize: '13px' }}>Нет ингредиентов</Text>;
         }
         
-        // Подсчитываем общую стоимость для отображения
-        const totalCost = items.reduce((sum, item) => {
-          return sum + (item.item_cost_rub || 0);
-        }, 0);
-        
         return (
-          <div style={{ width: '100%' }}>
-            <Space direction="vertical" size={6} style={{ width: '100%' }}>
-              {items.map((item, idx) => {
+          <Space direction="vertical" size={6} style={{ width: '100%' }}>
+            {items.map((item, idx) => {
               // Используем display_name_ru из item, если есть, иначе ищем в списке ингредиентов
               const ingredientName = item.display_name_ru || (() => {
                 const ingredient = ingredients.find(ing => {
@@ -323,24 +318,8 @@ const RecipesPage = () => {
                   </div>
                 </div>
               );
-              })}
-            </Space>
-            {totalCost > 0 && (
-              <div style={{ 
-                marginTop: 8, 
-                paddingTop: 8, 
-                borderTop: '1px solid #f0f0f0',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <Text type="secondary" style={{ fontSize: '11px' }}>Итого:</Text>
-                <Text strong style={{ color: '#1890ff', fontSize: '13px', fontWeight: 600 }}>
-                  {typeof totalCost === 'number' ? totalCost.toFixed(2) : '0.00'}₽
-                </Text>
-              </div>
-            )}
-          </div>
+            })}
+          </Space>
         );
       },
     },
