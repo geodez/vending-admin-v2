@@ -117,8 +117,19 @@ const IngredientsPage = () => {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+      
+      // Обрабатываем ingredient_group и brand_name - могут быть массивами из-за mode="tags"
+      const ingredientGroup = Array.isArray(values.ingredient_group) 
+        ? values.ingredient_group[0] || null 
+        : values.ingredient_group;
+      const brandName = Array.isArray(values.brand_name) 
+        ? values.brand_name[0] || null 
+        : values.brand_name;
+      
       const data: IngredientFormData = {
         ...values,
+        ingredient_group: ingredientGroup || undefined,
+        brand_name: brandName || undefined,
         cost_per_unit_rub: values.cost_per_unit_rub || undefined,
         default_load_qty: values.default_load_qty || undefined,
         alert_threshold: values.alert_threshold || undefined,
@@ -636,22 +647,55 @@ const IngredientsPage = () => {
             name="ingredient_group"
             label="Группа"
           >
-            <Input placeholder="Например: Coffee, Milk, Syrups" />
+            <Select 
+              placeholder="Выберите или введите новую группу" 
+              allowClear
+              showSearch
+              mode="tags"
+              maxTagCount={1}
+              filterOption={(input, option) => {
+                if (!input) return true;
+                const label = option?.label ?? '';
+                return label.toLowerCase().includes(input.toLowerCase());
+              }}
+              options={uniqueGroups.map(group => ({ value: group, label: group }))}
+              tokenSeparators={[',']}
+            />
           </Form.Item>
 
           <Form.Item
             name="brand_name"
             label="Бренд"
           >
-            <Input placeholder="Название бренда" />
+            <Select 
+              placeholder="Выберите или введите новый бренд" 
+              allowClear
+              showSearch
+              mode="tags"
+              maxTagCount={1}
+              filterOption={(input, option) => {
+                if (!input) return true;
+                const label = option?.label ?? '';
+                return label.toLowerCase().includes(input.toLowerCase());
+              }}
+              options={uniqueBrands.map(brand => ({ value: brand, label: brand }))}
+              tokenSeparators={[',']}
+            />
           </Form.Item>
 
           <Form.Item
             name="unit"
             label="Единица измерения"
-            rules={[{ required: true, message: 'Введите единицу измерения' }]}
+            rules={[{ required: true, message: 'Выберите единицу измерения' }]}
           >
-            <Input placeholder="g, ml, pcs" />
+            <Select placeholder="Выберите единицу измерения">
+              <Select.Option value="g">г (граммы)</Select.Option>
+              <Select.Option value="ml">мл (миллилитры)</Select.Option>
+              <Select.Option value="kg">кг (килограммы)</Select.Option>
+              <Select.Option value="l">л (литры)</Select.Option>
+              <Select.Option value="pcs">шт (штуки)</Select.Option>
+              <Select.Option value="pkg">упак (упаковки)</Select.Option>
+            </Select>
           </Form.Item>
 
           <Form.Item
