@@ -801,9 +801,6 @@ async def get_button_matrix(
         item_dict = {
             "machine_item_id": item.machine_item_id,
             "drink_id": item.drink_id,
-        item_dict = {
-            "machine_item_id": item.machine_item_id,
-            "drink_id": item.drink_id,
             "is_active": item.is_active,
             "drink_name": None
         }
@@ -816,7 +813,6 @@ async def get_button_matrix(
                 item_dict["drink_name"] = drink_row[0]
         
         items_with_names.append(ButtonMatrixItemResponse(**item_dict))        
-        items_with_names.append(ButtonMatrixItemResponse(**item_dict))
     
     return ButtonMatrixWithItems(
         id=matrix.id,
