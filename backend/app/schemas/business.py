@@ -184,6 +184,81 @@ class MachineMatrixResponse(MachineMatrixBase):
     vendista_term_id: int
     machine_item_id: int
     created_at: datetime
+    term_name: Optional[str] = None
+    drink_name: Optional[str] = None
+    location_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ============================================================================
+# Button Matrix Schemas (New Template System)
+# ============================================================================
+
+class ButtonMatrixBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    is_active: bool = True
+
+
+class ButtonMatrixCreate(ButtonMatrixBase):
+    pass
+
+
+class ButtonMatrixUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class ButtonMatrixResponse(ButtonMatrixBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ButtonMatrixItemBase(BaseModel):
+    machine_item_id: int
+    drink_id: Optional[int] = None
+    is_active: bool = True
+
+
+class ButtonMatrixItemCreate(ButtonMatrixItemBase):
+    pass
+
+
+class ButtonMatrixItemUpdate(BaseModel):
+    drink_id: Optional[int] = None
+    is_active: Optional[bool] = None
+
+
+class ButtonMatrixItemResponse(ButtonMatrixItemBase):
+    drink_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ButtonMatrixWithItems(ButtonMatrixResponse):
+    items: List[ButtonMatrixItemResponse] = []
+
+
+class TerminalMatrixMapCreate(BaseModel):
+    matrix_id: int
+    vendista_term_ids: List[int]  # List of terminal IDs to assign
+
+
+class TerminalMatrixMapResponse(BaseModel):
+    matrix_id: int
+    matrix_name: str
+    vendista_term_id: int
+    term_name: Optional[str] = None
+    is_active: bool
+    created_at: datetime
 
     class Config:
         from_attributes = True

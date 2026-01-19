@@ -10,18 +10,20 @@ class VendistaTerminal(Base):
     """
     Vendista terminal information.
     Stores terminals that are synced from Vendista API.
+    Each terminal belongs to one location.
     """
     __tablename__ = "vendista_terminals"
 
     id = Column(BigInteger, primary_key=True, index=True)  # Vendista terminal ID
     title = Column(Text, nullable=True)  # Terminal title from Vendista
     comment = Column(Text, nullable=True)  # Human-readable comment (e.g., "Островского Терм#1")
+    location_id = Column(Integer, ForeignKey('locations.id', ondelete='SET NULL'), nullable=True)  # Terminal location
     is_active = Column(Boolean, nullable=False, default=True)  # Is terminal active
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     def __repr__(self):
-        return f"<VendistaTerminal(id={self.id}, comment={self.comment})>"
+        return f"<VendistaTerminal(id={self.id}, comment={self.comment}, location_id={self.location_id})>"
 
 
 class VendistaTxRaw(Base):

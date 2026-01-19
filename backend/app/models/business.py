@@ -98,3 +98,48 @@ class MachineMatrix(Base):
 
     def __repr__(self):
         return f"<MachineMatrix(term={self.vendista_term_id}, button={self.machine_item_id})>"
+
+
+class ButtonMatrix(Base):
+    """Template for button-to-drink mappings (matrix template)."""
+    __tablename__ = "button_matrices"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(Text, nullable=False, unique=True)
+    description = Column(Text, nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    def __repr__(self):
+        return f"<ButtonMatrix(id={self.id}, name={self.name})>"
+
+
+class ButtonMatrixItem(Base):
+    """Button mapping item in a matrix template.
+    
+    Maps button ID to drink. Location is determined by terminal's location_id.
+    """
+    __tablename__ = "button_matrix_items"
+
+    matrix_id = Column(Integer, ForeignKey('button_matrices.id', ondelete='CASCADE'), primary_key=True)
+    machine_item_id = Column(Integer, primary_key=True)  # Button ID
+    drink_id = Column(Integer, ForeignKey('drinks.id', ondelete='SET NULL'), nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+
+    def __repr__(self):
+        return f"<ButtonMatrixItem(matrix_id={self.matrix_id}, button={self.machine_item_id}, drink_id={self.drink_id})>"
+
+
+class TerminalMatrixMap(Base):
+    """Mapping of terminals to button matrices."""
+    __tablename__ = "terminal_matrix_map"
+
+    matrix_id = Column(Integer, ForeignKey('button_matrices.id', ondelete='CASCADE'), primary_key=True)
+    vendista_term_id = Column(BigInteger, ForeignKey('vendista_terminals.id', ondelete='CASCADE'), primary_key=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+
+    def __repr__(self):
+        return f"<TerminalMatrixMap(matrix_id={self.matrix_id}, term_id={self.vendista_term_id})>"

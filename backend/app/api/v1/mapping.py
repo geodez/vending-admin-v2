@@ -9,7 +9,12 @@ from pydantic import BaseModel, Field
 from app.db.session import get_db
 from app.api.deps import get_current_user
 from app.models.user import User
-from app.schemas.business import DrinkCreate, DrinkResponse, DrinkUpdate, DrinkItemResponse
+from app.schemas.business import (
+    DrinkCreate, DrinkResponse, DrinkUpdate, DrinkItemResponse,
+    ButtonMatrixCreate, ButtonMatrixUpdate, ButtonMatrixResponse, ButtonMatrixWithItems,
+    ButtonMatrixItemCreate, ButtonMatrixItemUpdate, ButtonMatrixItemResponse,
+    TerminalMatrixMapCreate, TerminalMatrixMapResponse
+)
 from app.crud import business as crud
 import logging
 import csv
@@ -761,4 +766,267 @@ async def import_matrix(
         message=f"Successfully imported {inserted} rows"
     )
 
+
+# ===== BUTTON MATRIX ENDPOINTS (New Template System) =====
+
+@router.get("/button-matrices", response_model=List[ButtonMatrixResponse])
+async def get_button_matrices(
+    is_active: Optional[bool] = None,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get list of button matrices (templates)."""
+    matrices = crud.get_button_matrices(db, skip=skip, limit=limit, is_active=is_active)
+    return matrices
+
+
+@router.get("/button-matrices/{matrix_id}", response_model=ButtonMatrixWithItems)
+async def get_button_matrix(
+    matrix_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get button matrix with all items."""
+    matrix = crud.get_button_matrix(db, matrix_id)
+    if not matrix:
+        raise HTTPException(status_code=404, detail="Matrix not found")
+    
+    items = crud.get_button_matrix_items(db, matrix_id)
+    
+    # Get names for items
+    items_with_names = []
+    for item in items:
+        item_dict = {
+            "machine_item_id": item.machine_item_id,
+            "drink_id": item.drink_id,
+            "location_id": item.location_id,
+            "is_active": item.is_active,
+            "drink_name": None,
+            "location_name": None
+        }
+        
+        if item.drink_id:
+            drink_query = text("SELECT name FROM drinks WHERE id = :drink_id")
+            drink_result = db.execute(drink_query, {"drink_id": item.drink_id})
+            drink_row = drink_result.first()
+            if drink_row:
+                item_dict["drink_name"] = drink_row[0]
+        
+        if item.location_id:
+            location_query = text("SELECT name FROM locations WHERE id = :location_id")
+            location_result = db.execute(location_query, {"location_id": item.location_id})
+            location_row = location_result.first()
+            if location_row:
+                item_dict["location_name"] = location_row[0]
+        
+        items_with_names.append(ButtonMatrixItemResponse(**item_dict))
+    
+    return ButtonMatrixWithItems(
+        id=matrix.id,
+        name=matrix.name,
+        description=matrix.description,
+        is_active=matrix.is_active,
+        created_at=matrix.created_at,
+        updated_at=matrix.updated_at,
+        items=items_with_names
+    )
+
+
+@router.post("/button-matrices", response_model=ButtonMatrixResponse, status_code=status.HTTP_201_CREATED)
+async def create_button_matrix(
+    matrix: ButtonMatrixCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new button matrix template."""
+    if current_user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only owners can create matrices")
+    
+    return crud.create_button_matrix(db, matrix)
+
+
+@router.put("/button-matrices/{matrix_id}", response_model=ButtonMatrixResponse)
+async def update_button_matrix(
+    matrix_id: int,
+    matrix_update: ButtonMatrixUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update button matrix."""
+    if current_user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only owners can update matrices")
+    
+    matrix = crud.update_button_matrix(db, matrix_id, matrix_update)
+    if not matrix:
+        raise HTTPException(status_code=404, detail="Matrix not found")
+    
+    return matrix
+
+
+@router.delete("/button-matrices/{matrix_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_button_matrix(
+    matrix_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete button matrix."""
+    if current_user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only owners can delete matrices")
+    
+    if not crud.delete_button_matrix(db, matrix_id):
+        raise HTTPException(status_code=404, detail="Matrix not found")
+
+
+@router.post("/button-matrices/{matrix_id}/items", response_model=ButtonMatrixItemResponse, status_code=status.HTTP_201_CREATED)
+async def create_button_matrix_item(
+    matrix_id: int,
+    item: ButtonMatrixItemCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Add item to button matrix."""
+    if current_user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only owners can modify matrices")
+    
+    # Check matrix exists
+    matrix = crud.get_button_matrix(db, matrix_id)
+    if not matrix:
+        raise HTTPException(status_code=404, detail="Matrix not found")
+    
+    return crud.create_button_matrix_item(db, matrix_id, item)
+
+
+@router.put("/button-matrices/{matrix_id}/items/{machine_item_id}", response_model=ButtonMatrixItemResponse)
+async def update_button_matrix_item(
+    matrix_id: int,
+    machine_item_id: int,
+    item_update: ButtonMatrixItemUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update button matrix item."""
+    if current_user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only owners can modify matrices")
+    
+    item = crud.update_button_matrix_item(db, matrix_id, machine_item_id, item_update)
+    if not item:
+        raise HTTPException(status_code=404, detail="Matrix item not found")
+    
+    return item
+
+
+@router.delete("/button-matrices/{matrix_id}/items/{machine_item_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_button_matrix_item(
+    matrix_id: int,
+    machine_item_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete button matrix item."""
+    if current_user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only owners can modify matrices")
+    
+    if not crud.delete_button_matrix_item(db, matrix_id, machine_item_id):
+        raise HTTPException(status_code=404, detail="Matrix item not found")
+
+
+@router.post("/button-matrices/{matrix_id}/assign-terminals", response_model=List[TerminalMatrixMapResponse])
+async def assign_terminals_to_matrix(
+    matrix_id: int,
+    request: TerminalMatrixMapCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Assign terminals to a button matrix."""
+    if current_user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only owners can assign terminals")
+    
+    # Check matrix exists
+    matrix = crud.get_button_matrix(db, matrix_id)
+    if not matrix:
+        raise HTTPException(status_code=404, detail="Matrix not found")
+    
+    # Validate terminals exist
+    for term_id in request.vendista_term_ids:
+        term_check = text("SELECT id FROM vendista_terminals WHERE id = :term_id")
+        term_result = db.execute(term_check, {"term_id": term_id})
+        if not term_result.first():
+            raise HTTPException(status_code=404, detail=f"Terminal {term_id} not found")
+    
+    # Assign terminals
+    assignments = crud.assign_terminals_to_matrix(db, matrix_id, request.vendista_term_ids)
+    
+    # Get names for response
+    result = []
+    for assignment in assignments:
+        term_query = text("""
+            SELECT vt.comment 
+            FROM vendista_terminals vt 
+            WHERE vt.id = :term_id
+        """)
+        term_result = db.execute(term_query, {"term_id": assignment.vendista_term_id})
+        term_row = term_result.first()
+        
+        result.append(TerminalMatrixMapResponse(
+            matrix_id=assignment.matrix_id,
+            matrix_name=matrix.name,
+            vendista_term_id=assignment.vendista_term_id,
+            term_name=term_row[0] if term_row else None,
+            is_active=assignment.is_active,
+            created_at=assignment.created_at
+        ))
+    
+    return result
+
+
+@router.get("/button-matrices/{matrix_id}/terminals", response_model=List[TerminalMatrixMapResponse])
+async def get_matrix_terminals(
+    matrix_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get terminals assigned to a matrix."""
+    matrix = crud.get_button_matrix(db, matrix_id)
+    if not matrix:
+        raise HTTPException(status_code=404, detail="Matrix not found")
+    
+    assignments = crud.get_terminal_matrix_maps(db, matrix_id=matrix_id)
+    
+    result = []
+    for assignment in assignments:
+        term_query = text("""
+            SELECT vt.comment 
+            FROM vendista_terminals vt 
+            WHERE vt.id = :term_id
+        """)
+        term_result = db.execute(term_query, {"term_id": assignment.vendista_term_id})
+        term_row = term_result.first()
+        
+        result.append(TerminalMatrixMapResponse(
+            matrix_id=assignment.matrix_id,
+            matrix_name=matrix.name,
+            vendista_term_id=assignment.vendista_term_id,
+            term_name=term_row[0] if term_row else None,
+            is_active=assignment.is_active,
+            created_at=assignment.created_at
+        ))
+    
+    return result
+
+
+@router.delete("/button-matrices/{matrix_id}/terminals/{term_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_terminal_from_matrix(
+    matrix_id: int,
+    term_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Remove terminal from matrix."""
+    if current_user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only owners can modify matrices")
+    
+    if not crud.remove_terminal_from_matrix(db, matrix_id, term_id):
+        raise HTTPException(status_code=404, detail="Terminal assignment not found")
 

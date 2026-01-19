@@ -55,6 +55,7 @@ class VendistaTerminalBase(BaseModel):
     """Base schema for Vendista Terminal."""
     title: Optional[str] = None
     comment: Optional[str] = None
+    location_id: Optional[int] = None  # Terminal location
     is_active: bool = True
 
 
@@ -67,12 +68,14 @@ class VendistaTerminalUpdate(BaseModel):
     """Schema for updating a Vendista Terminal."""
     title: Optional[str] = None
     comment: Optional[str] = None
+    location_id: Optional[int] = None
     is_active: Optional[bool] = None
 
 
 class VendistaTerminalResponse(VendistaTerminalBase):
     """Schema for Vendista Terminal response."""
     id: int
+    location_name: Optional[str] = None  # Location name for display
     created_at: datetime
     updated_at: datetime
 
