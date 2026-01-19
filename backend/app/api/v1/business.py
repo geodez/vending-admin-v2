@@ -239,6 +239,22 @@ def update_ingredient(
     return ingredient
 
 
+@router.delete("/ingredients/{ingredient_code}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_ingredient(
+    ingredient_code: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete ingredient."""
+    try:
+        deleted = crud.delete_ingredient(db, ingredient_code)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Ingredient not found")
+    except ValueError as e:
+        # Ингредиент используется в рецептах
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 # ============================================================================
 # Drinks (Recipes)
 # ============================================================================

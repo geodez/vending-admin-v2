@@ -93,6 +93,23 @@ def update_ingredient(db: Session, ingredient_code: str, ingredient_update: Ingr
     return db_ingredient
 
 
+def delete_ingredient(db: Session, ingredient_code: str) -> bool:
+    """Delete ingredient. Returns True if deleted, False if not found."""
+    db_ingredient = get_ingredient(db, ingredient_code)
+    if not db_ingredient:
+        return False
+    
+    # Проверяем, используется ли ингредиент в рецептах
+    from app.models.business import DrinkItem
+    usage_count = db.query(DrinkItem).filter(DrinkItem.ingredient_code == ingredient_code).count()
+    if usage_count > 0:
+        raise ValueError(f"Cannot delete ingredient: it is used in {usage_count} recipe(s)")
+    
+    db.delete(db_ingredient)
+    db.commit()
+    return True
+
+
 # ============================================================================
 # Drink CRUD
 # ============================================================================
