@@ -276,11 +276,23 @@ const IngredientsPage = () => {
       if (values.is_active !== undefined && values.is_active !== null) {
         updateData.is_active = values.is_active;
       }
-      if (values.ingredient_group !== undefined && values.ingredient_group !== null && values.ingredient_group !== '') {
-        updateData.ingredient_group = values.ingredient_group;
+      // Обрабатываем ingredient_group - может быть массивом из-за mode="tags"
+      if (values.ingredient_group !== undefined && values.ingredient_group !== null) {
+        const groupValue = Array.isArray(values.ingredient_group) 
+          ? values.ingredient_group[0] || null 
+          : values.ingredient_group;
+        if (groupValue && groupValue !== '') {
+          updateData.ingredient_group = groupValue;
+        }
       }
-      if (values.brand_name !== undefined && values.brand_name !== null && values.brand_name !== '') {
-        updateData.brand_name = values.brand_name;
+      // Обрабатываем brand_name - может быть массивом из-за mode="tags"
+      if (values.brand_name !== undefined && values.brand_name !== null) {
+        const brandValue = Array.isArray(values.brand_name) 
+          ? values.brand_name[0] || null 
+          : values.brand_name;
+        if (brandValue && brandValue !== '') {
+          updateData.brand_name = brandValue;
+        }
       }
       if (values.unit !== undefined && values.unit !== null && values.unit !== '') {
         updateData.unit = values.unit;
@@ -745,32 +757,42 @@ const IngredientsPage = () => {
           <Form.Item
             name="ingredient_group"
             label="Группа"
-            tooltip="Оставьте пустым, чтобы не изменять"
+            tooltip="Оставьте пустым, чтобы не изменять. Можно ввести новое значение"
           >
             <Select 
-              placeholder="Не изменять" 
+              placeholder="Не изменять или введите новую группу" 
               allowClear
               showSearch
-              filterOption={(input, option) =>
-                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-              }
+              mode="tags"
+              maxTagCount={1}
+              filterOption={(input, option) => {
+                if (!input) return true;
+                const label = option?.label ?? '';
+                return label.toLowerCase().includes(input.toLowerCase());
+              }}
               options={uniqueGroups.map(group => ({ value: group, label: group }))}
+              tokenSeparators={[',']}
             />
           </Form.Item>
 
           <Form.Item
             name="brand_name"
             label="Бренд"
-            tooltip="Оставьте пустым, чтобы не изменять"
+            tooltip="Оставьте пустым, чтобы не изменять. Можно ввести новое значение"
           >
             <Select 
-              placeholder="Не изменять" 
+              placeholder="Не изменять или введите новый бренд" 
               allowClear
               showSearch
-              filterOption={(input, option) =>
-                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-              }
+              mode="tags"
+              maxTagCount={1}
+              filterOption={(input, option) => {
+                if (!input) return true;
+                const label = option?.label ?? '';
+                return label.toLowerCase().includes(input.toLowerCase());
+              }}
               options={uniqueBrands.map(brand => ({ value: brand, label: brand }))}
+              tokenSeparators={[',']}
             />
           </Form.Item>
 
