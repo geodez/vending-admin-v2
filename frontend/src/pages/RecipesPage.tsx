@@ -293,24 +293,33 @@ const RecipesPage = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <Tag color="blue" style={{ margin: 0 }}>{ingredientName}</Tag>
                     <Text type="secondary" style={{ fontSize: '12px' }}>
-                      {item.qty_per_unit != null && item.qty_per_unit !== undefined 
-                        ? (typeof item.qty_per_unit === 'number' ? item.qty_per_unit.toFixed(item.unit === 'g' || item.unit === 'ml' ? 0 : 2) : String(item.qty_per_unit))
-                        : '0'} {item.unit || ''}
+                      {(() => {
+                        const qty = item.qty_per_unit;
+                        if (qty == null || qty === undefined) return '0';
+                        if (typeof qty !== 'number') return String(qty);
+                        const unit = item.unit || '';
+                        const decimals = (unit === 'g' || unit === 'ml') ? 0 : 2;
+                        return qty.toFixed(decimals);
+                      })()} {item.unit || ''}
                     </Text>
-                    {item.item_cost_rub != null && item.item_cost_rub !== undefined && item.item_cost_rub > 0 && (
-                      <Tag 
-                        color="success" 
-                        style={{ 
-                          margin: 0, 
-                          fontWeight: 600,
-                          fontSize: '11px',
-                          padding: '2px 8px',
-                          borderRadius: 4
-                        }}
-                      >
-                        {typeof item.item_cost_rub === 'number' ? item.item_cost_rub.toFixed(2) : String(item.item_cost_rub)}₽
-                      </Tag>
-                    )}
+                    {(() => {
+                      const cost = item.item_cost_rub;
+                      if (cost == null || cost === undefined || cost <= 0) return null;
+                      return (
+                        <Tag 
+                          color="success" 
+                          style={{ 
+                            margin: 0, 
+                            fontWeight: 600,
+                            fontSize: '11px',
+                            padding: '2px 8px',
+                            borderRadius: 4
+                          }}
+                        >
+                          {typeof cost === 'number' ? cost.toFixed(2) : String(cost)}₽
+                        </Tag>
+                      );
+                    })()}
                   </div>
                 </div>
               );
