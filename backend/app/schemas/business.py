@@ -158,38 +158,16 @@ class DrinkResponse(DrinkBase):
 
 
 # ============================================================================
-# Machine Matrix Schemas
+# Button Matrix Schemas (New Template System)
 # ============================================================================
 
-class MachineMatrixBase(BaseModel):
+class ButtonMatrixBase(BaseModel):
     product_external_id: Optional[int] = None
     drink_id: Optional[int] = None
     location_id: Optional[int] = None
     is_active: bool = True
 
 
-class MachineMatrixCreate(MachineMatrixBase):
-    vendista_term_id: int
-    machine_item_id: int
-
-
-class MachineMatrixUpdate(BaseModel):
-    product_external_id: Optional[int] = None
-    drink_id: Optional[int] = None
-    location_id: Optional[int] = None
-    is_active: Optional[bool] = None
-
-
-class MachineMatrixResponse(MachineMatrixBase):
-    vendista_term_id: int
-    machine_item_id: int
-    created_at: datetime
-    term_name: Optional[str] = None
-    drink_name: Optional[str] = None
-    location_name: Optional[str] = None
-
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================
@@ -224,6 +202,7 @@ class ButtonMatrixResponse(ButtonMatrixBase):
 class ButtonMatrixItemBase(BaseModel):
     machine_item_id: int
     drink_id: Optional[int] = None
+    sale_price_rub: Optional[float] = None
     is_active: bool = True
 
 
@@ -233,11 +212,13 @@ class ButtonMatrixItemCreate(ButtonMatrixItemBase):
 
 class ButtonMatrixItemUpdate(BaseModel):
     drink_id: Optional[int] = None
+    sale_price_rub: Optional[float] = None
     is_active: Optional[bool] = None
 
 
 class ButtonMatrixItemResponse(ButtonMatrixItemBase):
     drink_name: Optional[str] = None
+    cogs_rub: Optional[float] = None  # Себестоимость напитка из рецепта
 
     class Config:
         from_attributes = True

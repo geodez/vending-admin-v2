@@ -226,6 +226,252 @@ class VendistaSyncService:
                 "message": f"Error: {str(e)}"
             }
 
+    async def sync_terminals_from_api(self, db: Session) -> dict:
+        """
+        Sync terminals directly from Vendista API.
+        
+        Tries to fetch terminals list from API endpoints.
+        If API endpoint is not available, falls back to transactions method.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            Dict with sync result
+        """
+        from app.crud import vendista as crud_vendista
+        from app.schemas.vendista import VendistaTerminalCreate, VendistaTerminalUpdate
+        
+        try:
+            logger.info("Starting terminal sync from Vendista API")
+            
+            # Try to fetch terminals from API
+            api_result = await vendista_client.get_terminals()
+            
+            if not api_result.get("success") or not api_result.get("terminals"):
+                logger.warning("Could not fetch terminals from API, falling back to transactions method")
+                return self.sync_terminals_from_transactions(db)
+            
+            terminals_data = api_result["terminals"]
+            logger.info(f"Received {len(terminals_data)} terminals from API")
+            
+            synced_count = 0
+            created_count = 0
+            updated_count = 0
+            terminals = []
+            
+            for term_data in terminals_data:
+                try:
+                    # Try to extract terminal info from different possible formats
+                    term_id = term_data.get("id") or term_data.get("term_id") or term_data.get("terminal_id")
+                    if not term_id:
+                        logger.warning(f"Skipping terminal with missing ID: {term_data}")
+                        continue
+                    
+                    # Try different field names for comment/title
+                    comment = (
+                        term_data.get("comment") or 
+                        term_data.get("terminal_comment") or 
+                        term_data.get("name") or 
+                        term_data.get("title") or
+                        term_data.get("description") or
+                        None
+                    )
+                    
+                    title = (
+                        term_data.get("title") or 
+                        term_data.get("terminal_id") or
+                        term_data.get("device_id") or
+                        None
+                    )
+                    
+                    is_active = term_data.get("is_active", True)
+                    if isinstance(is_active, str):
+                        is_active = is_active.lower() in ("true", "1", "yes", "active")
+                    
+                    # Check if terminal already exists
+                    existing_terminal = crud_vendista.get_terminal(db, term_id)
+                    
+                    if existing_terminal:
+                        # Update existing terminal
+                        needs_update = False
+                        update_data_dict = {}
+                        
+                        if comment and existing_terminal.comment != comment:
+                            update_data_dict["comment"] = comment
+                            needs_update = True
+                        if title and existing_terminal.title != title:
+                            update_data_dict["title"] = title
+                            needs_update = True
+                        if existing_terminal.is_active != is_active:
+                            update_data_dict["is_active"] = is_active
+                            needs_update = True
+                        
+                        if needs_update:
+                            update_data = VendistaTerminalUpdate(**update_data_dict)
+                            crud_vendista.update_terminal(db, term_id, update_data)
+                            updated_count += 1
+                            logger.info(f"Updated terminal {term_id}: {comment or title}")
+                        else:
+                            logger.debug(f"Terminal {term_id} already up to date")
+                    else:
+                        # Create new terminal
+                        terminal_data = VendistaTerminalCreate(
+                            id=term_id,
+                            title=title,
+                            comment=comment,
+                            is_active=is_active
+                        )
+                        crud_vendista.create_terminal(db, terminal_data)
+                        created_count += 1
+                        logger.info(f"Created terminal {term_id}: {comment or title}")
+                    
+                    synced_count += 1
+                    terminals.append({
+                        "id": term_id,
+                        "comment": comment,
+                        "title": title
+                    })
+                    
+                except Exception as e:
+                    logger.error(f"Error processing terminal: {e}", exc_info=True)
+                    continue
+            
+            db.commit()
+            
+            logger.info(
+                f"Terminal sync from API completed: {synced_count} total, "
+                f"{created_count} created, {updated_count} updated"
+            )
+            
+            return {
+                "success": True,
+                "source": "api",
+                "synced_count": synced_count,
+                "created_count": created_count,
+                "updated_count": updated_count,
+                "terminals": terminals,
+                "message": f"Синхронизировано терминалов из API: {synced_count} (создано: {created_count}, обновлено: {updated_count})"
+            }
+            
+        except Exception as e:
+            logger.error(f"Terminal sync from API failed: {e}", exc_info=True)
+            db.rollback()
+            # Fallback to transactions method
+            logger.info("Falling back to transactions sync method")
+            return self.sync_terminals_from_transactions(db)
+
+    def sync_terminals_from_transactions(self, db: Session) -> dict:
+        """
+        Sync terminals from vendista_tx_raw transactions into vendista_terminals table.
+        
+        Extracts unique terminals from transaction payloads and creates/updates
+        terminal records with title (from terminal_comment) and comment.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            Dict with sync result: {success, synced_count, updated_count, created_count, terminals}
+        """
+        from sqlalchemy import text
+        from app.crud import vendista as crud_vendista
+        from app.schemas.vendista import VendistaTerminalCreate
+        
+        try:
+            logger.info("Starting terminal sync from transactions")
+            
+            # Extract unique terminals from transactions
+            query = text("""
+                SELECT DISTINCT ON (term_id)
+                    term_id,
+                    MAX(payload->>'terminal_comment') as terminal_comment,
+                    MAX(payload->>'terminal_id') as terminal_id
+                FROM vendista_tx_raw
+                WHERE term_id IS NOT NULL
+                GROUP BY term_id
+                ORDER BY term_id
+            """)
+            
+            result = db.execute(query)
+            terminal_rows = result.fetchall()
+            
+            logger.info(f"Found {len(terminal_rows)} unique terminals in transactions")
+            
+            synced_count = 0
+            created_count = 0
+            updated_count = 0
+            terminals = []
+            
+            for row in terminal_rows:
+                term_id = row.term_id
+                terminal_comment = row.terminal_comment or ""
+                terminal_id = row.terminal_id or ""
+                
+                # Check if terminal already exists
+                existing_terminal = crud_vendista.get_terminal(db, term_id)
+                
+                if existing_terminal:
+                    # Update existing terminal if comment changed
+                    if existing_terminal.comment != terminal_comment:
+                        from app.schemas.vendista import VendistaTerminalUpdate
+                        update_data = VendistaTerminalUpdate(
+                            comment=terminal_comment if terminal_comment else None
+                        )
+                        crud_vendista.update_terminal(db, term_id, update_data)
+                        updated_count += 1
+                        logger.info(f"Updated terminal {term_id}: {terminal_comment}")
+                    else:
+                        logger.debug(f"Terminal {term_id} already exists, skipping")
+                else:
+                    # Create new terminal
+                    terminal_data = VendistaTerminalCreate(
+                        id=term_id,
+                        title=terminal_id if terminal_id else None,  # Use terminal_id as title
+                        comment=terminal_comment if terminal_comment else None,
+                        is_active=True
+                    )
+                    crud_vendista.create_terminal(db, terminal_data)
+                    created_count += 1
+                    logger.info(f"Created terminal {term_id}: {terminal_comment}")
+                
+                synced_count += 1
+                terminals.append({
+                    "id": term_id,
+                    "comment": terminal_comment,
+                    "terminal_id": terminal_id
+                })
+            
+            db.commit()
+            
+            logger.info(
+                f"Terminal sync completed: {synced_count} total, "
+                f"{created_count} created, {updated_count} updated"
+            )
+            
+            return {
+                "success": True,
+                "source": "transactions",
+                "synced_count": synced_count,
+                "created_count": created_count,
+                "updated_count": updated_count,
+                "terminals": terminals,
+                "message": f"Синхронизировано терминалов из транзакций: {synced_count} (создано: {created_count}, обновлено: {updated_count})"
+            }
+            
+        except Exception as e:
+            logger.error(f"Terminal sync failed: {e}", exc_info=True)
+            db.rollback()
+            return {
+                "success": False,
+                "source": "transactions",
+                "synced_count": 0,
+                "created_count": 0,
+                "updated_count": 0,
+                "terminals": [],
+                "message": f"Ошибка синхронизации: {str(e)}"
+            }
+
 
 # Singleton instance
 sync_service = VendistaSyncService()

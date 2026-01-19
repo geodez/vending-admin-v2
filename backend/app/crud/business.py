@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
 from app.models.business import (
-    Location, Product, Ingredient, Drink, DrinkItem, MachineMatrix,
+    Location, Product, Ingredient, Drink, DrinkItem,
     ButtonMatrix, ButtonMatrixItem, TerminalMatrixMap
 )
 from app.models.inventory import IngredientLoad, VariableExpense
@@ -172,28 +172,6 @@ def update_drink(db: Session, drink_id: int, drink_update: DrinkUpdate) -> Optio
 # ============================================================================
 # Machine Matrix CRUD
 # ============================================================================
-
-def get_machine_matrix(db: Session, term_id: int, machine_item_id: int) -> Optional[MachineMatrix]:
-    return db.query(MachineMatrix).filter(
-        MachineMatrix.vendista_term_id == term_id,
-        MachineMatrix.machine_item_id == machine_item_id
-    ).first()
-
-
-def get_machine_matrices(db: Session, term_id: Optional[int] = None, skip: int = 0, limit: int = 100) -> List[MachineMatrix]:
-    query = db.query(MachineMatrix)
-    if term_id:
-        query = query.filter(MachineMatrix.vendista_term_id == term_id)
-    return query.offset(skip).limit(limit).all()
-
-
-def create_machine_matrix(db: Session, matrix: MachineMatrixCreate) -> MachineMatrix:
-    db_matrix = MachineMatrix(**matrix.model_dump())
-    db.add(db_matrix)
-    db.commit()
-    db.refresh(db_matrix)
-    return db_matrix
-
 
 # ============================================================================
 # Button Matrix CRUD (New Template System)

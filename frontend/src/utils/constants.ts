@@ -43,7 +43,6 @@ export const ROUTES = {
   INVENTORY: '/inventory',
   RECIPES: '/recipes',
   INGREDIENTS: '/ingredients',
-  BUTTONS: '/buttons',
   MATRIX_TEMPLATES: '/matrix-templates',
   EXPENSES: '/expenses',
   OWNER_REPORT: '/owner-report',
@@ -84,13 +83,6 @@ export const NAV_ITEMS = [
     label: 'Ингредиенты',
     path: ROUTES.INGREDIENTS,
     icon: 'ShoppingOutlined',
-    roles: ['owner', 'operator'],
-  },
-  {
-    key: 'buttons',
-    label: 'Кнопки',
-    path: ROUTES.BUTTONS,
-    icon: 'AppstoreOutlined',
     roles: ['owner', 'operator'],
   },
   {

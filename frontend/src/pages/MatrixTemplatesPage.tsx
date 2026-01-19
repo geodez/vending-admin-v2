@@ -5,7 +5,7 @@ import {
 } from 'antd';
 import { 
   PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined, 
-  SearchOutlined, AppstoreOutlined, LinkOutlined, UnlinkOutlined
+  SearchOutlined, AppstoreOutlined, LinkOutlined, DisconnectOutlined
 } from '@ant-design/icons';
 import { 
   mappingApi, ButtonMatrix, ButtonMatrixWithItems, ButtonMatrixItem, 
@@ -187,6 +187,7 @@ const MatrixTemplatesPage = () => {
     itemForm.setFieldsValue({
       machine_item_id: item.machine_item_id,
       drink_id: item.drink_id,
+      sale_price_rub: item.sale_price_rub,
       is_active: item.is_active
     });
     setItemModalOpen(true);
@@ -196,22 +197,34 @@ const MatrixTemplatesPage = () => {
     if (!selectedMatrix) return;
     try {
       const values = await itemForm.validateFields();
+      // Преобразуем machine_item_id в число
+      const itemData = {
+        ...values,
+        machine_item_id: Number(values.machine_item_id),
+        drink_id: values.drink_id ? Number(values.drink_id) : null,
+        sale_price_rub: values.sale_price_rub ? Number(values.sale_price_rub) : null,
+      };
+      
       if (editingItem) {
         await mappingApi.updateButtonMatrixItem(
           selectedMatrix.id,
           editingItem.machine_item_id,
-          values
+          itemData
         );
         message.success('Элемент обновлен');
       } else {
-        await mappingApi.createButtonMatrixItem(selectedMatrix.id, values);
+        await mappingApi.createButtonMatrixItem(selectedMatrix.id, itemData);
         message.success('Элемент добавлен');
       }
       setItemModalOpen(false);
       itemForm.resetFields();
       fetchMatrixDetails(selectedMatrix.id);
     } catch (error: any) {
-      if (error.errorFields) return;
+      if (error.errorFields) {
+        console.error('Validation errors:', error.errorFields);
+        return;
+      }
+      console.error('Save error:', error);
       message.error(error.response?.data?.detail || 'Ошибка сохранения');
     }
   };
@@ -364,6 +377,38 @@ const MatrixTemplatesPage = () => {
       ),
     },
     {
+      title: 'Себестоимость',
+      key: 'cogs',
+      width: 120,
+      align: 'right' as const,
+      render: (_: any, record: ButtonMatrixItem) => {
+        if (record.cogs_rub === null || record.cogs_rub === undefined) {
+          return <Text type="secondary">—</Text>;
+        }
+        return (
+          <Text style={{ color: '#52c41a', fontWeight: 500 }}>
+            {record.cogs_rub.toFixed(2)} ₽
+          </Text>
+        );
+      },
+    },
+    {
+      title: 'Цена продажи',
+      key: 'sale_price',
+      width: 140,
+      align: 'right' as const,
+      render: (_: any, record: ButtonMatrixItem) => {
+        if (record.sale_price_rub === null || record.sale_price_rub === undefined) {
+          return <Text type="secondary">—</Text>;
+        }
+        return (
+          <Text strong style={{ color: '#1890ff' }}>
+            {record.sale_price_rub.toFixed(2)} ₽
+          </Text>
+        );
+      },
+    },
+    {
       title: 'Статус',
       dataIndex: 'is_active',
       key: 'is_active',
@@ -451,7 +496,7 @@ const MatrixTemplatesPage = () => {
           <Button
             type="link"
             danger
-            icon={<UnlinkOutlined />}
+            icon={<DisconnectOutlined />}
             size="small"
           >
             Удалить
@@ -463,8 +508,8 @@ const MatrixTemplatesPage = () => {
 
   return (
     <div>
-      <Title level={2}>📋 Шаблоны матриц кнопок</Title>
-      <Text type="secondary">Управление шаблонами матриц и назначение терминалов</Text>
+      <Title level={2}>📋 Матрицы</Title>
+      <Text type="secondary">Управление и назначение терминалов</Text>
 
       <Tabs activeKey={activeTab} onChange={setActiveTab} style={{ marginTop: 16 }}>
         <TabPane tab="Список матриц" key="list">
@@ -654,8 +699,25 @@ const MatrixTemplatesPage = () => {
             label="Номер кнопки"
             rules={[
               { required: true, message: 'Введите номер кнопки' },
-              { type: 'number', min: 1, message: 'Номер кнопки должен быть больше 0' }
+              { 
+                validator: (_, value) => {
+                  const num = Number(value);
+                  if (isNaN(num) || num < 1) {
+                    return Promise.reject(new Error('Номер кнопки должен быть больше 0'));
+                  }
+                  return Promise.resolve();
+                }
+              }
             ]}
+            getValueFromEvent={(e) => {
+              const value = e.target.value;
+              return value === '' ? undefined : Number(value);
+            }}
+            normalize={(value) => {
+              if (value === '' || value === undefined) return undefined;
+              const num = Number(value);
+              return isNaN(num) ? value : num;
+            }}
           >
             <Input type="number" placeholder="Номер кнопки на терминале" disabled={!!editingItem} />
           </Form.Item>
@@ -674,6 +736,63 @@ const MatrixTemplatesPage = () => {
                 value: d.id,
                 label: d.name
               }))}
+              onChange={(drinkId) => {
+                if (drinkId) {
+                  const drink = drinks.find(d => d.id === drinkId);
+                  if (drink && drink.cogs_rub && !itemForm.getFieldValue('sale_price_rub')) {
+                    // Auto-fill price with 2x COGS as default if price not set
+                    itemForm.setFieldValue('sale_price_rub', (drink.cogs_rub * 2).toFixed(2));
+                  }
+                }
+              }}
+            />
+          </Form.Item>
+          {itemForm.getFieldValue('drink_id') && (() => {
+            const drinkId = itemForm.getFieldValue('drink_id');
+            const drink = drinks.find(d => d.id === drinkId);
+            if (drink && drink.cogs_rub) {
+              return (
+                <Form.Item label="Себестоимость">
+                  <Text type="secondary" style={{ fontSize: '14px' }}>
+                    {drink.cogs_rub.toFixed(2)} ₽
+                  </Text>
+                </Form.Item>
+              );
+            }
+            return null;
+          })()}
+          <Form.Item
+            name="sale_price_rub"
+            label="Цена продажи (₽)"
+            rules={[
+              { 
+                validator: (_, value) => {
+                  if (value === undefined || value === null || value === '') {
+                    return Promise.resolve();
+                  }
+                  const num = Number(value);
+                  if (isNaN(num) || num < 0) {
+                    return Promise.reject(new Error('Цена должна быть положительным числом'));
+                  }
+                  return Promise.resolve();
+                }
+              }
+            ]}
+            getValueFromEvent={(e) => {
+              const value = e.target.value;
+              return value === '' ? undefined : Number(value);
+            }}
+            normalize={(value) => {
+              if (value === '' || value === undefined) return undefined;
+              const num = Number(value);
+              return isNaN(num) ? value : num;
+            }}
+          >
+            <Input 
+              type="number" 
+              placeholder="Цена продажи в рублях" 
+              step="0.01"
+              addonAfter="₽"
             />
           </Form.Item>
           <Form.Item

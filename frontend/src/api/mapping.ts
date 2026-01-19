@@ -30,47 +30,6 @@ export interface DrinkUpdate {
   items?: DrinkItem[];
 }
 
-export interface MachineMatrix {
-  term_id: number;
-  machine_item_id: number;
-  drink_id: number | null;
-  location_id: number | null;
-  is_active: boolean;
-  term_name?: string | null;  // Название терминала
-  drink_name?: string | null;  // Название напитка
-  location_name?: string | null;  // Название локации
-}
-
-export interface MachineMatrixCreate {
-  term_id: number;
-  machine_item_id: number;
-  drink_id: number;
-  location_id: number;
-  is_active?: boolean;
-}
-
-export interface ImportPreviewRow {
-  term_id: number;
-  machine_item_id: number;
-  drink_id: number;
-  location_id: number;
-  is_active: boolean;
-}
-
-export interface ImportPreviewResponse {
-  total_rows: number;
-  valid_rows: number;
-  errors: Array<{ row: number; error: string }>;
-  preview: ImportPreviewRow[];
-}
-
-export interface ImportApplyResponse {
-  inserted: number;
-  updated: number;
-  errors: Array<{ term_id?: number; machine_item_id?: number; error: string }>;
-  message: string;
-}
-
 // Button Matrix (Template System)
 export interface ButtonMatrix {
   id: number;
@@ -96,18 +55,22 @@ export interface ButtonMatrixUpdate {
 export interface ButtonMatrixItem {
   machine_item_id: number;
   drink_id: number | null;
+  sale_price_rub?: number | null;
   is_active: boolean;
   drink_name?: string | null;
+  cogs_rub?: number | null;  // Себестоимость напитка из рецепта
 }
 
 export interface ButtonMatrixItemCreate {
   machine_item_id: number;
   drink_id?: number | null;
+  sale_price_rub?: number | null;
   is_active?: boolean;
 }
 
 export interface ButtonMatrixItemUpdate {
   drink_id?: number | null;
+  sale_price_rub?: number | null;
   is_active?: boolean;
 }
 
@@ -154,54 +117,6 @@ export const mappingApi = {
       drink_ids: drinkIds,
       ...data
     });
-    return response.data;
-  },
-
-  // Machine Matrix
-  getMachineMatrix: async (termId?: number): Promise<MachineMatrix[]> => {
-    const params = termId !== undefined ? `?term_id=${termId}` : '';
-    const response = await apiClient.get<MachineMatrix[]>(`/mapping/machine-matrix${params}`);
-    return response.data;
-  },
-
-  createMachineMatrix: async (data: MachineMatrixCreate): Promise<MachineMatrix> => {
-    const response = await apiClient.post<MachineMatrix>('/mapping/machine-matrix', data);
-    return response.data;
-  },
-
-  bulkCreateMachineMatrix: async (items: MachineMatrixCreate[]): Promise<{ inserted: number; message: string }> => {
-    const response = await apiClient.post<{ inserted: number; message: string }>('/mapping/machine-matrix/bulk', items);
-    return response.data;
-  },
-
-  deleteMachineMatrix: async (termId: number, machineItemId: number): Promise<void> => {
-    await apiClient.delete(`/mapping/machine-matrix?term_id=${termId}&machine_item_id=${machineItemId}`);
-  },
-
-  // CSV Import
-  dryRunImport: async (file: File): Promise<ImportPreviewResponse> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await apiClient.post<ImportPreviewResponse>(
-      '/mapping/matrix/import?dry_run=true',
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      }
-    );
-    return response.data;
-  },
-
-  applyImport: async (file: File): Promise<ImportApplyResponse> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await apiClient.post<ImportApplyResponse>(
-      '/mapping/matrix/import?dry_run=false',
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      }
-    );
     return response.data;
   },
 

@@ -308,32 +308,6 @@ def update_drink(
 
 
 # ============================================================================
-# Machine Matrix (Button Mappings)
-# ============================================================================
-
-@router.get("/machine-matrix", response_model=List[MachineMatrixResponse])
-def list_machine_matrices(
-    term_id: Optional[int] = None,
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Get list of button mappings."""
-    return crud.get_machine_matrices(db, term_id=term_id, skip=skip, limit=limit)
-
-
-@router.post("/machine-matrix", response_model=MachineMatrixResponse, status_code=status.HTTP_201_CREATED)
-def create_machine_matrix(
-    matrix: MachineMatrixCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Create button mapping."""
-    return crud.create_machine_matrix(db, matrix)
-
-
-# ============================================================================
 # Ingredient Loads (Stock Management)
 # ============================================================================
 

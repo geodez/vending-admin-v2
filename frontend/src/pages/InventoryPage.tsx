@@ -122,86 +122,11 @@ const InventoryPage = () => {
 
   return (
     <div>
-      <Title level={2}>📦 Склад / Транзакции</Title>
-      <Text type="secondary">Детальный список транзакций</Text>
+      <Title level={2}>📦 Склад</Title>
+      <Text type="secondary">Управление складом и ингредиентами</Text>
       
       <Card style={{ marginTop: 16 }}>
-        <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }}>
-          <Space wrap>
-            <DatePicker
-              value={dateFrom}
-              onChange={(date) => date && setDateFrom(date)}
-              format="DD.MM.YYYY"
-              placeholder="От"
-            />
-            <DatePicker
-              value={dateTo}
-              onChange={(date) => date && setDateTo(date)}
-              format="DD.MM.YYYY"
-              placeholder="До"
-            />
-            <Input
-              placeholder="ID терминала"
-              value={termIdFilter}
-              onChange={(e) => setTermIdFilter(e.target.value)}
-              style={{ width: 140 }}
-              type="number"
-            />
-            <Select
-              value={sumType}
-              onChange={setSumType}
-              style={{ width: 140 }}
-              options={[
-                { label: 'Все', value: 'all' },
-                { label: 'Продажи', value: 'positive' },
-                { label: 'Возвраты', value: 'non_positive' },
-              ]}
-            />
-            <Button
-              type="primary"
-              icon={<SyncOutlined />}
-              onClick={() => fetchTransactions(1)}
-              loading={loading}
-            >
-              Обновить
-            </Button>
-            <Button
-              icon={<DownloadOutlined />}
-              onClick={handleExport}
-              loading={exporting}
-              disabled={transactions.length === 0}
-            >
-              CSV
-            </Button>
-          </Space>
-          <Text type="secondary">
-            Найдено: {total} {total % 10 === 1 && total % 100 !== 11 ? 'транзакция' : 'транзакций'}
-            {totalPages > 1 && ` (стр. ${page}/${totalPages})`}
-          </Text>
-        </Space>
-
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <Spin size="large" />
-          </div>
-        ) : transactions.length > 0 ? (
-          <Table
-            dataSource={transactions}
-            columns={columns}
-            rowKey="id"
-            pagination={{
-              current: page,
-              pageSize: pageSize,
-              total: total,
-              totalBoundaryShowSizeChanger: false,
-              onChange: (newPage) => fetchTransactions(newPage),
-              showTotal: (total) => `Всего: ${total}`,
-            }}
-            scroll={{ x: 800 }}
-          />
-        ) : (
-          <Empty description="Нет транзакций за выбранный период." />
-        )}
+        <Empty description="Раздел в разработке" />
       </Card>
     </div>
   );

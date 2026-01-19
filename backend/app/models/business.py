@@ -84,22 +84,6 @@ class DrinkItem(Base):
         return f"<DrinkItem(drink_id={self.drink_id}, ingredient={self.ingredient_code}, qty={self.qty_per_unit})>"
 
 
-class MachineMatrix(Base):
-    """Mapping between terminal buttons and recipes."""
-    __tablename__ = "machine_matrix"
-
-    vendista_term_id = Column(BigInteger, ForeignKey('vendista_terminals.id'), primary_key=True)
-    machine_item_id = Column(Integer, primary_key=True)  # Button ID on terminal
-    product_external_id = Column(Integer, ForeignKey('products.product_external_id'), nullable=True)
-    drink_id = Column(Integer, ForeignKey('drinks.id'), nullable=True)
-    location_id = Column(Integer, ForeignKey('locations.id'), nullable=True)
-    is_active = Column(Boolean, nullable=False, default=True)
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
-
-    def __repr__(self):
-        return f"<MachineMatrix(term={self.vendista_term_id}, button={self.machine_item_id})>"
-
-
 class ButtonMatrix(Base):
     """Template for button-to-drink mappings (matrix template)."""
     __tablename__ = "button_matrices"
@@ -125,11 +109,12 @@ class ButtonMatrixItem(Base):
     matrix_id = Column(Integer, ForeignKey('button_matrices.id', ondelete='CASCADE'), primary_key=True)
     machine_item_id = Column(Integer, primary_key=True)  # Button ID
     drink_id = Column(Integer, ForeignKey('drinks.id', ondelete='SET NULL'), nullable=True)
+    sale_price_rub = Column(Numeric(10, 2), nullable=True)  # Sale price in rubles
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
 
     def __repr__(self):
-        return f"<ButtonMatrixItem(matrix_id={self.matrix_id}, button={self.machine_item_id}, drink_id={self.drink_id})>"
+        return f"<ButtonMatrixItem(matrix_id={self.matrix_id}, button={self.machine_item_id}, drink_id={self.drink_id}, price={self.sale_price_rub})>"
 
 
 class TerminalMatrixMap(Base):

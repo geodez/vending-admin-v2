@@ -313,6 +313,40 @@ async def get_vendista_terminals(
     return terminals
 
 
+@router.post("/terminals/sync")
+async def sync_terminals_from_transactions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Sync terminals from Vendista API or transactions into vendista_terminals table.
+    
+    First tries to fetch terminals directly from Vendista API.
+    If API endpoint is not available, falls back to extracting terminals
+    from vendista_tx_raw transaction payloads.
+    
+    Only owners can sync.
+    
+    Returns sync result with counts and list of synced terminals.
+    """
+    if current_user.role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owners can sync terminals"
+        )
+    
+    try:
+        # Try API first, fallback to transactions if API not available
+        result = await sync_service.sync_terminals_from_api(db)
+        return result
+    except Exception as e:
+        logger.error(f"Terminal sync endpoint error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка синхронизации терминалов: {str(e)}"
+        )
+
+
 @router.post("/runs/{run_id}/rerun")
 async def rerun_sync(
     run_id: int,

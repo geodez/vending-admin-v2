@@ -4,7 +4,7 @@ API endpoints for Transactions (detailed list from vendista_tx_raw).
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text, func
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import List, Optional
 from app.db.session import get_db
 from app.api.deps import get_current_user
@@ -96,7 +96,8 @@ async def get_transactions(
     total = db.execute(count_query, params).scalar_one()
     total_pages = (total + page_size - 1) // page_size if total > 0 else 0
     
-    # Data query with pagination and drink name from machine_matrix
+    # Data query with pagination and drink name from button_matrix system
+    # Uses: terminal_matrix_map -> button_matrix_items -> drinks
     data_query = text(f"""
         SELECT
             v.id,
@@ -111,11 +112,14 @@ async def get_transactions(
             d.name as drink_name,
             v.payload
         FROM vendista_tx_raw v
-        LEFT JOIN machine_matrix mm ON 
-            mm.vendista_term_id = (v.payload->>'term_id')::int 
-            AND mm.machine_item_id = (v.payload->'machine_item'->0->>'machine_item_id')::int
-            AND mm.is_active = true
-        LEFT JOIN drinks d ON d.id = mm.drink_id
+        LEFT JOIN terminal_matrix_map tmm ON 
+            tmm.vendista_term_id = (v.payload->>'term_id')::int 
+            AND tmm.is_active = true
+        LEFT JOIN button_matrix_items bmi ON 
+            bmi.matrix_id = tmm.matrix_id 
+            AND bmi.machine_item_id = (v.payload->'machine_item'->0->>'machine_item_id')::int
+            AND bmi.is_active = true
+        LEFT JOIN drinks d ON d.id = bmi.drink_id
         WHERE {where_sql}
         {order_clause}
         LIMIT :limit OFFSET :offset
@@ -126,17 +130,25 @@ async def get_transactions(
     
     items = []
     for row in rows:
+        # Convert UTC timestamp to Moscow timezone to match Vendista display
+        # PostgreSQL TIMESTAMP(timezone=True) stores time in UTC
+        # Vendista shows time in local timezone (Moscow, UTC+3), so we subtract 3 hours
+        tx_time_display = None
+        if row[3]:
+            # Subtract 3 hours to convert from UTC to match Vendista's local time display
+            tx_time_display = (row[3] - timedelta(hours=3)).isoformat()
+        
         items.append({
             "id": row[0],
             "term_id": row[1],
             "vendista_tx_id": row[2],
-            "tx_time": row[3].isoformat() if row[3] else None,
+            "tx_time": tx_time_display,
             "sum_kopecks": int(row[4]) if row[4] else 0,
             "sum_rub": float(row[5]) if row[5] else 0.0,
             "machine_item_id": row[6],
             "terminal_comment": row[7],
             "status": row[8],
-            "drink_name": row[9],  # Drink name from machine_matrix
+            "drink_name": row[9],  # Drink name from button_matrix system (via terminal_matrix_map -> button_matrix_items)
             "raw_payload": row[10]
         })
     
@@ -210,7 +222,8 @@ async def export_transactions(
     
     where_sql = " AND ".join(where_clauses)
     
-    # Fetch all data (no pagination for export) with drink name
+    # Fetch all data (no pagination for export) with drink name from button_matrix system
+    # Uses: terminal_matrix_map -> button_matrix_items -> drinks
     data_query = text(f"""
         SELECT
             v.tx_time,
@@ -223,11 +236,14 @@ async def export_transactions(
             (v.payload->>'status')::text as status,
             d.name as drink_name
         FROM vendista_tx_raw v
-        LEFT JOIN machine_matrix mm ON 
-            mm.vendista_term_id = (v.payload->>'term_id')::int 
-            AND mm.machine_item_id = (v.payload->'machine_item'->0->>'machine_item_id')::int
-            AND mm.is_active = true
-        LEFT JOIN drinks d ON d.id = mm.drink_id
+        LEFT JOIN terminal_matrix_map tmm ON 
+            tmm.vendista_term_id = (v.payload->>'term_id')::int 
+            AND tmm.is_active = true
+        LEFT JOIN button_matrix_items bmi ON 
+            bmi.matrix_id = tmm.matrix_id 
+            AND bmi.machine_item_id = (v.payload->'machine_item'->0->>'machine_item_id')::int
+            AND bmi.is_active = true
+        LEFT JOIN drinks d ON d.id = bmi.drink_id
         WHERE {where_sql}
         ORDER BY v.tx_time DESC
     """)
@@ -244,8 +260,13 @@ async def export_transactions(
     writer.writeheader()
     
     for row in rows:
+        # Convert UTC to Moscow timezone (UTC+3) to match Vendista display
+        tx_time_display = None
+        if row[0]:
+            tx_time_display = (row[0] - timedelta(hours=3)).isoformat()
+        
         writer.writerow({
-            "tx_time": row[0].isoformat() if row[0] else "",
+            "tx_time": tx_time_display if tx_time_display else "",
             "term_id": row[1] or "",
             "vendista_tx_id": row[2] or "",
             "sum_rub": f"{row[3]:.2f}" if row[3] else "",
