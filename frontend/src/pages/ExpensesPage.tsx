@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Card, Typography, Table, DatePicker, Button, Empty, message, Spin, Modal, Form, Input, InputNumber, Select } from 'antd';
+import { Card, Typography, Table, DatePicker, Button, Empty, message, Spin, Modal, Form, Input, InputNumber, Select, Space } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined } from '@ant-design/icons';
 import { expensesApi, Expense, ExpenseCreate } from '../api/expenses';
+import { getLocations } from '../api/business';
+import type { Location } from '@/types/api';
+import { EXPENSE_CATEGORIES } from '../utils/constants';
 import dayjs, { Dayjs } from 'dayjs';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
-
-const CATEGORIES = ['ingredients', 'rent', 'launch', 'utilities', 'maintenance', 'other'];
 
 const ExpensesPage = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -19,6 +20,11 @@ const ExpensesPage = () => {
     dayjs().startOf('month'),
     dayjs()
   ]);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [locationsLoading, setLocationsLoading] = useState(false);
+  const [categories, setCategories] = useState<string[]>([...EXPENSE_CATEGORIES]);
+  const [newCategoryInput, setNewCategoryInput] = useState('');
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
 
   const fetchExpenses = async () => {
     setLoading(true);
@@ -35,14 +41,29 @@ const ExpensesPage = () => {
     }
   };
 
+  const fetchLocations = async () => {
+    setLocationsLoading(true);
+    try {
+      const response = await getLocations();
+      setLocations(response.data);
+    } catch (error: any) {
+      message.error(error.response?.data?.detail || 'Ошибка загрузки локаций');
+    } finally {
+      setLocationsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchExpenses();
+    fetchLocations();
   }, []);
 
   const handleCreate = () => {
     setEditingId(null);
     form.resetFields();
     form.setFieldsValue({ expense_date: dayjs() });
+    setShowNewCategoryInput(false);
+    setNewCategoryInput('');
     setModalOpen(true);
   };
 
@@ -62,6 +83,17 @@ const ExpensesPage = () => {
       fetchExpenses();
     } catch (error: any) {
       message.error(error.response?.data?.detail || 'Ошибка удаления');
+    }
+  };
+
+  const handleAddCategory = () => {
+    if (newCategoryInput.trim() && !categories.includes(newCategoryInput.trim())) {
+      setCategories([...categories, newCategoryInput.trim()]);
+      setNewCategoryInput('');
+      setShowNewCategoryInput(false);
+      message.success('Категория добавлена');
+    } else if (categories.includes(newCategoryInput.trim())) {
+      message.warning('Такая категория уже существует');
     }
   };
 
@@ -99,6 +131,10 @@ const ExpensesPage = () => {
       title: 'Локация',
       dataIndex: 'location_id',
       key: 'location_id',
+      render: (locationId: number) => {
+        const location = locations.find(l => l.id === locationId);
+        return location ? `${location.name} (ID: ${locationId})` : `ID: ${locationId}`;
+      },
     },
     {
       title: 'Категория',
@@ -178,19 +214,75 @@ const ExpensesPage = () => {
       <Modal
         title={editingId ? 'Редактировать расход' : 'Добавить расход'}
         open={modalOpen}
-        onCancel={() => setModalOpen(false)}
+        onCancel={() => {
+          setModalOpen(false);
+          setShowNewCategoryInput(false);
+          setNewCategoryInput('');
+        }}
         onOk={() => form.submit()}
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item name="expense_date" label="Дата" rules={[{ required: true }]}>
             <DatePicker format="DD.MM.YYYY" style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item name="location_id" label="ID Локации" rules={[{ required: true }]}>
-            <InputNumber min={1} style={{ width: '100%' }} />
+          <Form.Item name="location_id" label="Локация" rules={[{ required: true, message: 'Выберите локацию' }]}>
+            <Select
+              placeholder="Выберите локацию"
+              loading={locationsLoading}
+              showSearch
+              allowClear
+              filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              options={locations.map(loc => ({
+                value: loc.id,
+                label: `${loc.name} (ID: ${loc.id})`
+              }))}
+            />
           </Form.Item>
-          <Form.Item name="category" label="Категория" rules={[{ required: true }]}>
-            <Select>
-              {CATEGORIES.map(cat => (
+          <Form.Item name="category" label="Категория" rules={[{ required: true, message: 'Выберите категорию' }]}>
+            <Select
+              placeholder="Выберите категорию"
+              showSearch
+              allowClear
+              dropdownRender={(menu) => (
+                <>
+                  {menu}
+                  <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
+                    {showNewCategoryInput ? (
+                      <Space.Compact style={{ width: '100%' }}>
+                        <Input
+                          placeholder="Новая категория"
+                          value={newCategoryInput}
+                          onChange={(e) => setNewCategoryInput(e.target.value)}
+                          onPressEnter={handleAddCategory}
+                          autoFocus
+                        />
+                        <Button type="primary" onClick={handleAddCategory}>
+                          Добавить
+                        </Button>
+                        <Button onClick={() => {
+                          setShowNewCategoryInput(false);
+                          setNewCategoryInput('');
+                        }}>
+                          Отмена
+                        </Button>
+                      </Space.Compact>
+                    ) : (
+                      <Button
+                        type="link"
+                        icon={<PlusOutlined />}
+                        onClick={() => setShowNewCategoryInput(true)}
+                        style={{ width: '100%' }}
+                      >
+                        Добавить новую категорию
+                      </Button>
+                    )}
+                  </div>
+                </>
+              )}
+            >
+              {categories.map(cat => (
                 <Select.Option key={cat} value={cat}>{cat}</Select.Option>
               ))}
             </Select>
