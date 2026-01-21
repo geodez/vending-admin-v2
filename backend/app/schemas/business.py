@@ -124,6 +124,10 @@ class DrinkItemCreate(DrinkItemBase):
 
 
 class DrinkItemResponse(DrinkItemBase):
+    display_name_ru: Optional[str] = None
+    cost_per_unit_rub: Optional[float] = None
+    item_cost_rub: Optional[float] = None  # Стоимость этого ингредиента в рецепте
+    
     class Config:
         from_attributes = True
 
@@ -147,6 +151,7 @@ class DrinkResponse(DrinkBase):
     id: int
     created_at: datetime
     items: List[DrinkItemResponse] = []
+    cogs_rub: Optional[float] = None  # Себестоимость напитка (COGS)
 
     class Config:
         from_attributes = True
@@ -178,6 +183,83 @@ class MachineMatrixUpdate(BaseModel):
 class MachineMatrixResponse(MachineMatrixBase):
     vendista_term_id: int
     machine_item_id: int
+    created_at: datetime
+    term_name: Optional[str] = None
+    drink_name: Optional[str] = None
+    location_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ============================================================================
+# Button Matrix Schemas (New Template System)
+# ============================================================================
+
+class ButtonMatrixBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    is_active: bool = True
+
+
+class ButtonMatrixCreate(ButtonMatrixBase):
+    pass
+
+
+class ButtonMatrixUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class ButtonMatrixResponse(ButtonMatrixBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ButtonMatrixItemBase(BaseModel):
+    machine_item_id: int
+    drink_id: Optional[int] = None
+    sale_price_rub: Optional[float] = None
+    is_active: bool = True
+
+
+class ButtonMatrixItemCreate(ButtonMatrixItemBase):
+    pass
+
+
+class ButtonMatrixItemUpdate(BaseModel):
+    drink_id: Optional[int] = None
+    sale_price_rub: Optional[float] = None
+    is_active: Optional[bool] = None
+
+
+class ButtonMatrixItemResponse(ButtonMatrixItemBase):
+    drink_name: Optional[str] = None
+    cogs_rub: Optional[float] = None  # Себестоимость напитка из рецепта
+
+    class Config:
+        from_attributes = True
+
+
+class ButtonMatrixWithItems(ButtonMatrixResponse):
+    items: List[ButtonMatrixItemResponse] = []
+
+
+class TerminalMatrixMapCreate(BaseModel):
+    vendista_term_ids: List[int]  # List of terminal IDs to assign
+
+
+class TerminalMatrixMapResponse(BaseModel):
+    matrix_id: int
+    matrix_name: str
+    vendista_term_id: int
+    term_name: Optional[str] = None
+    is_active: bool
     created_at: datetime
 
     class Config:

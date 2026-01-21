@@ -6,7 +6,8 @@ from app.api.v1 import auth, sync, business, analytics, users, terminals, transa
 app = FastAPI(
     title="Vending Admin v2 API",
     description="Telegram Mini App для управления вендинговым бизнесом",
-    version="1.0.0"
+    version="1.0.0",
+    redirect_slashes=False  # Отключаем автоматические редиректы со слешами
 )
 
 # CORS middleware

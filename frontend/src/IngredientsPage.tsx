@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Card, Typography, Table, Button, Empty, message, Modal, Form, Input, InputNumber, Select, Space, Popconfirm, Tag, Switch, Checkbox, Row, Col, Dropdown, Badge, Tooltip } from 'antd';
+import { Card, Typography, Table, Button, Empty, message, Modal, Form, Input, InputNumber, Select, Space, Popconfirm, Tag, Switch, Checkbox, Row, Col, Dropdown, Badge } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, SearchOutlined, CheckSquareOutlined } from '@ant-design/icons';
 import { getIngredients, createIngredient, updateIngredient, deleteIngredient, bulkUpdateIngredients } from '../api/business';
 import type { Ingredient } from '@/types/api';
@@ -38,7 +38,7 @@ const IngredientsPage = () => {
   
   // Видимость колонок
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
-    ingredient_code: false, // Скрыта по умолчанию
+    ingredient_code: true,
     display_name_ru: true,
     ingredient_group: true,
     brand_name: true,
@@ -117,19 +117,8 @@ const IngredientsPage = () => {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      
-      // Обрабатываем ingredient_group и brand_name - могут быть массивами из-за mode="tags"
-      const ingredientGroup = Array.isArray(values.ingredient_group) 
-        ? values.ingredient_group[0] || null 
-        : values.ingredient_group;
-      const brandName = Array.isArray(values.brand_name) 
-        ? values.brand_name[0] || null 
-        : values.brand_name;
-      
       const data: IngredientFormData = {
         ...values,
-        ingredient_group: ingredientGroup || undefined,
-        brand_name: brandName || undefined,
         cost_per_unit_rub: values.cost_per_unit_rub || undefined,
         default_load_qty: values.default_load_qty || undefined,
         alert_threshold: values.alert_threshold || undefined,
@@ -251,65 +240,15 @@ const IngredientsPage = () => {
   const handleBulkEditSubmit = async () => {
     try {
       const values = await bulkEditForm.validateFields();
-      
-      // selectedRowKeys уже содержат ingredient_code, так как rowKey использует ingredient_code
-      // Просто фильтруем пустые значения
-      const codes = selectedRowKeys
-        .map(key => String(key))
-        .filter(code => code !== '' && code !== 'undefined' && code !== 'null');
-      
-      console.log('Selected row keys:', selectedRowKeys);
-      console.log('Extracted codes:', codes);
-      console.log('Filtered ingredients sample:', filteredIngredients.slice(0, 2));
-      
-      if (codes.length === 0) {
-        message.error('Не удалось определить коды выбранных ингредиентов');
-        return;
-      }
-      
-      // Проверяем, что все коды существуют в данных
-      const missingCodes = codes.filter(code => {
-        return !filteredIngredients.some((ing: any) => 
-          (ing.ingredient_code || ing.code || '') === code
-        );
-      });
-      
-      if (missingCodes.length > 0) {
-        console.warn('Some codes not found in filtered ingredients:', missingCodes);
-        // Не прерываем выполнение, просто предупреждаем
-      }
+      const codes = selectedRowKeys.map(key => String(key));
       
       // Подготавливаем данные для обновления (только измененные поля)
       const updateData: any = {};
-      if (values.expense_kind !== undefined && values.expense_kind !== null) {
+      if (values.expense_kind !== undefined) {
         updateData.expense_kind = values.expense_kind;
       }
-      if (values.is_active !== undefined && values.is_active !== null) {
+      if (values.is_active !== undefined) {
         updateData.is_active = values.is_active;
-      }
-      // Обрабатываем ingredient_group - может быть массивом из-за mode="tags"
-      if (values.ingredient_group !== undefined && values.ingredient_group !== null) {
-        const groupValue = Array.isArray(values.ingredient_group) 
-          ? values.ingredient_group[0] || null 
-          : values.ingredient_group;
-        if (groupValue && groupValue !== '') {
-          updateData.ingredient_group = groupValue;
-        }
-      }
-      // Обрабатываем brand_name - может быть массивом из-за mode="tags"
-      if (values.brand_name !== undefined && values.brand_name !== null) {
-        const brandValue = Array.isArray(values.brand_name) 
-          ? values.brand_name[0] || null 
-          : values.brand_name;
-        if (brandValue && brandValue !== '') {
-          updateData.brand_name = brandValue;
-        }
-      }
-      if (values.unit !== undefined && values.unit !== null && values.unit !== '') {
-        updateData.unit = values.unit;
-      }
-      if (values.cost_per_unit_rub !== undefined && values.cost_per_unit_rub !== null) {
-        updateData.cost_per_unit_rub = values.cost_per_unit_rub;
       }
       
       if (Object.keys(updateData).length === 0) {
@@ -343,9 +282,7 @@ const IngredientsPage = () => {
     },
     onSelectAll: (selected: boolean, selectedRows: any[], changeRows: any[]) => {
       if (selected) {
-        const allKeys = filteredIngredients
-          .map((ing: any) => ing.ingredient_code || ing.code || '')
-          .filter((key: string) => key !== ''); // Фильтруем пустые ключи
+        const allKeys = filteredIngredients.map((ing: any) => ing.ingredient_code || ing.code || '');
         setSelectedRowKeys(allKeys);
       } else {
         setSelectedRowKeys([]);
@@ -399,11 +336,7 @@ const IngredientsPage = () => {
       sorter: (a: any, b: any) => (a.cost_per_unit_rub || a.unit_cost_rub || 0) - (b.cost_per_unit_rub || b.unit_cost_rub || 0),
     },
     {
-      title: (
-        <Tooltip title="Тип учета ингредиента: 'Учитывается' - ингредиент отслеживается на складе, 'Не учитывается' - ингредиент не отслеживается на складе">
-          Тип
-        </Tooltip>
-      ),
+      title: 'Тип',
       dataIndex: 'expense_kind',
       key: 'expense_kind',
       width: 120,
@@ -414,11 +347,7 @@ const IngredientsPage = () => {
       ),
     },
     {
-      title: (
-        <Tooltip title="Статус ингредиента: 'Активен' - ингредиент доступен для использования в рецептах, 'Неактивен' - ингредиент скрыт и не используется">
-          Статус
-        </Tooltip>
-      ),
+      title: 'Статус',
       dataIndex: 'is_active',
       key: 'is_active',
       width: 100,
@@ -463,8 +392,8 @@ const IngredientsPage = () => {
     },
   ];
 
-  // Фильтруем колонки по видимости (показываем только те, где visibleColumns[key] === true)
-  const columns = allColumns.filter(col => visibleColumns[col.key] === true);
+  // Фильтруем колонки по видимости
+  const columns = allColumns.filter(col => visibleColumns[col.key] !== false);
 
   return (
     <div>
@@ -591,13 +520,7 @@ const IngredientsPage = () => {
           <Table
             dataSource={filteredIngredients}
             columns={columns}
-            rowKey={(record: any) => {
-              const key = record.ingredient_code || record.code || '';
-              if (!key) {
-                console.warn('Ingredient without code:', record);
-              }
-              return key;
-            }}
+            rowKey={(record: any) => record.ingredient_code || record.code || ''}
             rowSelection={rowSelection}
             pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (total) => `Всего: ${total}` }}
             scroll={{ x: 'max-content' }}
@@ -647,55 +570,22 @@ const IngredientsPage = () => {
             name="ingredient_group"
             label="Группа"
           >
-            <Select 
-              placeholder="Выберите или введите новую группу" 
-              allowClear
-              showSearch
-              mode="tags"
-              maxTagCount={1}
-              filterOption={(input, option) => {
-                if (!input) return true;
-                const label = option?.label ?? '';
-                return label.toLowerCase().includes(input.toLowerCase());
-              }}
-              options={uniqueGroups.map(group => ({ value: group, label: group }))}
-              tokenSeparators={[',']}
-            />
+            <Input placeholder="Например: Coffee, Milk, Syrups" />
           </Form.Item>
 
           <Form.Item
             name="brand_name"
             label="Бренд"
           >
-            <Select 
-              placeholder="Выберите или введите новый бренд" 
-              allowClear
-              showSearch
-              mode="tags"
-              maxTagCount={1}
-              filterOption={(input, option) => {
-                if (!input) return true;
-                const label = option?.label ?? '';
-                return label.toLowerCase().includes(input.toLowerCase());
-              }}
-              options={uniqueBrands.map(brand => ({ value: brand, label: brand }))}
-              tokenSeparators={[',']}
-            />
+            <Input placeholder="Название бренда" />
           </Form.Item>
 
           <Form.Item
             name="unit"
             label="Единица измерения"
-            rules={[{ required: true, message: 'Выберите единицу измерения' }]}
+            rules={[{ required: true, message: 'Введите единицу измерения' }]}
           >
-            <Select placeholder="Выберите единицу измерения">
-              <Select.Option value="g">г (граммы)</Select.Option>
-              <Select.Option value="ml">мл (миллилитры)</Select.Option>
-              <Select.Option value="kg">кг (килограммы)</Select.Option>
-              <Select.Option value="l">л (литры)</Select.Option>
-              <Select.Option value="pcs">шт (штуки)</Select.Option>
-              <Select.Option value="pkg">упак (упаковки)</Select.Option>
-            </Select>
+            <Input placeholder="g, ml, pcs" />
           </Form.Item>
 
           <Form.Item
@@ -798,77 +688,6 @@ const IngredientsPage = () => {
           form={bulkEditForm}
           layout="vertical"
         >
-          <Form.Item
-            name="ingredient_group"
-            label="Группа"
-            tooltip="Оставьте пустым, чтобы не изменять. Можно ввести новое значение"
-          >
-            <Select 
-              placeholder="Не изменять или введите новую группу" 
-              allowClear
-              showSearch
-              mode="tags"
-              maxTagCount={1}
-              filterOption={(input, option) => {
-                if (!input) return true;
-                const label = option?.label ?? '';
-                return label.toLowerCase().includes(input.toLowerCase());
-              }}
-              options={uniqueGroups.map(group => ({ value: group, label: group }))}
-              tokenSeparators={[',']}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="brand_name"
-            label="Бренд"
-            tooltip="Оставьте пустым, чтобы не изменять. Можно ввести новое значение"
-          >
-            <Select 
-              placeholder="Не изменять или введите новый бренд" 
-              allowClear
-              showSearch
-              mode="tags"
-              maxTagCount={1}
-              filterOption={(input, option) => {
-                if (!input) return true;
-                const label = option?.label ?? '';
-                return label.toLowerCase().includes(input.toLowerCase());
-              }}
-              options={uniqueBrands.map(brand => ({ value: brand, label: brand }))}
-              tokenSeparators={[',']}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="unit"
-            label="Единица измерения"
-            tooltip="Оставьте пустым, чтобы не изменять"
-          >
-            <Select placeholder="Не изменять" allowClear>
-              <Select.Option value="g">г (граммы)</Select.Option>
-              <Select.Option value="ml">мл (миллилитры)</Select.Option>
-              <Select.Option value="kg">кг (килограммы)</Select.Option>
-              <Select.Option value="l">л (литры)</Select.Option>
-              <Select.Option value="pcs">шт (штуки)</Select.Option>
-              <Select.Option value="pkg">упак (упаковки)</Select.Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="cost_per_unit_rub"
-            label="Цена за единицу (₽)"
-            tooltip="Оставьте пустым, чтобы не изменять"
-          >
-            <InputNumber
-              placeholder="Не изменять"
-              min={0}
-              step={0.01}
-              precision={2}
-              style={{ width: '100%' }}
-            />
-          </Form.Item>
-
           <Form.Item
             name="expense_kind"
             label="Тип учета"

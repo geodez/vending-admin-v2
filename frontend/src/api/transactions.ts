@@ -11,6 +11,7 @@ export interface Transaction {
   terminal_comment: string | null;
   status: number | null;
   location_id: number | null;
+  drink_name: string | null;  // Название напитка из machine_matrix
 }
 
 export interface TransactionsResponse {
@@ -38,7 +39,8 @@ export const transactionsApi = {
     if (params.page) queryParams.append('page', String(params.page));
     if (params.page_size) queryParams.append('page_size', String(params.page_size));
     
-    const response = await apiClient.get<TransactionsResponse>(`/transactions?${queryParams.toString()}`);
+    // Добавляем trailing slash чтобы избежать редиректа
+    const response = await apiClient.get<TransactionsResponse>(`/transactions/?${queryParams.toString()}`);
     return response.data;
   },
 
@@ -54,6 +56,7 @@ export const transactionsApi = {
     if (params.term_id !== undefined) queryParams.append('term_id', String(params.term_id));
     if (params.sum_type) queryParams.append('sum_type', params.sum_type);
     
+    // Добавляем trailing slash для консистентности
     const response = await apiClient.get(`/transactions/export?${queryParams.toString()}`, {
       responseType: 'blob',
     });

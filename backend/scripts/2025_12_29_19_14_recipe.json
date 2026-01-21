@@ -1,0 +1,1288 @@
+[
+    {
+        "canisterIds": "170",
+        "esAttr": {
+            "prebrewingTime": "8",
+            "prebrewingWaterRatio": "20",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "70",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "20",
+            "squeezeTime": "2"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Эспрессо 60 мл.",
+        "recipeNameLang": {
+            "zh_CN": "意式浓缩",
+            "en_": "Espresso",
+            "resKey": "Эспрессо",
+            "ru_": "Эспрессо 60 мл."
+        },
+        "stepses": [
+            {
+                "delayTime": "5",
+                "canisterId": "170",
+                "waterVolume": "50",
+                "gradientWeight": "10",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "170",
+        "esAttr": {
+            "prebrewingTime": "8",
+            "prebrewingWaterRatio": "35",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "80",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Двойной Эспрессо 120 мл.",
+        "recipeNameLang": {
+            "ru_": "Двойной Эспрессо 120 мл."
+        },
+        "stepses": [
+            {
+                "delayTime": "2",
+                "canisterId": "170",
+                "waterVolume": "90",
+                "gradientWeight": "16",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "170,0",
+        "esAttr": {
+            "prebrewingTime": "8",
+            "prebrewingWaterRatio": "24",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "60",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Американо 250 мл.",
+        "stepses": [
+            {
+                "delayTime": "2",
+                "canisterId": "170",
+                "waterVolume": "60",
+                "gradientWeight": "12",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "delayTime": "0",
+                "canisterId": "0",
+                "waterVolume": "135",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "170,0",
+        "esAttr": {
+            "prebrewingTime": "10",
+            "prebrewingWaterRatio": "32",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "80",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Американо Strong 250 мл.",
+        "stepses": [
+            {
+                "delayTime": "2",
+                "canisterId": "170",
+                "waterVolume": "60",
+                "gradientWeight": "16",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "delayTime": "0",
+                "canisterId": "0",
+                "waterVolume": "135",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "2,170",
+        "esAttr": {
+            "prebrewingTime": "8",
+            "prebrewingWaterRatio": "24",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "70",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Капучино 250 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "90",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "85",
+                "gradientWeight": "25",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "delayTime": "0",
+                "canisterId": "170",
+                "waterVolume": "75",
+                "gradientWeight": "12",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "2,170",
+        "esAttr": {
+            "prebrewingTime": "8",
+            "prebrewingWaterRatio": "32",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "80",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Капучино Strong 250 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "90",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "80",
+                "gradientWeight": "25",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "delayTime": "0",
+                "canisterId": "170",
+                "waterVolume": "85",
+                "gradientWeight": "16",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "2,170,2",
+        "esAttr": {
+            "prebrewingTime": "8",
+            "prebrewingWaterRatio": "24",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "70",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Латте 250 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "30",
+                "gradientWeight": "10",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "delayTime": "0",
+                "canisterId": "170",
+                "waterVolume": "60",
+                "gradientWeight": "12",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "120",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "70",
+                "gradientWeight": "22",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "3,170,2",
+        "esAttr": {
+            "prebrewingTime": "10",
+            "prebrewingWaterRatio": "33",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "70",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Моккачино 250 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "80",
+                "delayTime": "0",
+                "canisterId": "3",
+                "waterVolume": "55",
+                "gradientWeight": "8",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "delayTime": "0",
+                "canisterId": "170",
+                "waterVolume": "40",
+                "gradientWeight": "11",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "60",
+                "gradientWeight": "15",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "170,2",
+        "esAttr": {
+            "prebrewingTime": "10",
+            "prebrewingWaterRatio": "45",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "70",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Флэт Уайт 250 мл.",
+        "stepses": [
+            {
+                "delayTime": "0",
+                "canisterId": "170",
+                "waterVolume": "70",
+                "gradientWeight": "15",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "120",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "80",
+                "gradientWeight": "20",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "3,3,3,3",
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Горячий шоколад 250 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "90",
+                "delayTime": "0",
+                "canisterId": "3",
+                "waterVolume": "36",
+                "gradientWeight": "7",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "90",
+                "delayTime": "0",
+                "canisterId": "3",
+                "waterVolume": "36",
+                "gradientWeight": "7",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "90",
+                "delayTime": "0",
+                "canisterId": "3",
+                "waterVolume": "36",
+                "gradientWeight": "7",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "90",
+                "delayTime": "0",
+                "canisterId": "3",
+                "waterVolume": "36",
+                "gradientWeight": "7",
+                "recipeOutOrder": "3",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "2,3,2,3",
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Молочный шоколад 250 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "120",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "36",
+                "gradientWeight": "7",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "80",
+                "delayTime": "0",
+                "canisterId": "3",
+                "waterVolume": "36",
+                "gradientWeight": "7",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "120",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "36",
+                "gradientWeight": "7",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "80",
+                "delayTime": "0",
+                "canisterId": "3",
+                "waterVolume": "36",
+                "gradientWeight": "7",
+                "recipeOutOrder": "3",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "1,1,2,1",
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Молочный коктейль с бананом 250 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "40",
+                "gradientWeight": "5",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "40",
+                "gradientWeight": "5",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "100",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "40",
+                "gradientWeight": "7",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "40",
+                "gradientWeight": "5",
+                "recipeOutOrder": "3",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "1,1,2,1",
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Молочный коктейль с кокосом 250 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "40",
+                "gradientWeight": "5",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "40",
+                "gradientWeight": "5",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "100",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "40",
+                "gradientWeight": "7",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "40",
+                "gradientWeight": "5",
+                "recipeOutOrder": "3",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "1,1,2,1",
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Молочный коктейль клубника банан 250 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "40",
+                "gradientWeight": "5",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "40",
+                "gradientWeight": "5",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "100",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "40",
+                "gradientWeight": "7",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "40",
+                "gradientWeight": "5",
+                "recipeOutOrder": "3",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "1,170,2,1",
+        "esAttr": {
+            "prebrewingTime": "10",
+            "prebrewingWaterRatio": "33",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "70",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "РАФ кокосовый 250 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "40",
+                "gradientWeight": "8",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "delayTime": "0",
+                "canisterId": "170",
+                "waterVolume": "40",
+                "gradientWeight": "8",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "40",
+                "gradientWeight": "8",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "80",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "40",
+                "gradientWeight": "8",
+                "recipeOutOrder": "3",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "1,170,2,1",
+        "esAttr": {
+            "prebrewingTime": "10",
+            "prebrewingWaterRatio": "33",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "70",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "РАФ банановый 250 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "40",
+                "gradientWeight": "8",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "delayTime": "0",
+                "canisterId": "170",
+                "waterVolume": "40",
+                "gradientWeight": "8",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "40",
+                "gradientWeight": "8",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "80",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "40",
+                "gradientWeight": "8",
+                "recipeOutOrder": "3",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "170,0",
+        "esAttr": {
+            "prebrewingTime": "8",
+            "prebrewingWaterRatio": "26",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "70",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Американо 350 мл.",
+        "stepses": [
+            {
+                "canisterId": "170",
+                "waterVolume": "80",
+                "gradientWeight": "13",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "delayTime": "0",
+                "canisterId": "0",
+                "waterVolume": "210",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "170,0",
+        "esAttr": {
+            "prebrewingTime": "10",
+            "prebrewingWaterRatio": "32",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "70",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Американо Stronge 350 мл.",
+        "stepses": [
+            {
+                "canisterId": "170",
+                "waterVolume": "80",
+                "gradientWeight": "18",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "delayTime": "0",
+                "canisterId": "0",
+                "waterVolume": "210",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "2,170",
+        "esAttr": {
+            "prebrewingTime": "8",
+            "prebrewingWaterRatio": "24",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "70",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Капучино 350 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "90",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "200",
+                "gradientWeight": "25",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "canisterId": "170",
+                "waterVolume": "75",
+                "gradientWeight": "12",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "2,170",
+        "esAttr": {
+            "prebrewingTime": "8",
+            "prebrewingWaterRatio": "32",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "70",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Капучино Stronge 350 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "90",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "200",
+                "gradientWeight": "30",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "canisterId": "170",
+                "waterVolume": "75",
+                "gradientWeight": "18",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "2,170,170,2",
+        "esAttr": {
+            "prebrewingTime": "10",
+            "prebrewingWaterRatio": "48",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "70",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Латте 350 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "85",
+                "gradientWeight": "10",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "canisterId": "170",
+                "waterVolume": "55",
+                "gradientWeight": "8",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "canisterId": "170",
+                "waterVolume": "55",
+                "gradientWeight": "8",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "120",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "80",
+                "gradientWeight": "25",
+                "recipeOutOrder": "3",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "3,170,170,2",
+        "esAttr": {
+            "prebrewingTime": "10",
+            "prebrewingWaterRatio": "42",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "70",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Моккачино 350 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "80",
+                "delayTime": "0",
+                "canisterId": "3",
+                "waterVolume": "80",
+                "gradientWeight": "12",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "canisterId": "170",
+                "waterVolume": "55",
+                "gradientWeight": "7",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "canisterId": "170",
+                "waterVolume": "55",
+                "gradientWeight": "7",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "90",
+                "gradientWeight": "23",
+                "recipeOutOrder": "3",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "170,170,2",
+        "esAttr": {
+            "prebrewingTime": "10",
+            "prebrewingWaterRatio": "55",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "70",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Флэт Уайт 350 мл.",
+        "stepses": [
+            {
+                "canisterId": "170",
+                "waterVolume": "70",
+                "gradientWeight": "10",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "canisterId": "170",
+                "waterVolume": "65",
+                "gradientWeight": "10",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "120",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "145",
+                "gradientWeight": "35",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "1,1,2,1",
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Молочный коктейль с бананом 350 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "65",
+                "gradientWeight": "6",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "65",
+                "gradientWeight": "6",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "100",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "70",
+                "gradientWeight": "11",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "80",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "75",
+                "gradientWeight": "7",
+                "recipeOutOrder": "3",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "1,1,2,1",
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Молочный коктейль с кокосом 350 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "65",
+                "gradientWeight": "6",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "65",
+                "gradientWeight": "6",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "100",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "70",
+                "gradientWeight": "11",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "80",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "75",
+                "gradientWeight": "7",
+                "recipeOutOrder": "3",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "1,1,2,1",
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "Молочный коктейль клубника банан 350 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "65",
+                "gradientWeight": "6",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "65",
+                "gradientWeight": "6",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "100",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "70",
+                "gradientWeight": "11",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "80",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "75",
+                "gradientWeight": "7",
+                "recipeOutOrder": "3",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "1,170,2,1",
+        "esAttr": {
+            "prebrewingTime": "10",
+            "prebrewingWaterRatio": "30",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "70",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "РАФ кокосовый 350 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "70",
+                "gradientWeight": "11",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "canisterId": "170",
+                "waterVolume": "80",
+                "gradientWeight": "15",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "60",
+                "gradientWeight": "12",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "80",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "50",
+                "gradientWeight": "7",
+                "recipeOutOrder": "3",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "1,170,2,1",
+        "esAttr": {
+            "prebrewingTime": "10",
+            "prebrewingWaterRatio": "30",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "70",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "РАФ банановый 350 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "80",
+                "gradientWeight": "11",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "canisterId": "170",
+                "waterVolume": "80",
+                "gradientWeight": "15",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "60",
+                "gradientWeight": "12",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "80",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "60",
+                "gradientWeight": "7",
+                "recipeOutOrder": "3",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "1,170,2,1",
+        "esAttr": {
+            "prebrewingTime": "10",
+            "prebrewingWaterRatio": "30",
+            "restorationTime": "0.2",
+            "secondSqueezeForce": "80",
+            "secondSqueezeTime": "3",
+            "squeezeForce": "70",
+            "squeezeTime": "3"
+        },
+        "instantAttr": {
+            "firstMixWaterRatio": "0",
+            "secondMixWaterRatio": "0",
+            "thirdMixWaterRatio": "0"
+        },
+        "recipeName": "РАФ клубника банан 350 мл.",
+        "stepses": [
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "80",
+                "gradientWeight": "11",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            },
+            {
+                "canisterId": "170",
+                "waterVolume": "80",
+                "gradientWeight": "15",
+                "recipeOutOrder": "1",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "70",
+                "delayTime": "0",
+                "canisterId": "2",
+                "waterVolume": "60",
+                "gradientWeight": "12",
+                "recipeOutOrder": "2",
+                "isShowed": "0"
+            },
+            {
+                "mixSpeed": "80",
+                "delayTime": "0",
+                "canisterId": "1",
+                "waterVolume": "60",
+                "gradientWeight": "7",
+                "recipeOutOrder": "3",
+                "isShowed": "0"
+            }
+        ]
+    },
+    {
+        "canisterIds": "0",
+        "recipeName": "вода",
+        "stepses": [
+            {
+                "delayTime": "0",
+                "canisterId": "0",
+                "waterVolume": "10",
+                "recipeOutOrder": "0",
+                "isShowed": "0"
+            }
+        ]
+    }
+]

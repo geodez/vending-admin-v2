@@ -220,6 +220,81 @@ class VendistaAPIClient:
             "last_page": last_page,
         }
 
+    async def get_terminals(self) -> Dict[str, Any]:
+        """
+        Fetch terminals list from Vendista API.
+        
+        Tries multiple possible endpoints:
+        - /terminals
+        - /devices
+        - /machines
+        - /partner/terminals
+        
+        Returns:
+            Response dict with terminals list or error
+        """
+        possible_endpoints = [
+            "/terminals",
+            "/devices", 
+            "/machines",
+            "/partner/terminals",
+            "/api/terminals"
+        ]
+        
+        for endpoint in possible_endpoints:
+            try:
+                url = f"{self.base_url}{endpoint}"
+                params = self._get_params()
+                
+                logger.info(f"Trying to fetch terminals from {url}")
+                
+                async with httpx.AsyncClient(verify=False, timeout=self.timeout) as client:
+                    response = await client.get(url, params=params)
+                    response.raise_for_status()
+                    data = response.json()
+                    
+                    # Check if response looks like terminals list
+                    if isinstance(data, dict):
+                        # Try common response formats
+                        terminals = data.get("items") or data.get("terminals") or data.get("devices") or data.get("data")
+                        if terminals is not None:
+                            logger.info(f"Successfully fetched terminals from {endpoint}: {len(terminals) if isinstance(terminals, list) else 'unknown'} items")
+                            return {
+                                "success": True,
+                                "endpoint": endpoint,
+                                "terminals": terminals if isinstance(terminals, list) else [terminals],
+                                "raw_data": data
+                            }
+                    elif isinstance(data, list):
+                        logger.info(f"Successfully fetched terminals from {endpoint}: {len(data)} items")
+                        return {
+                            "success": True,
+                            "endpoint": endpoint,
+                            "terminals": data,
+                            "raw_data": data
+                        }
+                    
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 404:
+                    logger.debug(f"Endpoint {endpoint} not found (404), trying next...")
+                    continue
+                else:
+                    logger.warning(f"Error fetching from {endpoint}: {e.response.status_code}")
+                    continue
+            except Exception as e:
+                logger.debug(f"Error trying {endpoint}: {e}")
+                continue
+        
+        # If all endpoints failed, return error
+        logger.warning("Could not find terminals endpoint in Vendista API")
+        return {
+            "success": False,
+            "endpoint": None,
+            "terminals": [],
+            "raw_data": None,
+            "error": "No terminals endpoint found in Vendista API"
+        }
+
 
 # Singleton instance
 vendista_client = VendistaAPIClient()

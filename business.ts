@@ -11,7 +11,7 @@ import type {
 } from '@/types/api';
 
 // Locations
-export const getLocations = () => apiClient.get<Location[]>('/locations');
+export const getLocations = () => apiClient.get<Location[]>('/v1/business/locations');
 export const createLocation = (data: { name: string }) => 
   apiClient.post<Location>('/v1/business/locations', data);
 export const updateLocation = (id: number, data: { name: string }) =>
@@ -35,7 +35,7 @@ export const createIngredient = (data: Partial<Ingredient>) =>
 export const updateIngredient = (code: string, data: Partial<Ingredient>) =>
   apiClient.put<Ingredient>(`/ingredients/${code}`, data);
 export const bulkUpdateIngredients = (codes: string[], data: Partial<Ingredient>) =>
-  apiClient.put<{ updated: number; total: number; errors?: string[] }>('/ingredients/bulk/update', {
+  apiClient.put<{ updated: number; total: number; errors?: string[] }>('/ingredients/bulk-update', {
     ingredient_codes: codes,
     ...data
   });

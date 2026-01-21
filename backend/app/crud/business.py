@@ -4,7 +4,10 @@ CRUD operations for business entities.
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
-from app.models.business import Location, Product, Ingredient, Drink, DrinkItem, MachineMatrix
+from app.models.business import (
+    Location, Product, Ingredient, Drink, DrinkItem, MachineMatrix,
+    ButtonMatrix, ButtonMatrixItem, TerminalMatrixMap
+)
 from app.models.inventory import IngredientLoad, VariableExpense
 from app.schemas.business import *
 
@@ -69,7 +72,7 @@ def get_ingredient(db: Session, ingredient_code: str) -> Optional[Ingredient]:
 
 
 def get_ingredients(db: Session, skip: int = 0, limit: int = 100) -> List[Ingredient]:
-    return db.query(Ingredient).offset(skip).limit(limit).all()
+    return db.query(Ingredient).order_by(Ingredient.sort_order.asc().nulls_last(), Ingredient.ingredient_code.asc()).offset(skip).limit(limit).all()
 
 
 def create_ingredient(db: Session, ingredient: IngredientCreate) -> Ingredient:
@@ -84,11 +87,30 @@ def update_ingredient(db: Session, ingredient_code: str, ingredient_update: Ingr
     db_ingredient = get_ingredient(db, ingredient_code)
     if not db_ingredient:
         return None
-    for field, value in ingredient_update.model_dump(exclude_unset=True).items():
+    # Обновляем только те поля, которые явно установлены (не None и не пропущены)
+    update_dict = ingredient_update.model_dump(exclude_unset=True, exclude_none=True)
+    for field, value in update_dict.items():
         setattr(db_ingredient, field, value)
     db.commit()
     db.refresh(db_ingredient)
     return db_ingredient
+
+
+def delete_ingredient(db: Session, ingredient_code: str) -> bool:
+    """Delete ingredient. Returns True if deleted, False if not found."""
+    db_ingredient = get_ingredient(db, ingredient_code)
+    if not db_ingredient:
+        return False
+    
+    # Проверяем, используется ли ингредиент в рецептах
+    from app.models.business import DrinkItem
+    usage_count = db.query(DrinkItem).filter(DrinkItem.ingredient_code == ingredient_code).count()
+    if usage_count > 0:
+        raise ValueError(f"Cannot delete ingredient: it is used in {usage_count} recipe(s)")
+    
+    db.delete(db_ingredient)
+    db.commit()
+    return True
 
 
 # ============================================================================
@@ -171,6 +193,183 @@ def create_machine_matrix(db: Session, matrix: MachineMatrixCreate) -> MachineMa
     db.commit()
     db.refresh(db_matrix)
     return db_matrix
+
+
+# ============================================================================
+# Button Matrix CRUD (New Template System)
+# ============================================================================
+
+def get_button_matrix(db: Session, matrix_id: int) -> Optional[ButtonMatrix]:
+    return db.query(ButtonMatrix).filter(ButtonMatrix.id == matrix_id).first()
+
+
+def get_button_matrices(
+    db: Session, 
+    skip: int = 0, 
+    limit: int = 100,
+    is_active: Optional[bool] = None
+) -> List[ButtonMatrix]:
+    query = db.query(ButtonMatrix)
+    if is_active is not None:
+        query = query.filter(ButtonMatrix.is_active == is_active)
+    return query.order_by(ButtonMatrix.name).offset(skip).limit(limit).all()
+
+
+def create_button_matrix(db: Session, matrix: ButtonMatrixCreate) -> ButtonMatrix:
+    db_matrix = ButtonMatrix(**matrix.model_dump())
+    db.add(db_matrix)
+    db.commit()
+    db.refresh(db_matrix)
+    return db_matrix
+
+
+def update_button_matrix(
+    db: Session, 
+    matrix_id: int, 
+    matrix_update: ButtonMatrixUpdate
+) -> Optional[ButtonMatrix]:
+    db_matrix = get_button_matrix(db, matrix_id)
+    if db_matrix is None:
+        return None
+    
+    update_data = matrix_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_matrix, field, value)
+    
+    db.commit()
+    db.refresh(db_matrix)
+    return db_matrix
+
+
+def delete_button_matrix(db: Session, matrix_id: int) -> bool:
+    db_matrix = get_button_matrix(db, matrix_id)
+    if db_matrix is None:
+        return False
+    
+    db.delete(db_matrix)
+    db.commit()
+    return True
+
+
+def get_button_matrix_items(
+    db: Session, 
+    matrix_id: int
+) -> List[ButtonMatrixItem]:
+    return db.query(ButtonMatrixItem).filter(
+        ButtonMatrixItem.matrix_id == matrix_id
+    ).order_by(ButtonMatrixItem.machine_item_id).all()
+
+
+def create_button_matrix_item(
+    db: Session, 
+    matrix_id: int, 
+    item: ButtonMatrixItemCreate
+) -> ButtonMatrixItem:
+    db_item = ButtonMatrixItem(matrix_id=matrix_id, **item.model_dump())
+    db.add(db_item)
+    db.commit()
+    db.refresh(db_item)
+    return db_item
+
+
+def update_button_matrix_item(
+    db: Session,
+    matrix_id: int,
+    machine_item_id: int,
+    item_update: ButtonMatrixItemUpdate
+) -> Optional[ButtonMatrixItem]:
+    db_item = db.query(ButtonMatrixItem).filter(
+        ButtonMatrixItem.matrix_id == matrix_id,
+        ButtonMatrixItem.machine_item_id == machine_item_id
+    ).first()
+    
+    if db_item is None:
+        return None
+    
+    update_data = item_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_item, field, value)
+    
+    db.commit()
+    db.refresh(db_item)
+    return db_item
+
+
+def delete_button_matrix_item(
+    db: Session, 
+    matrix_id: int, 
+    machine_item_id: int
+) -> bool:
+    db_item = db.query(ButtonMatrixItem).filter(
+        ButtonMatrixItem.matrix_id == matrix_id,
+        ButtonMatrixItem.machine_item_id == machine_item_id
+    ).first()
+    
+    if db_item is None:
+        return False
+    
+    db.delete(db_item)
+    db.commit()
+    return True
+
+
+def get_terminal_matrix_maps(
+    db: Session,
+    matrix_id: Optional[int] = None,
+    term_id: Optional[int] = None
+) -> List[TerminalMatrixMap]:
+    query = db.query(TerminalMatrixMap)
+    if matrix_id:
+        query = query.filter(TerminalMatrixMap.matrix_id == matrix_id)
+    if term_id:
+        query = query.filter(TerminalMatrixMap.vendista_term_id == term_id)
+    return query.all()
+
+
+def assign_terminals_to_matrix(
+    db: Session,
+    matrix_id: int,
+    term_ids: List[int]
+) -> List[TerminalMatrixMap]:
+    # Remove existing assignments for this matrix
+    db.query(TerminalMatrixMap).filter(
+        TerminalMatrixMap.matrix_id == matrix_id
+    ).delete()
+    
+    # Create new assignments
+    assignments = []
+    for term_id in term_ids:
+        assignment = TerminalMatrixMap(
+            matrix_id=matrix_id,
+            vendista_term_id=term_id,
+            is_active=True
+        )
+        db.add(assignment)
+        assignments.append(assignment)
+    
+    db.commit()
+    for assignment in assignments:
+        db.refresh(assignment)
+    
+    return assignments
+
+
+def remove_terminal_from_matrix(
+    db: Session,
+    matrix_id: int,
+    term_id: int
+) -> bool:
+    assignment = db.query(TerminalMatrixMap).filter(
+        TerminalMatrixMap.matrix_id == matrix_id,
+        TerminalMatrixMap.vendista_term_id == term_id
+    ).first()
+    
+    if assignment is None:
+        return False
+    
+    db.delete(assignment)
+    db.commit()
+    return True
 
 
 # ============================================================================

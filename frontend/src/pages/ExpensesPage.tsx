@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Card, Typography, Table, DatePicker, Button, Empty, message, Spin, Modal, Form, Input, InputNumber, Select } from 'antd';
+import { Card, Typography, Table, DatePicker, Button, Empty, message, Spin, Modal, Form, Input, InputNumber, Select, Space } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined } from '@ant-design/icons';
 import { expensesApi, Expense, ExpenseCreate } from '../api/expenses';
+import { getTerminals, VendistaTerminal } from '../api/sync';
+import { EXPENSE_CATEGORIES } from '../utils/constants';
 import dayjs, { Dayjs } from 'dayjs';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
-
-const CATEGORIES = ['ingredients', 'rent', 'launch', 'utilities', 'maintenance', 'other'];
 
 const ExpensesPage = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -19,6 +19,11 @@ const ExpensesPage = () => {
     dayjs().startOf('month'),
     dayjs()
   ]);
+  const [terminals, setTerminals] = useState<VendistaTerminal[]>([]);
+  const [terminalsLoading, setTerminalsLoading] = useState(false);
+  const [categories, setCategories] = useState<string[]>([...EXPENSE_CATEGORIES]);
+  const [newCategoryInput, setNewCategoryInput] = useState('');
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
 
   const fetchExpenses = async () => {
     setLoading(true);
@@ -35,14 +40,32 @@ const ExpensesPage = () => {
     }
   };
 
+  const fetchTerminals = async () => {
+    setTerminalsLoading(true);
+    try {
+      const response = await getTerminals();
+      setTerminals(response.data);
+    } catch (error: any) {
+      // Ignore error if terminals not synced yet
+      if (error.response?.status !== 404) {
+        console.error('Error fetching terminals:', error);
+      }
+    } finally {
+      setTerminalsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchExpenses();
+    fetchTerminals();
   }, []);
 
   const handleCreate = () => {
     setEditingId(null);
     form.resetFields();
     form.setFieldsValue({ expense_date: dayjs() });
+    setShowNewCategoryInput(false);
+    setNewCategoryInput('');
     setModalOpen(true);
   };
 
@@ -62,6 +85,17 @@ const ExpensesPage = () => {
       fetchExpenses();
     } catch (error: any) {
       message.error(error.response?.data?.detail || 'Ошибка удаления');
+    }
+  };
+
+  const handleAddCategory = () => {
+    if (newCategoryInput.trim() && !categories.includes(newCategoryInput.trim())) {
+      setCategories([...categories, newCategoryInput.trim()]);
+      setNewCategoryInput('');
+      setShowNewCategoryInput(false);
+      message.success('Категория добавлена');
+    } else if (categories.includes(newCategoryInput.trim())) {
+      message.warning('Такая категория уже существует');
     }
   };
 
@@ -96,9 +130,19 @@ const ExpensesPage = () => {
       sorter: (a: Expense, b: Expense) => a.expense_date.localeCompare(b.expense_date),
     },
     {
-      title: 'Локация',
-      dataIndex: 'location_id',
-      key: 'location_id',
+      title: 'Терминал',
+      dataIndex: 'vendista_term_id',
+      key: 'vendista_term_id',
+      render: (vendistaTermId: number | null) => {
+        if (vendistaTermId === null || vendistaTermId === undefined) {
+          return '-';
+        }
+        const terminal = terminals.find(t => t.id === vendistaTermId);
+        if (terminal) {
+          return `${terminal.comment || terminal.title || 'Терминал'} (ID: ${vendistaTermId})`;
+        }
+        return `ID: ${vendistaTermId}`;
+      },
     },
     {
       title: 'Категория',
@@ -178,19 +222,75 @@ const ExpensesPage = () => {
       <Modal
         title={editingId ? 'Редактировать расход' : 'Добавить расход'}
         open={modalOpen}
-        onCancel={() => setModalOpen(false)}
+        onCancel={() => {
+          setModalOpen(false);
+          setShowNewCategoryInput(false);
+          setNewCategoryInput('');
+        }}
         onOk={() => form.submit()}
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item name="expense_date" label="Дата" rules={[{ required: true }]}>
             <DatePicker format="DD.MM.YYYY" style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item name="location_id" label="ID Локации" rules={[{ required: true }]}>
-            <InputNumber min={1} style={{ width: '100%' }} />
+          <Form.Item name="vendista_term_id" label="Терминал" rules={[{ required: true, message: 'Выберите терминал' }]}>
+            <Select
+              placeholder="Выберите терминал"
+              loading={terminalsLoading}
+              showSearch
+              allowClear
+              filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              options={terminals.map(term => ({
+                value: term.id,
+                label: `${term.comment || term.title || `Терминал #${term.id}`} (ID: ${term.id})`
+              }))}
+            />
           </Form.Item>
-          <Form.Item name="category" label="Категория" rules={[{ required: true }]}>
-            <Select>
-              {CATEGORIES.map(cat => (
+          <Form.Item name="category" label="Категория" rules={[{ required: true, message: 'Выберите категорию' }]}>
+            <Select
+              placeholder="Выберите категорию"
+              showSearch
+              allowClear
+              dropdownRender={(menu) => (
+                <>
+                  {menu}
+                  <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
+                    {showNewCategoryInput ? (
+                      <Space.Compact style={{ width: '100%' }}>
+                        <Input
+                          placeholder="Новая категория"
+                          value={newCategoryInput}
+                          onChange={(e) => setNewCategoryInput(e.target.value)}
+                          onPressEnter={handleAddCategory}
+                          autoFocus
+                        />
+                        <Button type="primary" onClick={handleAddCategory}>
+                          Добавить
+                        </Button>
+                        <Button onClick={() => {
+                          setShowNewCategoryInput(false);
+                          setNewCategoryInput('');
+                        }}>
+                          Отмена
+                        </Button>
+                      </Space.Compact>
+                    ) : (
+                      <Button
+                        type="link"
+                        icon={<PlusOutlined />}
+                        onClick={() => setShowNewCategoryInput(true)}
+                        style={{ width: '100%' }}
+                      >
+                        Добавить новую категорию
+                      </Button>
+                    )}
+                  </div>
+                </>
+              )}
+            >
+              {categories.map(cat => (
                 <Select.Option key={cat} value={cat}>{cat}</Select.Option>
               ))}
             </Select>

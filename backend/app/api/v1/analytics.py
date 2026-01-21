@@ -306,44 +306,127 @@ def get_owner_report(
     # Агрегированные значения
     transactions_count = int(result[0]) if result[0] else 0
     revenue_gross = float(result[1]) if result[1] else 0.0
+    cogs_total = float(result[2]) if result[2] else 0.0
     expenses_total = float(result[3]) if result[3] else 0.0
     net_profit = float(result[4]) if result[4] else 0.0
     
-    # FALLBACK: если vw_owner_report_daily пустая, считаем из vendista_tx_raw
+    # FALLBACK: если vw_owner_report_daily пустая, используем vw_kpi_daily
     if transactions_count == 0 and revenue_gross == 0.0:
         fallback_query = """
             SELECT
-                COUNT(*) as tx_count,
-                COALESCE(SUM((payload->>'sum')::numeric), 0) as sum_kopecks
-            FROM vendista_tx_raw
-            WHERE tx_time::date >= :from_date AND tx_time::date <= :to_date
-              AND (payload->>'sum') IS NOT NULL
-              AND (payload->>'sum')::numeric > 0
+                COALESCE(SUM(sales_count), 0) as transactions_count,
+                COALESCE(SUM(revenue), 0) as revenue_gross,
+                COALESCE(SUM(cogs), 0) as cogs_total
+            FROM vw_kpi_daily
+            WHERE tx_date >= :from_date AND tx_date <= :to_date
         """
+        if location_id:
+            fallback_query += " AND location_id = :location_id"
+        
         fallback_result = db.execute(text(fallback_query), params).fetchone()
         
-        if fallback_result and fallback_result[0] > 0:
+        if fallback_result and fallback_result[0] and fallback_result[0] > 0:
             transactions_count = int(fallback_result[0])
-            # Vendista sum в копейках, конвертируем в рубли
-            revenue_gross = round(float(fallback_result[1]) / 100, 2)
+            revenue_gross = float(fallback_result[1]) if fallback_result[1] else 0.0
+            cogs_total = float(fallback_result[2]) if fallback_result[2] else 0.0
             
-            # Расходы из variable_expenses
+            # Расходы из variable_expenses (через vendista_term_id, location_id может быть NULL)
             expense_query = """
-                SELECT COALESCE(SUM(amount_rub), 0)
-                FROM variable_expenses
-                WHERE expense_date >= :from_date AND expense_date <= :to_date
+                SELECT COALESCE(SUM(ve.amount_rub), 0)
+                FROM variable_expenses ve
+                LEFT JOIN vendista_terminals vt ON vt.id = ve.vendista_term_id
+                WHERE ve.expense_date >= :from_date AND ve.expense_date <= :to_date
             """
+            if location_id:
+                expense_query += " AND COALESCE(vt.location_id, -1) = :location_id"
+            
             exp_result = db.execute(text(expense_query), params).fetchone()
             expenses_total = float(exp_result[0]) if exp_result else 0.0
+        else:
+            # Если и vw_kpi_daily пустая, пробуем vw_tx_cogs
+            tx_cogs_query = """
+                SELECT
+                    COUNT(*) as transactions_count,
+                    COALESCE(SUM(revenue), 0) as revenue_gross,
+                    COALESCE(SUM(cogs), 0) as cogs_total
+                FROM vw_tx_cogs
+                WHERE tx_date >= :from_date AND tx_date <= :to_date
+            """
+            if location_id:
+                tx_cogs_query += " AND location_id = :location_id"
+            
+            tx_cogs_result = db.execute(text(tx_cogs_query), params).fetchone()
+            
+            if tx_cogs_result and tx_cogs_result[0] > 0:
+                transactions_count = int(tx_cogs_result[0])
+                revenue_gross = float(tx_cogs_result[1]) if tx_cogs_result[1] else 0.0
+                cogs_total = float(tx_cogs_result[2]) if tx_cogs_result[2] else 0.0
+                
+                # Расходы из variable_expenses (через vendista_term_id, location_id может быть NULL)
+                if expenses_total == 0.0:
+                    expense_query = """
+                        SELECT COALESCE(SUM(ve.amount_rub), 0)
+                        FROM variable_expenses ve
+                        LEFT JOIN vendista_terminals vt ON vt.id = ve.vendista_term_id
+                        WHERE ve.expense_date >= :from_date AND ve.expense_date <= :to_date
+                    """
+                    if location_id:
+                        expense_query += " AND COALESCE(vt.location_id, -1) = :location_id"
+                    
+                    exp_result = db.execute(text(expense_query), params).fetchone()
+                    expenses_total = float(exp_result[0]) if exp_result else 0.0
     
     # Комиссии: 8.95% от выручки
     fees_total = round(revenue_gross * 0.0895, 2)
     
-    # Чистая прибыль
-    if revenue_gross > 0:
-        final_net_profit = revenue_gross - fees_total - expenses_total
+    # Чистая прибыль: выручка - COGS - комиссии - переменные расходы
+    # Если net_profit уже рассчитан из view (с учетом переменных расходов), используем его
+    # Иначе считаем: gross_profit - комиссии - переменные расходы
+    if net_profit != 0.0 or (transactions_count > 0 and revenue_gross > 0):
+        # Если есть данные из view, используем их, но вычитаем комиссии
+        gross_profit = revenue_gross - cogs_total
+        final_net_profit = gross_profit - fees_total - expenses_total
     else:
-        final_net_profit = net_profit - fees_total
+        # Если данных нет, возвращаем 0
+        final_net_profit = 0.0
+    
+    # Дополнительные метрики
+    avg_check = revenue_gross / transactions_count if transactions_count > 0 else 0.0
+    gross_profit = revenue_gross - cogs_total
+    gross_margin_pct = (gross_profit / revenue_gross * 100) if revenue_gross > 0 else 0.0
+    net_margin_pct = (final_net_profit / revenue_gross * 100) if revenue_gross > 0 else 0.0
+    
+    # Топ продукты за период
+    top_products_query = """
+        SELECT
+            drink_id,
+            drink_name,
+            COUNT(*) as sales_count,
+            SUM(revenue) as revenue,
+            SUM(cogs) as cogs,
+            SUM(gross_profit) as gross_profit
+        FROM vw_tx_cogs
+        WHERE tx_date >= :from_date AND tx_date <= :to_date
+    """
+    if location_id:
+        top_products_query += " AND location_id = :location_id"
+    top_products_query += """
+        GROUP BY drink_id, drink_name
+        ORDER BY SUM(revenue) DESC
+        LIMIT 10
+    """
+    top_products_result = db.execute(text(top_products_query), params).fetchall()
+    top_products = [
+        {
+            "drink_id": row[0],
+            "drink_name": row[1],
+            "sales_count": int(row[2]),
+            "revenue": float(row[3]),
+            "cogs": float(row[4]),
+            "gross_profit": float(row[5])
+        }
+        for row in top_products_result
+    ]
     
     return {
         "period_start": period_start.isoformat(),
@@ -352,5 +435,11 @@ def get_owner_report(
         "fees_total": fees_total,
         "expenses_total": expenses_total,
         "net_profit": final_net_profit,
-        "transactions_count": transactions_count
+        "transactions_count": transactions_count,
+        "avg_check": round(avg_check, 2),
+        "gross_profit": round(gross_profit, 2),
+        "gross_margin_pct": round(gross_margin_pct, 2),
+        "net_margin_pct": round(net_margin_pct, 2),
+        "cogs_total": round(cogs_total, 2),
+        "top_products": top_products
     }

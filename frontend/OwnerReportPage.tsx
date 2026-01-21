@@ -734,42 +734,7 @@ export default function OwnerReportPage() {
             <Col xs={24} sm={12} lg={6}>
               <Card>
                 <Statistic
-                  title={
-                    <Space>
-                      Средний чек
-                      <Tooltip 
-                        title={
-                          <div style={{ maxWidth: '350px', whiteSpace: 'normal' }}>
-                            <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Средний чек</div>
-                            <div style={{ marginBottom: '8px' }}>
-                              Средняя сумма одной транзакции за период.
-                            </div>
-                            <div style={{ marginBottom: '8px' }}>
-                              <strong>Формула:</strong> Выручка / Количество транзакций
-                            </div>
-                            <div style={{ fontSize: '12px', padding: '8px', background: 'rgba(0,0,0,0.05)', borderRadius: '4px', marginBottom: '8px' }}>
-                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Пример:</div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Выручка: 66 702 ₽
-                              </div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Транзакций: 498
-                              </div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Средний чек: 66 702 / 498 = 133.94 ₽
-                              </div>
-                            </div>
-                            <div style={{ fontSize: '11px', color: '#999' }}>
-                              Показывает среднюю стоимость покупки
-                            </div>
-                          </div>
-                        }
-                        overlayStyle={{ maxWidth: '350px' }}
-                      >
-                        <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help' }} />
-                      </Tooltip>
-                    </Space>
-                  }
+                  title="Средний чек"
                   value={data.avg_check || 0}
                   formatter={(val) => formatRub(val as number)}
                   prefix={<DollarOutlined />}
@@ -779,42 +744,7 @@ export default function OwnerReportPage() {
             <Col xs={24} sm={12} lg={6}>
               <Card>
                 <Statistic
-                  title={
-                    <Space>
-                      Валовая прибыль
-                      <Tooltip 
-                        title={
-                          <div style={{ maxWidth: '400px', whiteSpace: 'normal' }}>
-                            <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Валовая прибыль</div>
-                            <div style={{ marginBottom: '8px' }}>
-                              Прибыль до вычета комиссий и переменных расходов.
-                            </div>
-                            <div style={{ marginBottom: '8px' }}>
-                              <strong>Формула:</strong> Выручка - COGS (себестоимость)
-                            </div>
-                            <div style={{ fontSize: '12px', padding: '8px', background: 'rgba(0,0,0,0.05)', borderRadius: '4px', marginBottom: '8px' }}>
-                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>COGS включает:</div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Стоимость ингредиентов напитков
-                              </div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Только ингредиенты с expense_kind = 'stock_tracked'
-                              </div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • С учетом конвертации единиц (г→кг, мл→л)
-                              </div>
-                            </div>
-                            <div style={{ fontSize: '11px', color: '#999' }}>
-                              Валовая прибыль показывает эффективность продаж до учета операционных расходов
-                            </div>
-                          </div>
-                        }
-                        overlayStyle={{ maxWidth: '400px' }}
-                      >
-                        <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help' }} />
-                      </Tooltip>
-                    </Space>
-                  }
+                  title="Валовая прибыль"
                   value={data.gross_profit || 0}
                   formatter={(val) => formatRub(val as number)}
                   prefix={<LineChartOutlined />}
@@ -824,60 +754,7 @@ export default function OwnerReportPage() {
             <Col xs={24} sm={12} lg={6}>
               <Card>
                 <Statistic
-                  title={
-                    <Space>
-                      COGS (себестоимость)
-                      <Tooltip 
-                        title={
-                          <div style={{ maxWidth: '400px', whiteSpace: 'normal' }}>
-                            <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>COGS (Cost of Goods Sold)</div>
-                            <div style={{ marginBottom: '8px' }}>
-                              Себестоимость проданных товаров - стоимость ингредиентов, использованных для приготовления напитков.
-                            </div>
-                            <div style={{ marginBottom: '8px' }}>
-                              <strong>Формула:</strong> SUM(стоимость ингредиентов) из всех проданных напитков
-                            </div>
-                            <div style={{ fontSize: '12px', padding: '8px', background: 'rgba(0,0,0,0.05)', borderRadius: '4px', marginBottom: '8px' }}>
-                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Расчет COGS:</div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Для каждого проданного напитка:
-                              </div>
-                              <div style={{ marginLeft: '16px', marginTop: '4px' }}>
-                                - Берется рецепт напитка (drink_items)
-                              </div>
-                              <div style={{ marginLeft: '16px' }}>
-                                - Для каждого ингредиента:
-                              </div>
-                              <div style={{ marginLeft: '24px', marginTop: '4px' }}>
-                                • qty × cost_per_unit (с конвертацией единиц)
-                              </div>
-                              <div style={{ marginLeft: '8px', marginTop: '4px' }}>
-                                • Учитываются только ингредиенты с expense_kind = 'stock_tracked'
-                              </div>
-                            </div>
-                            <div style={{ fontSize: '12px', padding: '8px', background: 'rgba(0,0,0,0.05)', borderRadius: '4px', marginBottom: '8px' }}>
-                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Конвертация единиц:</div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • г → кг: qty × (cost / 1000)
-                              </div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • мл → л: qty × (cost / 1000)
-                              </div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Одинаковые единицы: qty × cost
-                              </div>
-                            </div>
-                            <div style={{ fontSize: '11px', color: '#999' }}>
-                              Данные берутся из view vw_tx_cogs через шаблоны матриц
-                            </div>
-                          </div>
-                        }
-                        overlayStyle={{ maxWidth: '400px' }}
-                      >
-                        <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help' }} />
-                      </Tooltip>
-                    </Space>
-                  }
+                  title="COGS (себестоимость)"
                   value={data.cogs_total || 0}
                   formatter={(val) => formatRub(val as number)}
                   prefix={<ShoppingOutlined />}
@@ -887,42 +764,7 @@ export default function OwnerReportPage() {
             <Col xs={24} sm={12} lg={6}>
               <Card>
                 <Statistic
-                  title={
-                    <Space>
-                      Валовая маржа
-                      <Tooltip 
-                        title={
-                          <div style={{ maxWidth: '350px', whiteSpace: 'normal' }}>
-                            <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Валовая маржа</div>
-                            <div style={{ marginBottom: '8px' }}>
-                              Процент валовой прибыли от выручки.
-                            </div>
-                            <div style={{ marginBottom: '8px' }}>
-                              <strong>Формула:</strong> (Валовая прибыль / Выручка) × 100%
-                            </div>
-                            <div style={{ fontSize: '12px', padding: '8px', background: 'rgba(0,0,0,0.05)', borderRadius: '4px', marginBottom: '8px' }}>
-                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Показывает:</div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Эффективность продаж
-                              </div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Насколько выручка превышает себестоимость
-                              </div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Рентабельность до учета операционных расходов
-                              </div>
-                            </div>
-                            <div style={{ fontSize: '11px', color: '#999' }}>
-                              Высокая валовая маржа = хорошая эффективность продаж
-                            </div>
-                          </div>
-                        }
-                        overlayStyle={{ maxWidth: '350px' }}
-                      >
-                        <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help' }} />
-                      </Tooltip>
-                    </Space>
-                  }
+                  title="Валовая маржа"
                   value={data.gross_margin_pct || 0}
                   suffix="%"
                   prefix={<LineChartOutlined />}

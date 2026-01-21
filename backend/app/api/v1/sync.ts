@@ -30,11 +30,11 @@ export interface SyncRun {
 
 export interface VendistaTerminal {
   id: number;
-  title: string | null;
+  vendista_term_id: number;
+  title: string;
   comment: string | null;
   is_active: boolean;
-  created_at?: string;
-  updated_at?: string;
+  location_id: number | null;
 }
 
 export interface VendistaTransaction {
@@ -123,20 +123,3 @@ export const triggerSyncWithPeriod = (params: {
   transactions_synced: number;
   message: string;
 }>('/sync/sync', null, { params });
-
-// Sync terminals from transactions
-export interface TerminalSyncResult {
-  success: boolean;
-  synced_count: number;
-  created_count: number;
-  updated_count: number;
-  terminals: Array<{
-    id: number;
-    comment: string;
-    terminal_id: string;
-  }>;
-  message: string;
-}
-
-export const syncTerminals = () =>
-  apiClient.post<TerminalSyncResult>('/sync/terminals/sync');
