@@ -196,12 +196,13 @@ def upgrade():
         FROM vw_kpi_daily k
         LEFT JOIN (
             SELECT
-                expense_date,
-                location_id,
-                SUM(amount_rub) as variable_expenses
-            FROM variable_expenses
-            GROUP BY expense_date, location_id
-        ) ve ON ve.expense_date = k.tx_date AND ve.location_id = k.location_id;
+                ve.expense_date,
+                COALESCE(vt.location_id, NULL) as location_id,
+                SUM(ve.amount_rub) as variable_expenses
+            FROM variable_expenses ve
+            LEFT JOIN vendista_terminals vt ON vt.id = ve.vendista_term_id
+            GROUP BY ve.expense_date, COALESCE(vt.location_id, NULL)
+        ) ve ON ve.expense_date = k.tx_date AND COALESCE(ve.location_id, -1) = COALESCE(k.location_id, -1);
     """)
     
     # Drop machine_matrix table (replaced by button_matrices system)

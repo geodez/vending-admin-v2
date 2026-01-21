@@ -330,14 +330,15 @@ def get_owner_report(
             revenue_gross = float(fallback_result[1]) if fallback_result[1] else 0.0
             cogs_total = float(fallback_result[2]) if fallback_result[2] else 0.0
             
-            # Расходы из variable_expenses
+            # Расходы из variable_expenses (через vendista_term_id, location_id может быть NULL)
             expense_query = """
-                SELECT COALESCE(SUM(amount_rub), 0)
-                FROM variable_expenses
-                WHERE expense_date >= :from_date AND expense_date <= :to_date
+                SELECT COALESCE(SUM(ve.amount_rub), 0)
+                FROM variable_expenses ve
+                LEFT JOIN vendista_terminals vt ON vt.id = ve.vendista_term_id
+                WHERE ve.expense_date >= :from_date AND ve.expense_date <= :to_date
             """
             if location_id:
-                expense_query += " AND location_id = :location_id"
+                expense_query += " AND COALESCE(vt.location_id, -1) = :location_id"
             
             exp_result = db.execute(text(expense_query), params).fetchone()
             expenses_total = float(exp_result[0]) if exp_result else 0.0
@@ -361,15 +362,16 @@ def get_owner_report(
                 revenue_gross = float(tx_cogs_result[1]) if tx_cogs_result[1] else 0.0
                 cogs_total = float(tx_cogs_result[2]) if tx_cogs_result[2] else 0.0
                 
-                # Расходы из variable_expenses (если еще не получены)
+                # Расходы из variable_expenses (через vendista_term_id, location_id может быть NULL)
                 if expenses_total == 0.0:
                     expense_query = """
-                        SELECT COALESCE(SUM(amount_rub), 0)
-                        FROM variable_expenses
-                        WHERE expense_date >= :from_date AND expense_date <= :to_date
+                        SELECT COALESCE(SUM(ve.amount_rub), 0)
+                        FROM variable_expenses ve
+                        LEFT JOIN vendista_terminals vt ON vt.id = ve.vendista_term_id
+                        WHERE ve.expense_date >= :from_date AND ve.expense_date <= :to_date
                     """
                     if location_id:
-                        expense_query += " AND location_id = :location_id"
+                        expense_query += " AND COALESCE(vt.location_id, -1) = :location_id"
                     
                     exp_result = db.execute(text(expense_query), params).fetchone()
                     expenses_total = float(exp_result[0]) if exp_result else 0.0
