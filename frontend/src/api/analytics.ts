@@ -38,5 +38,9 @@ export const createExpense = (data: { date: string; category: string; amount: nu
   apiClient.post<ExpenseData>('/v1/analytics/expenses', data);
 
 // Owner Report
-export const getOwnerReport = (params?: { from_date?: string; to_date?: string }) =>
-  apiClient.get<any>('/v1/analytics/owner-report', { params });
+export const getOwnerReport = (params?: { period_start?: string; period_end?: string; location_id?: number }) =>
+  apiClient.get<any>('/analytics/owner-report', { params });
+
+// Daily Sales for charts
+export const getDailySales = (params?: { from_date?: string; to_date?: string; location_id?: number }) =>
+  apiClient.get<any[]>('/analytics/sales/daily', { params });

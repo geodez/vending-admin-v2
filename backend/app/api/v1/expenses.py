@@ -20,7 +20,8 @@ router = APIRouter()
 # Pydantic schemas
 class ExpenseCreate(BaseModel):
     expense_date: date
-    location_id: int  # This is actually terminal location_id or terminal id
+    vendista_term_id: int = Field(..., gt=0)
+    location_id: Optional[int] = None  # deprecated, kept for backward compatibility
     category: str = Field(..., min_length=1, max_length=50)
     amount_rub: float = Field(..., gt=0)
     comment: Optional[str] = None
@@ -28,7 +29,8 @@ class ExpenseCreate(BaseModel):
 
 class ExpenseUpdate(BaseModel):
     expense_date: Optional[date] = None
-    location_id: Optional[int] = None
+    vendista_term_id: Optional[int] = None
+    location_id: Optional[int] = None  # deprecated, kept for backward compatibility
     category: Optional[str] = Field(None, min_length=1, max_length=50)
     amount_rub: Optional[float] = Field(None, gt=0)
     comment: Optional[str] = None
@@ -37,6 +39,7 @@ class ExpenseUpdate(BaseModel):
 class ExpenseResponse(BaseModel):
     id: int
     expense_date: date
+    vendista_term_id: Optional[int]
     location_id: Optional[int]  # May be NULL since locations don't exist as entities
     category: str
     amount_rub: float
@@ -45,6 +48,7 @@ class ExpenseResponse(BaseModel):
     updated_at: datetime
 
 
+@router.get("", response_model=List[ExpenseResponse])
 @router.get("/", response_model=List[ExpenseResponse])
 async def get_expenses(
     period_start: Optional[date] = Query(None),
@@ -94,7 +98,7 @@ async def get_expenses(
     where_sql = " AND ".join(where_clauses)
     
     query = text(f"""
-        SELECT id, expense_date, location_id, category, amount_rub, comment, created_at, updated_at
+        SELECT id, expense_date, vendista_term_id, location_id, category, amount_rub, comment, created_at, updated_at
         FROM variable_expenses
         WHERE {where_sql}
         ORDER BY expense_date DESC, created_at DESC
@@ -108,17 +112,19 @@ async def get_expenses(
         expenses.append({
             "id": row[0],
             "expense_date": row[1],
-            "location_id": row[2] if row[2] is not None else None,  # Handle NULL location_id
-            "category": row[3],
-            "amount_rub": float(row[4]),
-            "comment": row[5],
-            "created_at": row[6],
-            "updated_at": row[7]
+            "vendista_term_id": row[2],
+            "location_id": row[3] if row[3] is not None else None,  # Handle NULL location_id
+            "category": row[4],
+            "amount_rub": float(row[5]),
+            "comment": row[6],
+            "created_at": row[7],
+            "updated_at": row[8]
         })
     
     return expenses
 
 
+@router.post("", response_model=ExpenseResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=ExpenseResponse, status_code=status.HTTP_201_CREATED)
 async def create_expense(
     expense: ExpenseCreate,
@@ -136,32 +142,22 @@ async def create_expense(
             detail="Only owners can create expenses"
         )
     
-    # Find terminal by location_id (which is actually terminal location_id or terminal id)
-    # Get terminal to find its vendista_term_id
-    terminal_query = text("""
-        SELECT id, location_id 
-        FROM vendista_terminals 
-        WHERE location_id = :location_id OR id = :location_id
-        LIMIT 1
-    """)
-    terminal_result = db.execute(terminal_query, {"location_id": expense.location_id})
-    terminal_row = terminal_result.fetchone()
-    
-    if not terminal_row:
+    vendista_term_id = expense.vendista_term_id
+    terminal_exists = db.execute(
+        text("SELECT 1 FROM vendista_terminals WHERE id = :id LIMIT 1"),
+        {"id": vendista_term_id},
+    ).fetchone()
+    if not terminal_exists:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Terminal with location_id or id={expense.location_id} not found"
+            detail=f"Terminal id={vendista_term_id} not found"
         )
-    
-    vendista_term_id = terminal_row[0]  # terminal id
-    # Use NULL for location_id since locations don't exist as entities
-    # We use vendista_term_id to link expense to terminal
     
     # Use explicit NULL for location_id in SQL, don't pass it in parameters
     query = text("""
         INSERT INTO variable_expenses (expense_date, location_id, vendista_term_id, category, amount_rub, comment, created_at, updated_at, created_by_user_id)
         VALUES (:expense_date, NULL, :vendista_term_id, :category, :amount_rub, :comment, NOW(), NOW(), :created_by_user_id)
-        RETURNING id, expense_date, location_id, category, amount_rub, comment, created_at, updated_at
+        RETURNING id, expense_date, vendista_term_id, location_id, category, amount_rub, comment, created_at, updated_at
     """)
     
     # Don't include location_id in params - it's set to NULL in SQL
@@ -180,12 +176,13 @@ async def create_expense(
     return {
         "id": row[0],
         "expense_date": row[1],
-        "location_id": row[2] if row[2] is not None else None,  # Handle NULL location_id
-        "category": row[3],
-        "amount_rub": float(row[4]),
-        "comment": row[5],
-        "created_at": row[6],
-        "updated_at": row[7]
+        "vendista_term_id": row[2],
+        "location_id": row[3] if row[3] is not None else None,  # Handle NULL location_id
+        "category": row[4],
+        "amount_rub": float(row[5]),
+        "comment": row[6],
+        "created_at": row[7],
+        "updated_at": row[8]
     }
 
 
@@ -215,22 +212,20 @@ async def update_expense(
         updates.append("expense_date = :expense_date")
         params["expense_date"] = expense.expense_date
     
-    if expense.location_id is not None:
-        # Find terminal and update vendista_term_id instead
-        terminal_query = text("""
-            SELECT id 
-            FROM vendista_terminals 
-            WHERE location_id = :location_id OR id = :location_id
-            LIMIT 1
-        """)
-        terminal_result = db.execute(terminal_query, {"location_id": expense.location_id})
-        terminal_row = terminal_result.fetchone()
-        
-        if terminal_row:
-            updates.append("vendista_term_id = :vendista_term_id")
-            params["vendista_term_id"] = terminal_row[0]
-            # Set location_id to NULL since locations don't exist as entities
-            updates.append("location_id = NULL")
+    if expense.vendista_term_id is not None:
+        terminal_exists = db.execute(
+            text("SELECT 1 FROM vendista_terminals WHERE id = :id LIMIT 1"),
+            {"id": expense.vendista_term_id},
+        ).fetchone()
+        if not terminal_exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Terminal id={expense.vendista_term_id} not found"
+            )
+        updates.append("vendista_term_id = :vendista_term_id")
+        params["vendista_term_id"] = expense.vendista_term_id
+        # Set location_id to NULL since locations don't exist as entities
+        updates.append("location_id = NULL")
     
     if expense.category is not None:
         updates.append("category = :category")
@@ -257,7 +252,7 @@ async def update_expense(
         UPDATE variable_expenses
         SET {set_sql}
         WHERE id = :expense_id
-        RETURNING id, expense_date, location_id, category, amount_rub, comment, created_at, updated_at
+        RETURNING id, expense_date, vendista_term_id, location_id, category, amount_rub, comment, created_at, updated_at
     """)
     
     result = db.execute(query, params)
@@ -273,12 +268,13 @@ async def update_expense(
     return {
         "id": row[0],
         "expense_date": row[1],
-        "location_id": row[2],
-        "category": row[3],
-        "amount_rub": float(row[4]),
-        "comment": row[5],
-        "created_at": row[6],
-        "updated_at": row[7]
+        "vendista_term_id": row[2],
+        "location_id": row[3],
+        "category": row[4],
+        "amount_rub": float(row[5]),
+        "comment": row[6],
+        "created_at": row[7],
+        "updated_at": row[8]
     }
 
 

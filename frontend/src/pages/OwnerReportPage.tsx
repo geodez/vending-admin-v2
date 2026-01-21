@@ -1,9 +1,14 @@
-import { useEffect, useState } from 'react';
-import { Spin, Result, Button, Typography, Card, Row, Col, Table, Space, Statistic, Alert, Modal, message, Tooltip } from 'antd';
-import { DollarOutlined, CreditCardOutlined, ShoppingOutlined, LineChartOutlined, ReloadOutlined, CheckCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { useEffect, useState, useMemo } from 'react';
+import { Spin, Result, Button, Typography, Card, Row, Col, Table, Space, Statistic, Alert, Modal, message, Tooltip, DatePicker, Select, Radio } from 'antd';
+import { DollarOutlined, CreditCardOutlined, ShoppingOutlined, LineChartOutlined, ReloadOutlined, CheckCircleOutlined, QuestionCircleOutlined, FilterOutlined } from '@ant-design/icons';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import apiClient from '../api/client';
+import { getOwnerReport, getDailySales } from '../api/analytics';
+import { getTerminals, VendistaTerminal } from '../api/sync';
+import dayjs, { Dayjs } from 'dayjs';
 
 const { Paragraph, Title, Text } = Typography;
+const { RangePicker } = DatePicker;
 
 type LoadState =
   | { kind: 'loading' }
@@ -20,6 +25,19 @@ interface OwnerReportData {
   expenses_total: number;
   net_profit: number;
   transactions_count: number;
+  avg_check: number;
+  gross_profit: number;
+  gross_margin_pct: number;
+  net_margin_pct: number;
+  cogs_total: number;
+  top_products: Array<{
+    drink_id: number;
+    drink_name: string;
+    sales_count: number;
+    revenue: number;
+    cogs: number;
+    gross_profit: number;
+  }>;
 }
 
 // Форматирование как RUB
@@ -32,16 +50,52 @@ const formatRub = (value: number) => {
   }).format(value);
 };
 
+const COLORS = ['#1890ff', '#52c41a', '#faad14', '#f5222d', '#722ed1', '#13c2c2', '#eb2f96', '#fa8c16'];
+
 export default function OwnerReportPage() {
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
   const [healthLoading, setHealthLoading] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
   const [healthStatus, setHealthStatus] = useState<{ ok: boolean; status: string } | null>(null);
+  const [dailyData, setDailyData] = useState<any[]>([]);
+  const [dailyLoading, setDailyLoading] = useState(false);
+  
+  // Filters
+  const [periodStart, setPeriodStart] = useState<Dayjs>(dayjs().startOf('month'));
+  const [periodEnd, setPeriodEnd] = useState<Dayjs>(dayjs());
+  const [selectedTerminal, setSelectedTerminal] = useState<number | undefined>(undefined);
+  const [terminals, setTerminals] = useState<VendistaTerminal[]>([]);
+  const [terminalsLoading, setTerminalsLoading] = useState(false);
+
+  // Загрузка терминалов
+  const loadTerminals = async () => {
+    setTerminalsLoading(true);
+    try {
+      const response = await getTerminals();
+      setTerminals(response.data);
+    } catch (error: any) {
+      console.error('Error loading terminals:', error);
+    } finally {
+      setTerminalsLoading(false);
+    }
+  };
 
   // Загрузка данных отчёта
   const loadReport = async () => {
     try {
-      const res = await apiClient.get('/analytics/owner-report');
+      const params: any = {
+        period_start: periodStart.format('YYYY-MM-DD'),
+        period_end: periodEnd.format('YYYY-MM-DD'),
+      };
+      if (selectedTerminal) {
+        // Find location_id from terminal
+        const terminal = terminals.find(t => t.id === selectedTerminal);
+        if (terminal?.location_id) {
+          params.location_id = terminal.location_id;
+        }
+      }
+      
+      const res = await getOwnerReport(params);
       setState({ kind: 'ok', data: res.data });
     } catch (e: any) {
       const status = e?.response?.status;
@@ -59,19 +113,96 @@ export default function OwnerReportPage() {
     }
   };
 
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      if (alive) {
-        await loadReport();
+  // Загрузка данных по дням для графиков
+  const loadDailyData = async () => {
+    setDailyLoading(true);
+    try {
+      const params: any = {
+        from_date: periodStart.format('YYYY-MM-DD'),
+        to_date: periodEnd.format('YYYY-MM-DD'),
+      };
+      if (selectedTerminal) {
+        const terminal = terminals.find(t => t.id === selectedTerminal);
+        if (terminal?.location_id) {
+          params.location_id = terminal.location_id;
+        }
       }
-    })();
+      
+      const res = await getDailySales(params);
+      // Группируем по датам (на случай нескольких локаций)
+      const grouped = res.data.reduce((acc: any, item: any) => {
+        const date = item.date;
+        if (!acc[date]) {
+          acc[date] = {
+            date: date,
+            revenue: 0,
+            gross_profit: 0,
+            net_profit: 0,
+            sales_count: 0,
+            expenses: 0,
+          };
+        }
+        acc[date].revenue += item.revenue || 0;
+        acc[date].gross_profit += item.gross_profit || 0;
+        acc[date].sales_count += item.sales_count || 0;
+        return acc;
+      }, {});
+      
+      // Добавляем расходы и считаем чистую прибыль
+      const result = Object.values(grouped).map((item: any) => {
+        const fees = item.revenue * 0.0895;
+        // Расходы нужно получить отдельно, пока используем 0
+        const expenses = 0;
+        return {
+          ...item,
+          fees: fees,
+          expenses: expenses,
+          net_profit: item.gross_profit - fees - expenses,
+          dateFormatted: dayjs(item.date).format('DD.MM'),
+        };
+      }).sort((a: any, b: any) => a.date.localeCompare(b.date));
+      
+      setDailyData(result);
+    } catch (error: any) {
+      console.error('Error loading daily data:', error);
+    } finally {
+      setDailyLoading(false);
+    }
+  };
 
-    return () => {
-      alive = false;
-    };
+  useEffect(() => {
+    loadTerminals();
   }, []);
+
+  useEffect(() => {
+    if (terminals.length > 0) {
+      loadReport();
+      loadDailyData();
+    }
+  }, [periodStart, periodEnd, selectedTerminal, terminals.length]);
+
+  // Быстрые фильтры периода
+  const handleQuickFilter = (type: 'today' | 'week' | 'month' | 'year') => {
+    const today = dayjs();
+    switch (type) {
+      case 'today':
+        setPeriodStart(today);
+        setPeriodEnd(today);
+        break;
+      case 'week':
+        setPeriodStart(today.startOf('week'));
+        setPeriodEnd(today);
+        break;
+      case 'month':
+        setPeriodStart(today.startOf('month'));
+        setPeriodEnd(today);
+        break;
+      case 'year':
+        setPeriodStart(today.startOf('year'));
+        setPeriodEnd(today);
+        break;
+    }
+  };
 
   // Проверка соединения с Vendista API
   const handleCheckHealth = async () => {
@@ -109,8 +240,8 @@ export default function OwnerReportPage() {
           
           if (ok) {
             message.success(`✅ Синхронизировано ${transactions_synced} транзакций`);
-            // Перезагрузить отчёт
             await loadReport();
+            await loadDailyData();
           } else {
             message.error('❌ ' + msg);
           }
@@ -247,11 +378,21 @@ export default function OwnerReportPage() {
         value: data.transactions_count.toLocaleString('ru-RU'),
       },
       {
+        key: 'avg_check',
+        param: 'Средний чек',
+        value: formatRub(data.avg_check || 0),
+      },
+      {
+        key: 'gross_margin',
+        param: 'Валовая маржа (%)',
+        value: `${data.gross_margin_pct?.toFixed(2) || '0.00'}%`,
+      },
+      {
         key: 'margin',
-        param: 'Маржа (%)' ,
+        param: 'Маржа (%)',
         value: data.revenue_gross > 0 
-          ? ((data.net_profit / data.revenue_gross) * 100).toFixed(2)
-          : '0.00',
+          ? `${data.net_margin_pct?.toFixed(2) || ((data.net_profit / data.revenue_gross) * 100).toFixed(2)}%`
+          : '0.00%',
       },
     ];
 
@@ -287,10 +428,52 @@ export default function OwnerReportPage() {
                 <QuestionCircleOutlined style={{ color: '#1890ff', cursor: 'help', fontSize: '18px' }} />
               </Tooltip>
             </Space>
-            <Paragraph type="secondary">
-              Финансовые метрики за период {data.period_start} — {data.period_end}
-            </Paragraph>
           </div>
+
+          {/* Фильтры */}
+          <Card title={<><FilterOutlined /> Фильтры</>}>
+            <Space direction="vertical" style={{ width: '100%' }} size="middle">
+              <div>
+                <Text strong style={{ marginRight: 8 }}>Период:</Text>
+                <RangePicker
+                  value={[periodStart, periodEnd]}
+                  onChange={(dates) => {
+                    if (dates && dates[0] && dates[1]) {
+                      setPeriodStart(dates[0]);
+                      setPeriodEnd(dates[1]);
+                    }
+                  }}
+                  format="DD.MM.YYYY"
+                  style={{ marginRight: 16 }}
+                />
+                <Space>
+                  <Button size="small" onClick={() => handleQuickFilter('today')}>Сегодня</Button>
+                  <Button size="small" onClick={() => handleQuickFilter('week')}>Неделя</Button>
+                  <Button size="small" onClick={() => handleQuickFilter('month')}>Месяц</Button>
+                  <Button size="small" onClick={() => handleQuickFilter('year')}>Год</Button>
+                </Space>
+              </div>
+              <div>
+                <Text strong style={{ marginRight: 8 }}>Терминал:</Text>
+                <Select
+                  placeholder="Все терминалы"
+                  allowClear
+                  style={{ width: 300 }}
+                  loading={terminalsLoading}
+                  value={selectedTerminal}
+                  onChange={setSelectedTerminal}
+                  showSearch
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                  }
+                  options={terminals.map(term => ({
+                    value: term.id,
+                    label: `${term.comment || term.title || `Терминал #${term.id}`} (ID: ${term.id})`
+                  }))}
+                />
+              </div>
+            </Space>
+          </Card>
 
           {/* Alert если данные нулевые */}
           {isDataEmpty && (
@@ -351,21 +534,6 @@ export default function OwnerReportPage() {
                             <div style={{ marginBottom: '8px' }}>
                               <strong>Формула:</strong> SUM(revenue) из vw_owner_report_daily
                             </div>
-                            <div style={{ fontSize: '12px', padding: '8px', background: 'rgba(0,0,0,0.05)', borderRadius: '4px', marginBottom: '8px' }}>
-                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Расчет revenue:</div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Из транзакций: (payload-&gt;&gt;'sum') / 100
-                              </div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Конвертация из копеек в рубли
-                              </div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Агрегация по датам и локациям
-                              </div>
-                            </div>
-                            <div style={{ fontSize: '11px', color: '#999' }}>
-                              Данные берутся из view vw_tx_cogs → vw_kpi_daily → vw_owner_report_daily
-                            </div>
                           </div>
                         }
                         overlayStyle={{ maxWidth: '350px' }}
@@ -392,25 +560,7 @@ export default function OwnerReportPage() {
                           <div style={{ maxWidth: '300px', whiteSpace: 'normal' }}>
                             <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Комиссии платформы</div>
                             <div style={{ marginBottom: '8px' }}>
-                              Комиссия платформы Vendista за обработку платежей.
-                            </div>
-                            <div style={{ marginBottom: '8px' }}>
                               <strong>Формула:</strong> Выручка × 8.95%
-                            </div>
-                            <div style={{ fontSize: '12px', padding: '8px', background: 'rgba(0,0,0,0.05)', borderRadius: '4px', marginBottom: '8px' }}>
-                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Применяется:</div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Ко всем транзакциям
-                              </div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Автоматически при расчете
-                              </div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Вычитается из выручки
-                              </div>
-                            </div>
-                            <div style={{ fontSize: '11px', color: '#999' }}>
-                              Стандартная комиссия платформы Vendista
                             </div>
                           </div>
                         }
@@ -438,28 +588,7 @@ export default function OwnerReportPage() {
                           <div style={{ maxWidth: '350px', whiteSpace: 'normal' }}>
                             <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Переменные расходы</div>
                             <div style={{ marginBottom: '8px' }}>
-                              Переменные расходы, введенные вручную в разделе "Расходы".
-                            </div>
-                            <div style={{ marginBottom: '8px' }}>
                               <strong>Формула:</strong> SUM(amount_rub) из variable_expenses
-                            </div>
-                            <div style={{ fontSize: '12px', padding: '8px', background: 'rgba(0,0,0,0.05)', borderRadius: '4px', marginBottom: '8px' }}>
-                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Включает:</div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Аренду помещений
-                              </div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Коммунальные услуги
-                              </div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Обслуживание оборудования
-                              </div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Другие переменные расходы
-                              </div>
-                            </div>
-                            <div style={{ fontSize: '11px', color: '#999' }}>
-                              Добавляются вручную в разделе "Расходы" за выбранный период
                             </div>
                           </div>
                         }
@@ -489,34 +618,7 @@ export default function OwnerReportPage() {
                           <div style={{ maxWidth: '400px', whiteSpace: 'normal' }}>
                             <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Чистая прибыль</div>
                             <div style={{ marginBottom: '8px' }}>
-                              Итоговая прибыль после вычета всех расходов.
-                            </div>
-                            <div style={{ marginBottom: '8px' }}>
                               <strong>Формула:</strong> Выручка - COGS - Комиссии - Расходы
-                            </div>
-                            <div style={{ padding: '8px', background: 'rgba(0,0,0,0.05)', borderRadius: '4px', fontSize: '12px', marginBottom: '8px' }}>
-                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>COGS (себестоимость):</div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Рассчитывается из ингредиентов рецептов напитков
-                              </div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • Только ингредиенты с expense_kind = 'stock_tracked'
-                              </div>
-                              <div style={{ marginLeft: '8px' }}>
-                                • С учетом конвертации единиц:
-                              </div>
-                              <div style={{ marginLeft: '16px', marginTop: '4px' }}>
-                                - г → кг: qty × (cost / 1000)
-                              </div>
-                              <div style={{ marginLeft: '16px' }}>
-                                - мл → л: qty × (cost / 1000)
-                              </div>
-                              <div style={{ marginLeft: '16px' }}>
-                                - одинаковые единицы: qty × cost
-                              </div>
-                            </div>
-                            <div style={{ fontSize: '11px', color: '#999' }}>
-                              Данные берутся из view vw_tx_cogs через шаблоны матриц
                             </div>
                           </div>
                         }
@@ -530,6 +632,142 @@ export default function OwnerReportPage() {
                   formatter={(val) => formatRub(val as number)}
                   prefix={<LineChartOutlined />}
                   valueStyle={{ color: data.net_profit >= 0 ? '#1890ff' : '#ff4d4f' }}
+                />
+              </Card>
+            </Col>
+          </Row>
+
+          {/* Графики */}
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={12}>
+              <Card title="Динамика выручки и прибыли" loading={dailyLoading}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={dailyData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="dateFormatted" />
+                    <YAxis />
+                    <RechartsTooltip formatter={(value: number) => formatRub(value)} />
+                    <Legend />
+                    <Line type="monotone" dataKey="revenue" stroke="#1890ff" name="Выручка" />
+                    <Line type="monotone" dataKey="gross_profit" stroke="#52c41a" name="Валовая прибыль" />
+                    <Line type="monotone" dataKey="net_profit" stroke="#722ed1" name="Чистая прибыль" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Card>
+            </Col>
+            <Col xs={24} lg={12}>
+              <Card title="Количество транзакций" loading={dailyLoading}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={dailyData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="dateFormatted" />
+                    <YAxis />
+                    <RechartsTooltip />
+                    <Legend />
+                    <Bar dataKey="sales_count" fill="#1890ff" name="Транзакции" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Card>
+            </Col>
+          </Row>
+
+          {/* Топ продукты */}
+          {data.top_products && data.top_products.length > 0 && (
+            <Row gutter={[16, 16]}>
+              <Col xs={24} lg={12}>
+                <Card title="Топ-10 продуктов по выручке">
+                  <Table
+                    dataSource={data.top_products}
+                    pagination={false}
+                    size="small"
+                    columns={[
+                      {
+                        title: 'Напиток',
+                        dataIndex: 'drink_name',
+                        key: 'drink_name',
+                      },
+                      {
+                        title: 'Продажи',
+                        dataIndex: 'sales_count',
+                        key: 'sales_count',
+                        align: 'right' as const,
+                      },
+                      {
+                        title: 'Выручка',
+                        dataIndex: 'revenue',
+                        key: 'revenue',
+                        align: 'right' as const,
+                        render: (val: number) => formatRub(val),
+                      },
+                    ]}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} lg={12}>
+                <Card title="Распределение выручки по продуктам">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={data.top_products.slice(0, 8)}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="revenue"
+                      >
+                        {data.top_products.slice(0, 8).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip formatter={(value: number) => formatRub(value)} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Card>
+              </Col>
+            </Row>
+          )}
+
+          {/* Расширенные метрики */}
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} lg={6}>
+              <Card>
+                <Statistic
+                  title="Средний чек"
+                  value={data.avg_check || 0}
+                  formatter={(val) => formatRub(val as number)}
+                  prefix={<DollarOutlined />}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <Card>
+                <Statistic
+                  title="Валовая прибыль"
+                  value={data.gross_profit || 0}
+                  formatter={(val) => formatRub(val as number)}
+                  prefix={<LineChartOutlined />}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <Card>
+                <Statistic
+                  title="COGS (себестоимость)"
+                  value={data.cogs_total || 0}
+                  formatter={(val) => formatRub(val as number)}
+                  prefix={<ShoppingOutlined />}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <Card>
+                <Statistic
+                  title="Валовая маржа"
+                  value={data.gross_margin_pct || 0}
+                  suffix="%"
+                  prefix={<LineChartOutlined />}
                 />
               </Card>
             </Col>

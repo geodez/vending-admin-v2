@@ -131,18 +131,17 @@ const ExpensesPage = () => {
     },
     {
       title: 'Терминал',
-      dataIndex: 'location_id',
-      key: 'location_id',
-      render: (locationId: number | null) => {
-        if (locationId === null || locationId === undefined) {
+      dataIndex: 'vendista_term_id',
+      key: 'vendista_term_id',
+      render: (vendistaTermId: number | null) => {
+        if (vendistaTermId === null || vendistaTermId === undefined) {
           return '-';
         }
-        // Find terminal by location_id (terminals have location_id field) or by id
-        const terminal = terminals.find(t => t.location_id === locationId || t.id === locationId);
+        const terminal = terminals.find(t => t.id === vendistaTermId);
         if (terminal) {
-          return `${terminal.comment || terminal.title || 'Терминал'} (ID: ${locationId})`;
+          return `${terminal.comment || terminal.title || 'Терминал'} (ID: ${vendistaTermId})`;
         }
-        return `ID: ${locationId}`;
+        return `ID: ${vendistaTermId}`;
       },
     },
     {
@@ -234,7 +233,7 @@ const ExpensesPage = () => {
           <Form.Item name="expense_date" label="Дата" rules={[{ required: true }]}>
             <DatePicker format="DD.MM.YYYY" style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item name="location_id" label="Терминал" rules={[{ required: true, message: 'Выберите терминал' }]}>
+          <Form.Item name="vendista_term_id" label="Терминал" rules={[{ required: true, message: 'Выберите терминал' }]}>
             <Select
               placeholder="Выберите терминал"
               loading={terminalsLoading}
@@ -243,14 +242,10 @@ const ExpensesPage = () => {
               filterOption={(input, option) =>
                 (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
               }
-              options={terminals.map(term => {
-                // Use location_id if available, otherwise use terminal id as location_id
-                const locationId = term.location_id || term.id;
-                return {
-                  value: locationId,
-                  label: `${term.comment || term.title || `Терминал #${term.id}`} (ID: ${locationId})`
-                };
-              })}
+              options={terminals.map(term => ({
+                value: term.id,
+                label: `${term.comment || term.title || `Терминал #${term.id}`} (ID: ${term.id})`
+              }))}
             />
           </Form.Item>
           <Form.Item name="category" label="Категория" rules={[{ required: true, message: 'Выберите категорию' }]}>

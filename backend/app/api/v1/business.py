@@ -344,38 +344,3 @@ def create_ingredient_load(
     return crud.create_ingredient_load(db, load, user_id=current_user.id)
 
 
-# ============================================================================
-# Variable Expenses
-# ============================================================================
-
-@router.get("/expenses", response_model=List[VariableExpenseResponse])
-def list_expenses(
-    location_id: Optional[int] = None,
-    category: Optional[str] = None,
-    from_date: Optional[date] = None,
-    to_date: Optional[date] = None,
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Get list of variable expenses."""
-    return crud.get_variable_expenses(
-        db,
-        location_id=location_id,
-        category=category,
-        from_date=from_date,
-        to_date=to_date,
-        skip=skip,
-        limit=limit
-    )
-
-
-@router.post("/expenses", response_model=VariableExpenseResponse, status_code=status.HTTP_201_CREATED)
-def create_expense(
-    expense: VariableExpenseCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Create variable expense."""
-    return crud.create_variable_expense(db, expense, user_id=current_user.id)

@@ -390,6 +390,44 @@ def get_owner_report(
         # Если данных нет, возвращаем 0
         final_net_profit = 0.0
     
+    # Дополнительные метрики
+    avg_check = revenue_gross / transactions_count if transactions_count > 0 else 0.0
+    gross_profit = revenue_gross - cogs_total
+    gross_margin_pct = (gross_profit / revenue_gross * 100) if revenue_gross > 0 else 0.0
+    net_margin_pct = (final_net_profit / revenue_gross * 100) if revenue_gross > 0 else 0.0
+    
+    # Топ продукты за период
+    top_products_query = """
+        SELECT
+            drink_id,
+            drink_name,
+            COUNT(*) as sales_count,
+            SUM(revenue) as revenue,
+            SUM(cogs) as cogs,
+            SUM(gross_profit) as gross_profit
+        FROM vw_tx_cogs
+        WHERE tx_date >= :from_date AND tx_date <= :to_date
+    """
+    if location_id:
+        top_products_query += " AND location_id = :location_id"
+    top_products_query += """
+        GROUP BY drink_id, drink_name
+        ORDER BY SUM(revenue) DESC
+        LIMIT 10
+    """
+    top_products_result = db.execute(text(top_products_query), params).fetchall()
+    top_products = [
+        {
+            "drink_id": row[0],
+            "drink_name": row[1],
+            "sales_count": int(row[2]),
+            "revenue": float(row[3]),
+            "cogs": float(row[4]),
+            "gross_profit": float(row[5])
+        }
+        for row in top_products_result
+    ]
+    
     return {
         "period_start": period_start.isoformat(),
         "period_end": period_end.isoformat(),
@@ -397,5 +435,11 @@ def get_owner_report(
         "fees_total": fees_total,
         "expenses_total": expenses_total,
         "net_profit": final_net_profit,
-        "transactions_count": transactions_count
+        "transactions_count": transactions_count,
+        "avg_check": round(avg_check, 2),
+        "gross_profit": round(gross_profit, 2),
+        "gross_margin_pct": round(gross_margin_pct, 2),
+        "net_margin_pct": round(net_margin_pct, 2),
+        "cogs_total": round(cogs_total, 2),
+        "top_products": top_products
     }

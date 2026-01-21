@@ -3,6 +3,7 @@ import apiClient from './client';
 export interface Expense {
   id: number;
   expense_date: string;
+  vendista_term_id: number | null;
   location_id: number | null;  // May be NULL since locations don't exist as entities
   category: string;
   amount_rub: number;
@@ -13,7 +14,7 @@ export interface Expense {
 
 export interface ExpenseCreate {
   expense_date: string;
-  location_id: number;
+  vendista_term_id: number;
   category: string;
   amount_rub: number;
   comment?: string;
@@ -21,7 +22,7 @@ export interface ExpenseCreate {
 
 export interface ExpenseUpdate {
   expense_date?: string;
-  location_id?: number;
+  vendista_term_id?: number;
   category?: string;
   amount_rub?: number;
   comment?: string;
