@@ -90,3 +90,4 @@ migrations/versions/__pycache__/
 *.swp
 .~lock.*
 backend/.env
+backend/docker-compose.override.yml.disabled
