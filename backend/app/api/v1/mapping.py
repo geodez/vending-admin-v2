@@ -1,5 +1,5 @@
 """
-API endpoints for Mapping (drinks + button matrices).
+API endpoints for Mapping (drinks + machine_matrix).
 """
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from sqlalchemy.orm import Session
@@ -25,6 +25,98 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+# ===== MACHINE MATRIX SCHEMAS =====
+class MachineMatrixCreate(BaseModel):
+    term_id: int
+    machine_item_id: int
+    drink_id: int
+    location_id: int
+    is_active: bool = True
+
+
+class MachineMatrixResponse(BaseModel):
+    term_id: int
+    machine_item_id: int
+    drink_id: Optional[int]
+    location_id: Optional[int]
+    is_active: bool
+    term_name: Optional[str] = None  # Название терминала
+    drink_name: Optional[str] = None  # Название напитка
+    location_name: Optional[str] = None  # Название локации
+
+
+# ===== IMPORT SCHEMAS =====
+class ImportPreviewRow(BaseModel):
+    """Row for dry-run preview (no ID, no status)"""
+    term_id: int
+    machine_item_id: int
+    drink_id: int
+    location_id: int
+    is_active: bool
+
+
+class ImportPreviewResponse(BaseModel):
+    """Dry-run preview response"""
+    total_rows: int
+    valid_rows: int
+    errors: List[dict]  # [{"row": 2, "error": "term_id must be integer"}]
+    preview: List[ImportPreviewRow]
+
+
+class ImportApplyResponse(BaseModel):
+    """Apply import response"""
+    inserted: int
+    updated: int
+    errors: List[dict]
+    message: str
+
+
+# ===== DRINKS ENDPOINTS =====
+
+@router.get("/drinks", response_model=List[DrinkResponse])
+async def get_drinks(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get list of all drinks with their recipe items (ingredients) and COGS calculation.
+    """
+    # Get all drinks with COGS calculation
+    drinks_query = text("""
+        SELECT 
+            d.id,
+            d.name,
+            d.is_active,
+            d.created_at,
+            COALESCE((
+                SELECT SUM(
+                    CASE 
+                        -- Если единицы совпадают, просто умножаем
+                        WHEN di.unit = i.unit THEN di.qty_per_unit * i.cost_per_unit_rub
+                        -- Конвертация: рецепт в граммах, ингредиент в килограммах
+                        WHEN di.unit = 'g' AND i.unit = 'kg' THEN di.qty_per_unit * (i.cost_per_unit_rub / 1000.0)
+                        -- Конвертация: рецепт в миллилитрах, ингредиент в литрах
+                        WHEN di.unit = 'ml' AND i.unit = 'l' THEN di.qty_per_unit * (i.cost_per_unit_rub / 1000.0)
+                        -- Конвертация: рецепт в граммах, ингредиент в граммах (но цена за кг)
+                        WHEN di.unit = 'g' AND i.unit = 'g' AND i.cost_per_unit_rub > 100 THEN di.qty_per_unit * (i.cost_per_unit_rub / 1000.0)
+                        -- Остальные случаи - просто умножаем (предполагаем одинаковые единицы)
+                        ELSE di.qty_per_unit * i.cost_per_unit_rub
+                    END
+                )
+                FROM drink_items di
+                JOIN ingredients i ON i.ingredient_code = di.ingredient_code
+                WHERE di.drink_id = d.id
+                  AND i.expense_kind = 'stock_tracked'
+                  AND i.cost_per_unit_rub IS NOT NULL
+            ), 0) as cogs_rub
+        FROM drinks d
+        ORDER BY d.name
+    """)
+    
+    result = db.execute(drinks_query)
+    drinks_rows = result.fetchall()
+    
+    # Get all drink items with ingredient info
     items_query = text("""
         SELECT 
             di.drink_id,
@@ -274,6 +366,407 @@ async def bulk_update_drinks(
     }
 
 
+# ===== MACHINE MATRIX ENDPOINTS =====
+
+@router.get("/machine-matrix", response_model=List[MachineMatrixResponse])
+async def get_machine_matrix(
+    term_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get machine matrix (mapping of terminal buttons to drinks).
+    
+    Optional filter by term_id.
+    """
+    where_clause = "WHERE vendista_term_id = :term_id" if term_id else ""
+    params = {"term_id": term_id} if term_id else {}
+    
+    query = text(f"""
+        SELECT 
+            mm.vendista_term_id,
+            mm.machine_item_id,
+            mm.drink_id,
+            mm.location_id,
+            mm.is_active,
+            vt.comment as term_name,
+            d.name as drink_name,
+            l.name as location_name
+        FROM machine_matrix mm
+        LEFT JOIN vendista_terminals vt ON vt.id = mm.vendista_term_id
+        LEFT JOIN drinks d ON d.id = mm.drink_id
+        LEFT JOIN locations l ON l.id = mm.location_id
+        {where_clause}
+        ORDER BY mm.vendista_term_id, mm.machine_item_id
+    """)
+    
+    result = db.execute(query, params)
+    rows = result.fetchall()
+    
+    matrix = []
+    for row in rows:
+        matrix.append({
+            "term_id": row[0],
+            "machine_item_id": row[1],
+            "drink_id": row[2],
+            "location_id": row[3],
+            "is_active": row[4],
+            "term_name": row[5],
+            "drink_name": row[6],
+            "location_name": row[7]
+        })
+    
+    return matrix
+
+
+@router.post("/machine-matrix", response_model=MachineMatrixResponse, status_code=status.HTTP_201_CREATED)
+async def create_machine_matrix(
+    item: MachineMatrixCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Create or update a single machine matrix record.
+    
+    Uses ON CONFLICT to upsert by (term_id, machine_item_id).
+    Owner-only access.
+    """
+    if current_user.role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owners can modify machine matrix"
+        )
+    
+    # Validate drink_id exists
+    drink_check = text("SELECT id FROM drinks WHERE id = :drink_id")
+    drink_result = db.execute(drink_check, {"drink_id": item.drink_id})
+    if not drink_result.first():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Drink with id {item.drink_id} not found"
+        )
+    
+    # Validate location_id exists
+    location_check = text("SELECT id FROM locations WHERE id = :location_id")
+    location_result = db.execute(location_check, {"location_id": item.location_id})
+    if not location_result.first():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Location with id {item.location_id} not found"
+        )
+    
+    # Insert or update
+    query = text("""
+        INSERT INTO machine_matrix (vendista_term_id, machine_item_id, drink_id, location_id, is_active)
+        VALUES (:term_id, :machine_item_id, :drink_id, :location_id, :is_active)
+        ON CONFLICT (vendista_term_id, machine_item_id)
+        DO UPDATE SET
+            drink_id = EXCLUDED.drink_id,
+            location_id = EXCLUDED.location_id,
+            is_active = EXCLUDED.is_active
+        RETURNING vendista_term_id, machine_item_id, drink_id, location_id, is_active
+    """)
+    
+    result = db.execute(query, {
+        "term_id": item.term_id,
+        "machine_item_id": item.machine_item_id,
+        "drink_id": item.drink_id,
+        "location_id": item.location_id,
+        "is_active": item.is_active
+    })
+    
+    db.commit()
+    row = result.first()
+    
+    # Get names for response
+    names_query = text("""
+        SELECT 
+            vt.comment as term_name,
+            d.name as drink_name,
+            l.name as location_name
+        FROM machine_matrix mm
+        LEFT JOIN vendista_terminals vt ON vt.id = mm.vendista_term_id
+        LEFT JOIN drinks d ON d.id = mm.drink_id
+        LEFT JOIN locations l ON l.id = mm.location_id
+        WHERE mm.vendista_term_id = :term_id AND mm.machine_item_id = :machine_item_id
+    """)
+    names_result = db.execute(names_query, {
+        "term_id": row[0],
+        "machine_item_id": row[1]
+    })
+    names_row = names_result.first()
+    
+    return {
+        "term_id": row[0],
+        "machine_item_id": row[1],
+        "drink_id": row[2],
+        "location_id": row[3],
+        "is_active": row[4],
+        "term_name": names_row[0] if names_row else None,
+        "drink_name": names_row[1] if names_row else None,
+        "location_name": names_row[2] if names_row else None
+    }
+
+
+@router.post("/machine-matrix/bulk", status_code=status.HTTP_201_CREATED)
+async def bulk_create_machine_matrix(
+    items: List[MachineMatrixCreate],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Bulk insert/update machine matrix records.
+    
+    Uses ON CONFLICT to upsert by (term_id, machine_item_id).
+    Owner-only access.
+    """
+    if current_user.role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owners can modify machine matrix"
+        )
+    
+    if not items:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No items provided"
+        )
+    
+    # Prepare bulk insert
+    query = text("""
+        INSERT INTO machine_matrix (vendista_term_id, machine_item_id, drink_id, location_id, is_active)
+        VALUES (:term_id, :machine_item_id, :drink_id, :location_id, :is_active)
+        ON CONFLICT (vendista_term_id, machine_item_id)
+        DO UPDATE SET
+            drink_id = EXCLUDED.drink_id,
+            location_id = EXCLUDED.location_id,
+            is_active = EXCLUDED.is_active
+    """)
+    
+    for item in items:
+        db.execute(query, {
+            "term_id": item.term_id,
+            "machine_item_id": item.machine_item_id,
+            "drink_id": item.drink_id,
+            "location_id": item.location_id,
+            "is_active": item.is_active
+        })
+    
+    db.commit()
+    
+    return {"inserted": len(items), "message": "Machine matrix updated successfully"}
+
+
+@router.delete("/machine-matrix", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_machine_matrix(
+    term_id: int = Query(..., description="Terminal ID"),
+    machine_item_id: int = Query(..., description="Machine item ID"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Delete a machine matrix record by term_id and machine_item_id.
+    
+    Owner-only access.
+    """
+    if current_user.role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owners can delete machine matrix records"
+        )
+    
+    query = text("DELETE FROM machine_matrix WHERE vendista_term_id = :term_id AND machine_item_id = :machine_item_id")
+    result = db.execute(query, {"term_id": term_id, "machine_item_id": machine_item_id})
+    db.commit()
+    
+    if result.rowcount == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Matrix record not found"
+        )
+    
+    return None
+
+
+# ===== HELPER FUNCTIONS =====
+
+def _validate_and_parse_csv(csv_content: str):
+    """
+    Parse and validate CSV content.
+    
+    Expected columns: term_id, machine_item_id, drink_id, location_id, is_active
+    
+    Returns: (valid_rows, errors)
+    - valid_rows: List[dict] with validated data
+    - errors: List[dict] with {"row": line_number, "error": message}
+    """
+    errors = []
+    valid_rows = []
+    
+    try:
+        # Parse CSV
+        reader = csv.DictReader(io.StringIO(csv_content))
+        
+        if not reader.fieldnames:
+            return [], [{"row": 1, "error": "CSV is empty"}]
+        
+        # Check required columns
+        required_cols = {"term_id", "machine_item_id", "drink_id", "location_id", "is_active"}
+        if not required_cols.issubset(set(reader.fieldnames or [])):
+            missing = required_cols - set(reader.fieldnames or [])
+            return [], [{"row": 1, "error": f"Missing columns: {', '.join(missing)}"}]
+        
+        # Parse each row
+        for row_num, row in enumerate(reader, start=2):
+            try:
+                # Validate and convert types
+                term_id = int(row["term_id"].strip())
+                machine_item_id = int(row["machine_item_id"].strip())
+                drink_id = int(row["drink_id"].strip())
+                location_id = int(row["location_id"].strip())
+                is_active_str = row["is_active"].strip().lower()
+                
+                if is_active_str not in ("true", "false", "1", "0"):
+                    raise ValueError(f"is_active must be 'true' or 'false', got '{is_active_str}'")
+                
+                is_active = is_active_str in ("true", "1")
+                
+                # Validate ranges
+                if term_id <= 0:
+                    raise ValueError("term_id must be positive")
+                if machine_item_id <= 0:
+                    raise ValueError("machine_item_id must be positive")
+                if drink_id <= 0:
+                    raise ValueError("drink_id must be positive")
+                if location_id < 0:
+                    raise ValueError("location_id must be non-negative")
+                
+                valid_rows.append({
+                    "term_id": term_id,
+                    "machine_item_id": machine_item_id,
+                    "drink_id": drink_id,
+                    "location_id": location_id,
+                    "is_active": is_active
+                })
+            
+            except ValueError as e:
+                errors.append({"row": row_num, "error": str(e)})
+            except KeyError as e:
+                errors.append({"row": row_num, "error": f"Missing column: {e}"})
+    
+    except Exception as e:
+        logger.error(f"CSV parsing error: {e}")
+        return [], [{"row": 0, "error": f"CSV parsing failed: {str(e)}"}]
+    
+    return valid_rows, errors
+
+
+# ===== IMPORT ENDPOINTS =====
+
+# ===== IMPORT ENDPOINTS =====
+
+@router.post("/matrix/import")
+async def import_matrix(
+    file: UploadFile = File(...),
+    dry_run: bool = True,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Import machine matrix from CSV file with optional dry-run mode.
+    
+    CSV format:
+        term_id,machine_item_id,drink_id,location_id,is_active
+        178428,1,101,10,true
+        178428,2,102,11,true
+    
+    Parameters:
+    - file: CSV file upload
+    - dry_run: if true (default), validate and preview only; if false, apply changes
+    
+    Returns:
+    - dry_run=true: ImportPreviewResponse (validation errors + preview)
+    - dry_run=false: ImportApplyResponse (insert/update summary)
+    
+    Owner-only access.
+    """
+    if current_user.role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owners can import machine matrix"
+        )
+    
+    # Read file content
+    try:
+        content = await file.read()
+        csv_content = content.decode("utf-8")
+    except Exception as e:
+        logger.error(f"File read error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to read file: {str(e)}"
+        )
+    
+    # Parse and validate CSV
+    valid_rows, errors = _validate_and_parse_csv(csv_content)
+    
+    logger.info(f"CSV import: dry_run={dry_run}, valid_rows={len(valid_rows)}, errors={len(errors)}")
+    
+    # DRY-RUN MODE: return preview
+    if dry_run:
+        preview = valid_rows[:100]  # Limit preview to 100 rows
+        return ImportPreviewResponse(
+            total_rows=len(valid_rows) + len(errors),
+            valid_rows=len(valid_rows),
+            errors=errors,
+            preview=preview
+        )
+    
+    # APPLY MODE: check for errors first
+    if errors:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"CSV validation failed with {len(errors)} error(s). Fix errors and retry."
+        )
+    
+    # Apply bulk upsert
+    inserted = 0
+    apply_errors = []
+    
+    query = text("""
+        INSERT INTO machine_matrix (vendista_term_id, machine_item_id, drink_id, location_id, is_active)
+        VALUES (:term_id, :machine_item_id, :drink_id, :location_id, :is_active)
+        ON CONFLICT (vendista_term_id, machine_item_id)
+        DO UPDATE SET
+            drink_id = EXCLUDED.drink_id,
+            location_id = EXCLUDED.location_id,
+            is_active = EXCLUDED.is_active
+    """)
+    
+    for row in valid_rows:
+        try:
+            db.execute(query, row)
+        except Exception as e:
+            logger.error(f"Upsert error for {row}: {e}")
+            apply_errors.append({
+                "term_id": row["term_id"],
+                "machine_item_id": row["machine_item_id"],
+                "error": str(e)
+            })
+    
+    db.commit()
+    inserted = len(valid_rows) - len(apply_errors)
+    
+    logger.info(f"CSV import applied: inserted={inserted}, errors={len(apply_errors)}")
+    
+    return ImportApplyResponse(
+        inserted=inserted,
+        updated=0,
+        errors=apply_errors,
+        message=f"Successfully imported {inserted} rows"
+    )
+
+
 # ===== BUTTON MATRIX ENDPOINTS (New Template System) =====
 
 @router.get("/button-matrices", response_model=List[ButtonMatrixResponse])
@@ -302,49 +795,24 @@ async def get_button_matrix(
     
     items = crud.get_button_matrix_items(db, matrix_id)
     
-    # Get names and COGS for items
+    # Get names for items
     items_with_names = []
     for item in items:
-        drink_name = None
-        cogs_rub = None
+        item_dict = {
+            "machine_item_id": item.machine_item_id,
+            "drink_id": item.drink_id,
+            "is_active": item.is_active,
+            "drink_name": None
+        }
+        
         if item.drink_id:
-            # Get drink name and COGS
-            drink_query = text("""
-                SELECT 
-                    d.name,
-                    COALESCE((
-                        SELECT SUM(
-                            CASE 
-                                WHEN di.unit = i.unit THEN di.qty_per_unit * i.cost_per_unit_rub
-                                WHEN di.unit = 'g' AND i.unit = 'kg' THEN di.qty_per_unit * (i.cost_per_unit_rub / 1000.0)
-                                WHEN di.unit = 'ml' AND i.unit = 'l' THEN di.qty_per_unit * (i.cost_per_unit_rub / 1000.0)
-                                WHEN di.unit = 'g' AND i.unit = 'g' AND i.cost_per_unit_rub > 100 THEN di.qty_per_unit * (i.cost_per_unit_rub / 1000.0)
-                                ELSE di.qty_per_unit * i.cost_per_unit_rub
-                            END
-                        )
-                        FROM drink_items di
-                        JOIN ingredients i ON i.ingredient_code = di.ingredient_code
-                        WHERE di.drink_id = d.id
-                          AND i.expense_kind = 'stock_tracked'
-                          AND i.cost_per_unit_rub IS NOT NULL
-                    ), 0) as cogs_rub
-                FROM drinks d
-                WHERE d.id = :drink_id
-            """)
+            drink_query = text("SELECT name FROM drinks WHERE id = :drink_id")
             drink_result = db.execute(drink_query, {"drink_id": item.drink_id})
             drink_row = drink_result.first()
             if drink_row:
-                drink_name = drink_row[0]
-                cogs_rub = float(drink_row[1]) if drink_row[1] else None
+                item_dict["drink_name"] = drink_row[0]
         
-        items_with_names.append(ButtonMatrixItemResponse(
-            machine_item_id=item.machine_item_id,
-            drink_id=item.drink_id,
-            sale_price_rub=float(item.sale_price_rub) if item.sale_price_rub else None,
-            is_active=item.is_active,
-            drink_name=drink_name,
-            cogs_rub=round(cogs_rub, 2) if cogs_rub is not None else None
-        ))        
+        items_with_names.append(ButtonMatrixItemResponse(**item_dict))        
     
     return ButtonMatrixWithItems(
         id=matrix.id,
