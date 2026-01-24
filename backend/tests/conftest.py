@@ -117,7 +117,7 @@ def operator_user(db):
 def auth_headers_owner(owner_user):
     """Generate auth headers for owner."""
     from app.auth.jwt import create_access_token
-    token = create_access_token(user_id=owner_user.id)
+    token = create_access_token({"user_id": owner_user.id, "role": "owner"})
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -125,5 +125,5 @@ def auth_headers_owner(owner_user):
 def auth_headers_operator(operator_user):
     """Generate auth headers for operator."""
     from app.auth.jwt import create_access_token
-    token = create_access_token(user_id=operator_user.id)
+    token = create_access_token({"user_id": operator_user.id, "role": "operator"})
     return {"Authorization": f"Bearer {token}"}

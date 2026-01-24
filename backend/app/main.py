@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.api.v1 import auth, sync, business, analytics, users, terminals, transactions, expenses, mapping
+from app.api.middleware.error_handlers import register_error_handlers, BusinessLogicError
 
 app = FastAPI(
     title="Vending Admin v2 API",
@@ -9,6 +10,9 @@ app = FastAPI(
     version="1.0.0",
     redirect_slashes=False  # Отключаем автоматические редиректы со слешами
 )
+
+# Register error handlers
+register_error_handlers(app)
 
 # CORS middleware
 app.add_middleware(
@@ -23,7 +27,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/api/v1", tags=["User Management"])
 app.include_router(sync.router, prefix="/api/v1/sync", tags=["Vendista Sync"])
-app.include_router(business.router, prefix="/api/v1", tags=["Business Entities"])
+app.include_router(business.router, prefix="/api/v1/business", tags=["Business Entities"])
 app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["Analytics & Reports"])
 app.include_router(terminals.router, prefix="/api/v1/terminals", tags=["Terminals"])
 app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["Transactions"])
