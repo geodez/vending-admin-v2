@@ -1,7 +1,7 @@
 """
 Vendista models for storing terminal and transaction data.
 """
-from sqlalchemy import Column, BigInteger, Text, Boolean, TIMESTAMP, JSON, Integer, UniqueConstraint
+from sqlalchemy import Column, BigInteger, Text, Boolean, TIMESTAMP, JSON, Integer, UniqueConstraint, ForeignKey
 from sqlalchemy.sql import func
 from app.db.base import Base
 
