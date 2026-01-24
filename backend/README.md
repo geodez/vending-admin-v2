@@ -55,6 +55,7 @@ docker-compose exec db psql -U vending -d vending < create_owner.sql
 API доступен по адресу: http://localhost:8000
 
 - Health check: http://localhost:8000/health
+- Connection status: http://localhost:8000/status
 - API docs: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 

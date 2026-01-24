@@ -89,6 +89,7 @@
 6. **Root endpoints**
    - `GET /` - API info
    - `GET /health` - Health check
+   - `GET /status` - Connection status (answers "на связи?")
 
 **Total API Endpoints: 40+**
 

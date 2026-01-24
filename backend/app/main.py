@@ -45,3 +45,14 @@ def root():
 def health_check():
     """Health check для мониторинга"""
     return {"status": "healthy"}
+
+
+@app.get("/status")
+def connection_status():
+    """Проверка статуса подключения - отвечает на 'на связи?'"""
+    return {
+        "status": "online",
+        "message": "Да, на связи! ✅",
+        "service": "Vending Admin v2 API",
+        "version": "1.0.0"
+    }

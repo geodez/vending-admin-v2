@@ -58,6 +58,10 @@ docker-compose exec db psql -U vending -d vending -f /app/create_owner.sql
 curl http://localhost:8000/health
 # Ответ: {"status":"healthy"}
 
+# Проверка подключения (отвечает на "на связи?")
+curl http://localhost:8000/status
+# Ответ: {"status":"online","message":"Да, на связи! ✅","service":"Vending Admin v2 API","version":"1.0.0"}
+
 # API документация
 # http://localhost:8000/docs (Swagger)
 # http://localhost:8000/redoc (ReDoc)
