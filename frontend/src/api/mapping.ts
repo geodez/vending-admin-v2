@@ -179,4 +179,32 @@ export const mappingApi = {
   removeTerminalFromMatrix: async (matrixId: number, termId: number): Promise<void> => {
     await apiClient.delete(`/mapping/button-matrices/${matrixId}/terminals/${termId}`);
   },
+
+  // Batch operations
+  batchUpdateButtonMatrixItems: async (
+    matrixId: number,
+    items: ButtonMatrixItemCreate[]
+  ): Promise<{ inserted: number; updated: number; errors: any[] }> => {
+    const response = await apiClient.post<{ inserted: number; updated: number; errors: any[] }>(
+      `/mapping/button-matrices/${matrixId}/items/batch`,
+      { items }
+    );
+    return response.data;
+  },
+
+  // Clone matrix
+  cloneButtonMatrix: async (
+    matrixId: number,
+    data: {
+      name?: string;
+      description?: string;
+      vendista_term_ids?: number[];
+    }
+  ): Promise<ButtonMatrix> => {
+    const response = await apiClient.post<ButtonMatrix>(
+      `/mapping/button-matrices/${matrixId}/clone`,
+      data
+    );
+    return response.data;
+  },
 };

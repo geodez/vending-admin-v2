@@ -91,3 +91,8 @@ migrations/versions/__pycache__/
 .~lock.*
 backend/.env
 backend/docker-compose.override.yml.disabled
+
+# Archives and backups
+backups/
+*.tar.gz
+*.zip

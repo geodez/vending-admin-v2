@@ -4,7 +4,7 @@ API endpoints for Expenses (variable_expenses table CRUD).
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from app.db.session import get_db
@@ -306,3 +306,206 @@ async def delete_expense(
         )
     
     return None
+
+
+@router.get("/analytics")
+async def get_expenses_analytics(
+    from_date: Optional[date] = Query(None),
+    to_date: Optional[date] = Query(None),
+    location_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get expenses analytics:
+    - Daily expenses chart
+    - Comparison between categories
+    - Expense trends
+    
+    Owner-only access.
+    """
+    if current_user.role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owners can view expense analytics"
+        )
+    
+    # Default period
+    today = datetime.utcnow().date()
+    if to_date is None:
+        to_date = today
+    if from_date is None:
+        from_date = today.replace(day=1)
+    
+    params = {
+        "from_date": from_date,
+        "to_date": to_date
+    }
+    
+    # Daily expenses
+    daily_query = """
+        SELECT
+            expense_date,
+            SUM(amount_rub) as total_amount,
+            COUNT(*) as expense_count
+        FROM variable_expenses
+        WHERE expense_date >= :from_date AND expense_date <= :to_date
+    """
+    if location_id is not None:
+        daily_query += " AND location_id = :location_id"
+        params["location_id"] = location_id
+    daily_query += " GROUP BY expense_date ORDER BY expense_date"
+    
+    daily_results = db.execute(text(daily_query), params).fetchall()
+    daily_data = [
+        {
+            "date": row[0].isoformat() if row[0] else None,
+            "total_amount": float(row[1] or 0),
+            "expense_count": int(row[2] or 0)
+        }
+        for row in daily_results
+    ]
+    
+    # Expenses by category
+    category_query = """
+        SELECT
+            category,
+            SUM(amount_rub) as total_amount,
+            COUNT(*) as expense_count,
+            AVG(amount_rub) as avg_amount
+        FROM variable_expenses
+        WHERE expense_date >= :from_date AND expense_date <= :to_date
+    """
+    if location_id is not None:
+        category_query += " AND location_id = :location_id"
+    category_query += " GROUP BY category ORDER BY SUM(amount_rub) DESC"
+    
+    category_results = db.execute(text(category_query), params).fetchall()
+    category_data = [
+        {
+            "category": row[0],
+            "total_amount": float(row[1] or 0),
+            "expense_count": int(row[2] or 0),
+            "avg_amount": float(row[3] or 0)
+        }
+        for row in category_results
+    ]
+    
+    # Trends: compare current period with previous period
+    period_days = (to_date - from_date).days + 1
+    prev_from_date = from_date - timedelta(days=period_days)
+    prev_to_date = from_date - timedelta(days=1)
+    
+    prev_params = params.copy()
+    prev_params["from_date"] = prev_from_date
+    prev_params["to_date"] = prev_to_date
+    
+    prev_total_query = """
+        SELECT COALESCE(SUM(amount_rub), 0) as total_amount
+        FROM variable_expenses
+        WHERE expense_date >= :from_date AND expense_date <= :to_date
+    """
+    if location_id is not None:
+        prev_total_query += " AND location_id = :location_id"
+    
+    prev_total_result = db.execute(text(prev_total_query), prev_params).fetchone()
+    prev_total = float(prev_total_result[0] or 0) if prev_total_result else 0.0
+    
+    current_total = sum(item["total_amount"] for item in daily_data)
+    trend_pct = ((current_total - prev_total) / prev_total * 100) if prev_total > 0 else 0.0
+    
+    return {
+        "period": {
+            "from_date": from_date.isoformat(),
+            "to_date": to_date.isoformat()
+        },
+        "daily_data": daily_data,
+        "by_category": category_data,
+        "summary": {
+            "total_amount": current_total,
+            "total_count": sum(item["expense_count"] for item in daily_data),
+            "avg_daily": current_total / period_days if period_days > 0 else 0.0,
+            "prev_period_total": prev_total,
+            "trend_pct": round(trend_pct, 2)
+        }
+    }
+
+
+@router.get("/categories")
+async def get_expenses_categories(
+    from_date: Optional[date] = Query(None),
+    to_date: Optional[date] = Query(None),
+    location_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get expense categories directory with statistics.
+    Returns all categories with aggregated stats.
+    
+    Owner-only access.
+    """
+    if current_user.role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owners can view expense categories"
+        )
+    
+    # Default period (all time if not specified)
+    params = {}
+    where_clause = "1=1"
+    
+    if from_date:
+        where_clause += " AND expense_date >= :from_date"
+        params["from_date"] = from_date
+    if to_date:
+        where_clause += " AND expense_date <= :to_date"
+        params["to_date"] = to_date
+    if location_id is not None:
+        where_clause += " AND location_id = :location_id"
+        params["location_id"] = location_id
+    
+    query = text(f"""
+        SELECT
+            category,
+            COUNT(*) as expense_count,
+            SUM(amount_rub) as total_amount,
+            AVG(amount_rub) as avg_amount,
+            MIN(amount_rub) as min_amount,
+            MAX(amount_rub) as max_amount,
+            MIN(expense_date) as first_expense_date,
+            MAX(expense_date) as last_expense_date
+        FROM variable_expenses
+        WHERE {where_clause}
+        GROUP BY category
+        ORDER BY SUM(amount_rub) DESC
+    """)
+    
+    results = db.execute(query, params).fetchall()
+    
+    categories = [
+        {
+            "category": row[0],
+            "expense_count": int(row[1] or 0),
+            "total_amount": float(row[2] or 0),
+            "avg_amount": float(row[3] or 0),
+            "min_amount": float(row[4] or 0),
+            "max_amount": float(row[5] or 0),
+            "first_expense_date": row[6].isoformat() if row[6] else None,
+            "last_expense_date": row[7].isoformat() if row[7] else None
+        }
+        for row in results
+    ]
+    
+    # Calculate total for percentage calculation
+    total_all = sum(cat["total_amount"] for cat in categories)
+    
+    # Add percentage for each category
+    for cat in categories:
+        cat["percentage"] = round((cat["total_amount"] / total_all * 100) if total_all > 0 else 0.0, 2)
+    
+    return {
+        "categories": categories,
+        "total_categories": len(categories),
+        "total_amount": total_all
+    }

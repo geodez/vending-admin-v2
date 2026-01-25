@@ -443,3 +443,387 @@ def get_owner_report(
         "cogs_total": round(cogs_total, 2),
         "top_products": top_products
     }
+
+
+@router.get("/sales/summary")
+def get_sales_summary(
+    from_date: Optional[date] = None,
+    to_date: Optional[date] = None,
+    location_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get sales summary (aggregated statistics).
+    Returns overall metrics for the period.
+    """
+    query = """
+        SELECT
+            COUNT(*) as total_sales,
+            SUM(revenue) as total_revenue,
+            SUM(cogs) as total_cogs,
+            SUM(gross_profit) as total_gross_profit,
+            CASE 
+                WHEN SUM(revenue) > 0 
+                THEN (SUM(gross_profit) / SUM(revenue) * 100)::numeric(5,2)
+                ELSE 0 
+            END as gross_margin_pct,
+            COUNT(DISTINCT drink_id) as unique_drinks,
+            COUNT(DISTINCT term_id) as active_terminals,
+            COUNT(DISTINCT location_id) as active_locations,
+            AVG(revenue) as avg_transaction_value
+        FROM vw_tx_cogs
+        WHERE 1=1
+    """
+    
+    params = {}
+    if from_date:
+        query += " AND tx_date >= :from_date"
+        params['from_date'] = from_date
+    if to_date:
+        query += " AND tx_date <= :to_date"
+        params['to_date'] = to_date
+    if location_id:
+        query += " AND location_id = :location_id"
+        params['location_id'] = location_id
+    
+    result = db.execute(text(query), params).fetchone()
+    
+    return {
+        "total_sales": result[0] or 0,
+        "total_revenue": float(result[1] or 0),
+        "total_cogs": float(result[2] or 0),
+        "total_gross_profit": float(result[3] or 0),
+        "gross_margin_pct": float(result[4] or 0),
+        "unique_drinks": result[5] or 0,
+        "active_terminals": result[6] or 0,
+        "active_locations": result[7] or 0,
+        "avg_transaction_value": float(result[8] or 0)
+    }
+
+
+@router.get("/sales/margin")
+def get_sales_margin(
+    from_date: Optional[date] = None,
+    to_date: Optional[date] = None,
+    location_id: Optional[int] = None,
+    compare_from_date: Optional[date] = None,
+    compare_to_date: Optional[date] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get detailed margin analysis by products.
+    Optionally compares margins between two periods.
+    """
+    # Main period query
+    query = """
+        SELECT
+            drink_id,
+            drink_name,
+            location_id,
+            COUNT(*) as sales_count,
+            SUM(revenue) as revenue,
+            SUM(cogs) as cogs,
+            SUM(gross_profit) as gross_profit,
+            CASE 
+                WHEN SUM(revenue) > 0 
+                THEN (SUM(gross_profit) / SUM(revenue) * 100)::numeric(5,2)
+                ELSE 0 
+            END as margin_pct,
+            AVG(revenue) as avg_price
+        FROM vw_tx_cogs
+        WHERE drink_id IS NOT NULL
+    """
+    
+    params = {}
+    if from_date:
+        query += " AND tx_date >= :from_date"
+        params['from_date'] = from_date
+    if to_date:
+        query += " AND tx_date <= :to_date"
+        params['to_date'] = to_date
+    if location_id:
+        query += " AND location_id = :location_id"
+        params['location_id'] = location_id
+    
+    query += " GROUP BY drink_id, drink_name, location_id ORDER BY SUM(revenue) DESC"
+    
+    results = db.execute(text(query), params).fetchall()
+    
+    products = [
+        {
+            "drink_id": row[0],
+            "drink_name": row[1],
+            "location_id": row[2],
+            "sales_count": int(row[3]),
+            "revenue": float(row[4]),
+            "cogs": float(row[5]),
+            "gross_profit": float(row[6]),
+            "margin_pct": float(row[7]),
+            "avg_price": float(row[8] or 0)
+        }
+        for row in results
+    ]
+    
+    # Comparison period (if provided)
+    comparison = None
+    if compare_from_date and compare_to_date:
+        compare_query = query.replace(":from_date", ":compare_from_date").replace(":to_date", ":compare_to_date")
+        compare_params = params.copy()
+        compare_params['compare_from_date'] = compare_from_date
+        compare_params['compare_to_date'] = compare_to_date
+        if 'from_date' in compare_params:
+            del compare_params['from_date']
+        if 'to_date' in compare_params:
+            del compare_params['to_date']
+        
+        compare_results = db.execute(text(compare_query), compare_params).fetchall()
+        
+        comparison = [
+            {
+                "drink_id": row[0],
+                "drink_name": row[1],
+                "location_id": row[2],
+                "sales_count": int(row[3]),
+                "revenue": float(row[4]),
+                "cogs": float(row[5]),
+                "gross_profit": float(row[6]),
+                "margin_pct": float(row[7]),
+                "avg_price": float(row[8] or 0)
+            }
+            for row in compare_results
+        ]
+    
+    return {
+        "period": {
+            "from_date": from_date.isoformat() if from_date else None,
+            "to_date": to_date.isoformat() if to_date else None
+        },
+        "products": products,
+        "comparison": comparison,
+        "comparison_period": {
+            "from_date": compare_from_date.isoformat() if compare_from_date else None,
+            "to_date": compare_to_date.isoformat() if compare_to_date else None
+        } if comparison else None
+    }
+
+
+@router.get("/owner-report/daily")
+def get_owner_report_daily(
+    period_start: Optional[date] = None,
+    period_end: Optional[date] = None,
+    location_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_owner)
+):
+    """
+    Get detailed owner report by days (Owner only).
+    Returns daily breakdown of financial metrics.
+    """
+    from datetime import datetime, timezone
+    
+    # Normalize period
+    if not period_start:
+        now = datetime.now(timezone.utc)
+        period_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).date()
+    if not period_end:
+        period_end = datetime.now(timezone.utc).date()
+    
+    if period_end < period_start:
+        raise HTTPException(status_code=422, detail="period_end must be >= period_start")
+    
+    # Query daily data from vw_owner_report_daily
+    query = """
+        SELECT
+            tx_date,
+            location_id,
+            sales_count,
+            revenue,
+            cogs,
+            variable_expenses,
+            net_profit,
+            CASE 
+                WHEN revenue > 0 
+                THEN ((revenue - cogs) / revenue * 100)::numeric(5,2)
+                ELSE 0 
+            END as gross_margin_pct,
+            CASE 
+                WHEN revenue > 0 
+                THEN (net_profit / revenue * 100)::numeric(5,2)
+                ELSE 0 
+            END as net_margin_pct
+        FROM vw_owner_report_daily
+        WHERE tx_date >= :from_date AND tx_date <= :to_date
+    """
+    
+    params = {'from_date': period_start, 'to_date': period_end}
+    if location_id:
+        query += " AND location_id = :location_id"
+        params['location_id'] = location_id
+    
+    query += " ORDER BY tx_date DESC"
+    
+    results = db.execute(text(query), params).fetchall()
+    
+    # If vw_owner_report_daily is empty, fallback to vw_kpi_daily
+    if not results:
+        fallback_query = """
+            SELECT
+                tx_date,
+                location_id,
+                sales_count,
+                revenue,
+                cogs,
+                0 as variable_expenses,
+                revenue - cogs as net_profit,
+                gross_margin_pct,
+                0 as net_margin_pct
+            FROM vw_kpi_daily
+            WHERE tx_date >= :from_date AND tx_date <= :to_date
+        """
+        if location_id:
+            fallback_query += " AND location_id = :location_id"
+        fallback_query += " ORDER BY tx_date DESC"
+        
+        results = db.execute(text(fallback_query), params).fetchall()
+    
+    daily_data = [
+        {
+            "date": row[0].isoformat() if row[0] else None,
+            "location_id": row[1],
+            "sales_count": int(row[2] or 0),
+            "revenue": float(row[3] or 0),
+            "cogs": float(row[4] or 0),
+            "variable_expenses": float(row[5] or 0),
+            "net_profit": float(row[6] or 0),
+            "gross_margin_pct": float(row[7] or 0),
+            "net_margin_pct": float(row[8] or 0)
+        }
+        for row in results
+    ]
+    
+    return {
+        "period_start": period_start.isoformat(),
+        "period_end": period_end.isoformat(),
+        "daily_data": daily_data
+    }
+
+
+@router.get("/owner-report/issues")
+def get_owner_report_issues(
+    location_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_owner)
+):
+    """
+    Get list of issues and alerts (Owner only).
+    Returns:
+    - Critical stock levels (low inventory)
+    - Low margin products (< 30%)
+    - Sync errors (from sync_runs)
+    """
+    issues = []
+    
+    # 1. Critical stock levels
+    stock_query = """
+        SELECT
+            ingredient_code,
+            display_name_ru,
+            location_id,
+            location_name,
+            balance,
+            alert_threshold,
+            unit
+        FROM vw_inventory_balance
+        WHERE alert_threshold IS NOT NULL 
+          AND balance <= alert_threshold
+    """
+    params = {}
+    if location_id:
+        stock_query += " AND location_id = :location_id"
+        params['location_id'] = location_id
+    
+    stock_results = db.execute(text(stock_query), params).fetchall()
+    for row in stock_results:
+        issues.append({
+            "type": "low_stock",
+            "severity": "critical",
+            "ingredient_code": row[0],
+            "ingredient_name": row[1],
+            "location_id": row[2],
+            "location_name": row[3],
+            "balance": float(row[4]),
+            "threshold": float(row[5]) if row[5] else None,
+            "unit": row[6],
+            "message": f"Low stock: {row[1]} at {row[3]} ({row[4]} {row[6]} <= {row[5]} {row[6]})"
+        })
+    
+    # 2. Low margin products (< 30%)
+    margin_query = """
+        SELECT
+            drink_id,
+            drink_name,
+            location_id,
+            gross_margin_pct,
+            revenue,
+            sales_count
+        FROM vw_kpi_product
+        WHERE gross_margin_pct < 30 AND revenue > 0
+    """
+    if location_id:
+        margin_query += " AND location_id = :location_id"
+    margin_query += " ORDER BY revenue DESC LIMIT 20"
+    
+    margin_results = db.execute(text(margin_query), params).fetchall()
+    for row in margin_results:
+        issues.append({
+            "type": "low_margin",
+            "severity": "warning",
+            "drink_id": row[0],
+            "drink_name": row[1],
+            "location_id": row[2],
+            "margin_pct": float(row[3]),
+            "revenue": float(row[4]),
+            "sales_count": int(row[5]),
+            "message": f"Low margin: {row[1]} ({row[3]:.1f}% margin)"
+        })
+    
+    # 3. Sync errors (from sync_runs)
+    sync_query = """
+        SELECT
+            id,
+            started_at,
+            completed_at,
+            period_start,
+            period_end,
+            message,
+            ok
+        FROM sync_runs
+        WHERE ok = false
+        ORDER BY started_at DESC
+        LIMIT 10
+    """
+    sync_results = db.execute(text(sync_query)).fetchall()
+    for row in sync_results:
+        issues.append({
+            "type": "sync_error",
+            "severity": "error",
+            "sync_run_id": row[0],
+            "started_at": row[1].isoformat() if row[1] else None,
+            "completed_at": row[2].isoformat() if row[2] else None,
+            "period_start": row[3].isoformat() if row[3] else None,
+            "period_end": row[4].isoformat() if row[4] else None,
+            "message": row[5] or "Sync failed",
+            "ok": row[6]
+        })
+    
+    return {
+        "total_issues": len(issues),
+        "by_type": {
+            "low_stock": len([i for i in issues if i["type"] == "low_stock"]),
+            "low_margin": len([i for i in issues if i["type"] == "low_margin"]),
+            "sync_error": len([i for i in issues if i["type"] == "sync_error"])
+        },
+        "issues": issues
+    }

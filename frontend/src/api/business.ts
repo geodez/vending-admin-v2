@@ -13,20 +13,20 @@ import type {
 // Locations
 export const getLocations = () => apiClient.get<Location[]>('/locations');
 export const createLocation = (data: { name: string }) => 
-  apiClient.post<Location>('/v1/business/locations', data);
+  apiClient.post<Location>('/business/locations', data);
 export const updateLocation = (id: number, data: { name: string }) =>
-  apiClient.put<Location>(`/v1/business/locations/${id}`, data);
+  apiClient.put<Location>(`/business/locations/${id}`, data);
 export const deleteLocation = (id: number) =>
-  apiClient.delete(`/v1/business/locations/${id}`);
+  apiClient.delete(`/business/locations/${id}`);
 
 // Products
-export const getProducts = () => apiClient.get<Product[]>('/v1/business/products');
+export const getProducts = () => apiClient.get<Product[]>('/business/products');
 export const createProduct = (data: Partial<Product>) =>
-  apiClient.post<Product>('/v1/business/products', data);
+  apiClient.post<Product>('/business/products', data);
 export const updateProduct = (id: string, data: Partial<Product>) =>
-  apiClient.put<Product>(`/v1/business/products/${id}`, data);
+  apiClient.put<Product>(`/business/products/${id}`, data);
 export const deleteProduct = (id: string) =>
-  apiClient.delete(`/v1/business/products/${id}`);
+  apiClient.delete(`/business/products/${id}`);
 
 // Ingredients
 export const getIngredients = () => apiClient.get<Ingredient[]>('/ingredients');
@@ -43,16 +43,16 @@ export const deleteIngredient = (code: string) =>
   apiClient.delete(`/ingredients/${code}`);
 
 // Drinks (Recipes)
-export const getDrinks = () => apiClient.get<Drink[]>('/v1/business/drinks');
+export const getDrinks = () => apiClient.get<Drink[]>('/business/drinks');
 export const createDrink = (data: Partial<Drink>) =>
-  apiClient.post<Drink>('/v1/business/drinks', data);
+  apiClient.post<Drink>('/business/drinks', data);
 export const updateDrink = (id: number, data: Partial<Drink>) =>
-  apiClient.put<Drink>(`/v1/business/drinks/${id}`, data);
+  apiClient.put<Drink>(`/business/drinks/${id}`, data);
 export const deleteDrink = (id: number) =>
-  apiClient.delete(`/v1/business/drinks/${id}`);
+  apiClient.delete(`/business/drinks/${id}`);
 
 // Recipes (drink items)
 export const getRecipe = (drinkId: number) =>
-  apiClient.get<Recipe>(`/v1/business/drinks/${drinkId}/recipe`);
+  apiClient.get<Recipe>(`/business/drinks/${drinkId}/recipe`);
 export const updateRecipe = (drinkId: number, items: Array<{ ingredient_code: string; qty_per_unit: number; unit: string }>) =>
-  apiClient.put(`/v1/business/drinks/${drinkId}/recipe`, { items });
+  apiClient.put(`/business/drinks/${drinkId}/recipe`, { items });
