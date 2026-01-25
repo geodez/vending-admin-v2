@@ -18,7 +18,7 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore } from '@/store/authStore';
 import { formatRole } from '@/utils/formatters';
-import { NAV_ITEMS, ROUTES } from '@/utils/constants';
+import { NAV_ITEMS, ROUTES, APP_VERSION, RELEASE_DATE } from '@/utils/constants';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -118,6 +118,42 @@ const AppLayout = () => {
           selectedKeys={[location.pathname]}
           items={navItems}
         />
+        {!collapsed && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 16,
+              left: 0,
+              right: 0,
+              padding: '0 16px',
+              textAlign: 'center',
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 11,
+                color: 'rgba(255, 255, 255, 0.45)',
+                display: 'block',
+              }}
+            >
+              v{APP_VERSION}
+            </Text>
+            <Text
+              style={{
+                fontSize: 10,
+                color: 'rgba(255, 255, 255, 0.35)',
+                display: 'block',
+                marginTop: 2,
+              }}
+            >
+              {new Date(RELEASE_DATE).toLocaleDateString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })}
+            </Text>
+          </div>
+        )}
       </Sider>
 
       <Layout style={{ marginLeft: collapsed ? 80 : 200, transition: 'margin-left 0.2s' }} className="hide-mobile">
