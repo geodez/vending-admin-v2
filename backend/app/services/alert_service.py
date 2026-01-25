@@ -143,7 +143,6 @@ class AlertService:
                 drink_id,
                 drink_name,
                 location_id,
-                location_name,
                 gross_margin_pct,
                 revenue,
                 sales_count
@@ -160,8 +159,8 @@ class AlertService:
         try:
             results = self.db.execute(text(query), params).fetchall()
             for row in results:
-                margin_pct = float(row[4]) if row[4] else 0
-                revenue = float(row[5]) if row[5] else 0
+                margin_pct = float(row[3]) if row[3] else 0
+                revenue = float(row[4]) if row[4] else 0
 
                 # Determine severity based on margin
                 if margin_pct < 10:
@@ -177,10 +176,10 @@ class AlertService:
                     "drink_id": row[0],
                     "drink_name": row[1],
                     "location_id": row[2],
-                    "location_name": row[3],
+                    "location_name": None,  # vw_kpi_product doesn't have location_name
                     "margin_pct": margin_pct,
                     "revenue": revenue,
-                    "sales_count": int(row[6]) if row[6] else 0,
+                    "sales_count": int(row[5]) if row[5] else 0,
                     "message": f"Низкая маржа: {row[1]} ({margin_pct:.1f}% маржа, выручка {revenue:.2f} руб.)",
                     "timestamp": datetime.now().isoformat()
                 })
