@@ -11,7 +11,7 @@ import type {
 } from '@/types/api';
 
 // Locations
-export const getLocations = () => apiClient.get<Location[]>('/locations');
+export const getLocations = () => apiClient.get<Location[]>('/business/locations');
 export const createLocation = (data: { name: string }) => 
   apiClient.post<Location>('/business/locations', data);
 export const updateLocation = (id: number, data: { name: string }) =>
@@ -29,18 +29,18 @@ export const deleteProduct = (id: string) =>
   apiClient.delete(`/business/products/${id}`);
 
 // Ingredients
-export const getIngredients = () => apiClient.get<Ingredient[]>('/ingredients');
+export const getIngredients = () => apiClient.get<Ingredient[]>('/business/ingredients');
 export const createIngredient = (data: Partial<Ingredient>) =>
-  apiClient.post<Ingredient>('/ingredients', data);
+  apiClient.post<Ingredient>('/business/ingredients', data);
 export const updateIngredient = (code: string, data: Partial<Ingredient>) =>
-  apiClient.put<Ingredient>(`/ingredients/${code}`, data);
+  apiClient.put<Ingredient>(`/business/ingredients/${code}`, data);
 export const bulkUpdateIngredients = (codes: string[], data: Partial<Ingredient>) =>
-  apiClient.put<{ updated: number; total: number; errors?: string[] }>('/ingredients/bulk/update', {
+  apiClient.put<{ updated: number; total: number; errors?: string[] }>('/business/ingredients/bulk/update', {
     ingredient_codes: codes,
     ...data
   });
 export const deleteIngredient = (code: string) =>
-  apiClient.delete(`/ingredients/${code}`);
+  apiClient.delete(`/business/ingredients/${code}`);
 
 // Drinks (Recipes)
 export const getDrinks = () => apiClient.get<Drink[]>('/business/drinks');
