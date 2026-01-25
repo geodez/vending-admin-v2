@@ -120,30 +120,33 @@ const AppLayout = () => {
             mode="inline"
             selectedKeys={[location.pathname]}
             items={navItems}
-            style={{ flex: 1, overflow: 'auto', paddingBottom: !collapsed ? 60 : 0 }}
+            style={{ flex: 1, overflow: 'auto' }}
           />
           {!collapsed && (
             <div
               style={{
-                padding: '16px',
+                padding: '12px 16px',
                 textAlign: 'center',
-                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                borderTop: '1px solid rgba(255, 255, 255, 0.15)',
                 flexShrink: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                zIndex: 10,
               }}
             >
               <Text
                 style={{
-                  fontSize: 11,
-                  color: 'rgba(255, 255, 255, 0.65)',
+                  fontSize: 12,
+                  color: 'rgba(255, 255, 255, 0.75)',
                   display: 'block',
+                  fontWeight: 500,
                 }}
               >
                 v{APP_VERSION}
               </Text>
               <Text
                 style={{
-                  fontSize: 10,
-                  color: 'rgba(255, 255, 255, 0.5)',
+                  fontSize: 11,
+                  color: 'rgba(255, 255, 255, 0.6)',
                   display: 'block',
                   marginTop: 4,
                 }}
