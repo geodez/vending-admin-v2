@@ -114,31 +114,38 @@ const AppLayout = () => {
         >
           {collapsed ? '☕' : 'Vending Admin'}
         </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 0,
+            overflow: 'auto',
+          }}
+        >
           <Menu
             theme="dark"
             mode="inline"
             selectedKeys={[location.pathname]}
             items={navItems}
-            style={{ flex: 1, overflow: 'auto' }}
+            style={{ flex: '0 0 auto' }}
           />
           {!collapsed && (
             <div
               style={{
-                padding: '12px 16px',
-                textAlign: 'center',
+                padding: '10px 16px 16px',
                 borderTop: '1px solid rgba(255, 255, 255, 0.15)',
                 flexShrink: 0,
                 backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                zIndex: 10,
               }}
             >
               <Text
                 style={{
                   fontSize: 12,
-                  color: 'rgba(255, 255, 255, 0.75)',
+                  color: 'rgba(255, 255, 255, 0.85)',
                   display: 'block',
                   fontWeight: 500,
+                  textAlign: 'center',
                 }}
               >
                 v{APP_VERSION}
@@ -146,9 +153,10 @@ const AppLayout = () => {
               <Text
                 style={{
                   fontSize: 11,
-                  color: 'rgba(255, 255, 255, 0.6)',
+                  color: 'rgba(255, 255, 255, 0.65)',
                   display: 'block',
-                  marginTop: 4,
+                  marginTop: 2,
+                  textAlign: 'center',
                 }}
               >
                 {new Date(RELEASE_DATE).toLocaleDateString('ru-RU', {
