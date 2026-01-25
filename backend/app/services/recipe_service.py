@@ -4,7 +4,8 @@ Business logic service for recipe (drink) operations.
 from sqlalchemy.orm import Session
 from typing import List, Optional, Any, Dict
 from app.crud import business as crud
-from app.schemas.business import DrinkCreate, DrinkUpdate
+from app.models.business import Drink
+from app.schemas.business import DrinkCreate, DrinkUpdate, DrinkCloneRequest, DrinkItemCreate
 from app.api.middleware.error_handlers import BusinessLogicError
 import logging
 
@@ -186,3 +187,52 @@ class RecipeService:
                 })
 
         return recipes_with_costs
+
+    def clone_recipe(self, drink_id: int, clone_request: DrinkCloneRequest) -> Any:
+        """
+        Clone a recipe (drink) with all its ingredients.
+
+        Args:
+            drink_id: ID of drink to clone
+            clone_request: Clone request with optional name and is_active
+
+        Returns:
+            Cloned drink object
+
+        Raises:
+            BusinessLogicError: If drink not found or validation fails
+        """
+        # Get original drink
+        original_drink = crud.get_drink(self.db, drink_id)
+        if not original_drink:
+            raise BusinessLogicError("Recipe not found", 404)
+
+        # Prepare new drink data
+        new_name = clone_request.name
+        if not new_name:
+            # Generate default name: original name + " (копия)"
+            new_name = f"{original_drink.name} (копия)"
+
+        # Check if name already exists
+        existing_drink = self.db.query(Drink).filter(Drink.name == new_name).first()
+        if existing_drink:
+            raise BusinessLogicError(f"Drink with name '{new_name}' already exists", 400)
+
+        # Prepare items from original drink
+        items = []
+        for item in original_drink.items:
+            items.append({
+                'ingredient_code': item.ingredient_code,
+                'qty_per_unit': float(item.qty_per_unit),
+                'unit': item.unit
+            })
+
+        # Create new drink
+        new_drink_data = DrinkCreate(
+            name=new_name,
+            is_active=clone_request.is_active if clone_request.is_active is not None else original_drink.is_active,
+            items=[DrinkItemCreate(**item) for item in items]
+        )
+
+        # Validate and create
+        return self.create_recipe_with_validation(new_drink_data)

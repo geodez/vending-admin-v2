@@ -7,7 +7,7 @@ from typing import List
 from app.db.session import get_db
 from app.api.deps import get_current_user
 from app.models.user import User
-from app.schemas.business import DrinkResponse, DrinkCreate, DrinkUpdate
+from app.schemas.business import DrinkResponse, DrinkCreate, DrinkUpdate, DrinkCloneRequest
 from app.crud import business as crud
 from app.services.recipe_service import RecipeService
 from app.api.middleware.validation import ValidationMiddleware
@@ -70,3 +70,15 @@ def get_drink_cost(
     """Calculate and return recipe cost breakdown."""
     service = RecipeService(db)
     return service.calculate_recipe_cost(drink_id)
+
+
+@router.post("/drinks/{drink_id}/clone", response_model=DrinkResponse, status_code=status.HTTP_201_CREATED)
+def clone_drink(
+    drink_id: int,
+    clone_request: DrinkCloneRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Clone a drink (recipe) with all its ingredients."""
+    service = RecipeService(db)
+    return service.clone_recipe(drink_id, clone_request)

@@ -56,3 +56,5 @@ export const getRecipe = (drinkId: number) =>
   apiClient.get<Recipe>(`/business/drinks/${drinkId}/recipe`);
 export const updateRecipe = (drinkId: number, items: Array<{ ingredient_code: string; qty_per_unit: number; unit: string }>) =>
   apiClient.put(`/business/drinks/${drinkId}/recipe`, { items });
+export const cloneDrink = (drinkId: number, data?: { name?: string; is_active?: boolean }) =>
+  apiClient.post<Drink>(`/business/drinks/${drinkId}/clone`, data || {});

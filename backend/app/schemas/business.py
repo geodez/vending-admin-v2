@@ -157,6 +157,12 @@ class DrinkResponse(DrinkBase):
         from_attributes = True
 
 
+class DrinkCloneRequest(BaseModel):
+    """Request model for cloning a drink."""
+    name: Optional[str] = None  # If not provided, will use original name + " (копия)"
+    is_active: Optional[bool] = None  # If not provided, will use original value
+
+
 # ============================================================================
 # Button Matrix Schemas (New Template System)
 # ============================================================================

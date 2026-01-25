@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Card, Typography, Table, Button, Empty, message, Modal, Form, Input, InputNumber, Select, Space, Popconfirm, Tag, Switch, Checkbox, Badge, Tooltip } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CheckSquareOutlined, SearchOutlined, DollarOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckSquareOutlined, SearchOutlined, DollarOutlined, CopyOutlined } from '@ant-design/icons';
 import { mappingApi, Drink, DrinkCreate, DrinkUpdate, DrinkItem } from '../api/mapping';
-import { getIngredients } from '../api/business';
+import { getIngredients, cloneDrink } from '../api/business';
 import type { Ingredient } from '@/types/api';
 
 const { Title, Text } = Typography;
@@ -150,6 +150,16 @@ const RecipesPage = () => {
       fetchDrinks();
     } catch (error: any) {
       message.error(error.response?.data?.detail || 'Ошибка удаления');
+    }
+  };
+
+  const handleClone = async (drink: Drink) => {
+    try {
+      await cloneDrink(drink.id);
+      message.success(`Рецепт "${drink.name}" успешно скопирован`);
+      fetchDrinks();
+    } catch (error: any) {
+      message.error(error.response?.data?.detail || 'Ошибка при клонировании рецепта');
     }
   };
 
@@ -409,7 +419,7 @@ const RecipesPage = () => {
     {
       title: 'Действия',
       key: 'actions',
-      width: 150,
+      width: 200,
       align: 'right' as const,
       render: (_: any, record: Drink) => (
         <Space size="small">
@@ -420,6 +430,14 @@ const RecipesPage = () => {
             size="small"
           >
             Изменить
+          </Button>
+          <Button
+            type="link"
+            icon={<CopyOutlined />}
+            onClick={() => handleClone(record)}
+            size="small"
+          >
+            Клонировать
           </Button>
           <Popconfirm
             title="Удалить рецепт?"
