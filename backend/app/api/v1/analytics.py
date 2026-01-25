@@ -765,11 +765,11 @@ def get_owner_report_issues(
             drink_id,
             drink_name,
             location_id,
-            margin_pct,
+            gross_margin_pct,
             revenue,
             sales_count
         FROM vw_kpi_product
-        WHERE margin_pct < 30 AND revenue > 0
+        WHERE gross_margin_pct < 30 AND revenue > 0
     """
     if location_id:
         margin_query += " AND location_id = :location_id"
