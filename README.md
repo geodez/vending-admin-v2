@@ -19,7 +19,7 @@
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** — полная архитектура проекта (30+ страниц)
 - **[API_REFERENCE.md](./API_REFERENCE.md)** — справочник API
 - **[DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md)** — план разработки
-- **[QUICK_DEPLOY.md](./QUICK_DEPLOY.md)** — быстрый деплой на сервер
+- **[DEPLOYMENT_FINAL_STEPS.md](./DEPLOYMENT_FINAL_STEPS.md)** — деплой на сервер
 - **[SERVER_PREPARATION.md](./SERVER_PREPARATION.md)** — подготовка сервера
 
 ## 🚀 Быстрый старт

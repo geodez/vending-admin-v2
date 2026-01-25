@@ -1,10 +1,27 @@
 # Vending Admin v2 - Архитектура проекта
 
+**Версия документации:** Обновлена 2026-01-24 (после рефакторинга)  
+**Версия проекта:** v1.1.1  
+**Статус:** Актуальная реализация
+
+---
+
 ## 🎯 Цель проекта
 
 Современная административная панель для управления вендинговым бизнесом с аутентификацией через Telegram и полным функционалом для:
 - Собственников (полный доступ к финансам и управлению)
 - Операторов (доступ к оперативному управлению)
+
+---
+
+## 📝 Важные примечания
+
+⚠️ **Эта документация обновлена после рефакторинга и отражает актуальную реализацию.**
+
+- Структура файлов может отличаться от первоначального плана (модули объединены)
+- Пути API endpoints обновлены (более структурированы)
+- RBAC упрощен (без таблиц permissions)
+- Некоторые функции из первоначальной документации не реализованы (см. `IMPROVEMENT_PLAN.md`)
 
 ---
 
@@ -84,26 +101,10 @@ CREATE TABLE users (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Таблица прав доступа
-CREATE TABLE permissions (
-    id SERIAL PRIMARY KEY,
-    name TEXT UNIQUE NOT NULL,  -- 'view_sales', 'edit_recipes', etc.
-    description TEXT
-);
-
--- Связь пользователей и прав
-CREATE TABLE user_permissions (
-    user_id INT REFERENCES users(id) ON DELETE CASCADE,
-    permission_id INT REFERENCES permissions(id) ON DELETE CASCADE,
-    PRIMARY KEY (user_id, permission_id)
-);
-
--- Связь ролей и прав (предустановленные роли)
-CREATE TABLE role_permissions (
-    role TEXT NOT NULL,  -- 'owner', 'operator'
-    permission_id INT REFERENCES permissions(id) ON DELETE CASCADE,
-    PRIMARY KEY (role, permission_id)
-);
+-- ⚠️ УПРОЩЕННЫЙ RBAC: Таблицы permissions не используются
+-- Права доступа определяются только полем role в таблице users
+-- Роли: 'owner' (полный доступ) и 'operator' (ограниченный доступ)
+-- Проверка прав выполняется через декоратор require_owner в deps.py
 ```
 
 ### Права доступа по ролям
@@ -135,144 +136,258 @@ backend/
 │   ├── __init__.py
 │   ├── main.py                    # FastAPI app entry point
 │   ├── config.py                  # Settings (Pydantic Settings)
-│   ├── dependencies.py            # Dependency injection
 │   │
 │   ├── auth/
 │   │   ├── __init__.py
 │   │   ├── telegram.py           # Telegram auth validation
-│   │   ├── jwt.py                # JWT token generation/validation
-│   │   ├── permissions.py        # RBAC logic
-│   │   └── middleware.py         # Auth middleware
+│   │   └── jwt.py                # JWT token generation/validation
 │   │
 │   ├── api/
 │   │   ├── __init__.py
-│   │   ├── deps.py               # API dependencies (get_current_user)
+│   │   ├── deps.py               # API dependencies (get_current_user, require_owner)
+│   │   ├── middleware/           # ⭐ Новое после рефакторинга
+│   │   │   ├── error_handlers.py # Централизованная обработка ошибок
+│   │   │   └── validation.py    # Валидация и общие паттерны
 │   │   └── v1/
 │   │       ├── __init__.py
-│   │       ├── auth.py           # POST /auth/telegram
-│   │       ├── overview.py       # GET /overview (дашборд)
-│   │       ├── sales.py          # GET /sales/* (продажи)
-│   │       ├── inventory.py      # GET/POST /inventory/* (склад)
-│   │       ├── recipes.py        # GET/POST/PUT/DELETE /recipes/*
-│   │       ├── ingredients.py    # GET/POST/PUT/DELETE /ingredients/*
-│   │       ├── buttons.py        # GET/POST /buttons/* (кнопки терминала)
-│   │       ├── expenses.py       # GET/POST /expenses/* (переменные расходы)
-│   │       ├── owner_report.py   # GET /owner-report/* (отчет собственника)
-│   │       └── settings.py       # GET/POST /settings/* (настройки)
+│   │       ├── auth.py           # POST /auth/telegram, GET /auth/me
+│   │       ├── analytics.py      # ⭐ Объединяет overview, sales, owner-report
+│   │       ├── business.py       # ⭐ Агрегатор бизнес-модулей
+│   │       ├── drinks.py          # ⭐ CRUD рецептов (вместо recipes.py)
+│   │       ├── ingredients.py    # ⭐ CRUD ингредиентов
+│   │       ├── locations.py      # ⭐ CRUD локаций
+│   │       ├── products.py       # ⭐ CRUD продуктов
+│   │       ├── inventory.py      # ⭐ Управление складом
+│   │       ├── mapping.py        # ⭐ Маппинг кнопок терминалов (Button Matrix)
+│   │       ├── expenses.py       # CRUD переменных расходов
+│   │       ├── users.py          # ⭐ Управление пользователями (вместо settings.py)
+│   │       ├── terminals.py      # CRUD терминалов
+│   │       ├── transactions.py  # CRUD транзакций
+│   │       └── sync.py           # Синхронизация с Vendista
 │   │
 │   ├── models/
 │   │   ├── __init__.py
-│   │   ├── user.py               # User, Permission models
-│   │   ├── location.py           # Location, Terminal models
-│   │   ├── product.py            # Product, Drink models
-│   │   ├── ingredient.py         # Ingredient model
-│   │   ├── recipe.py             # Recipe, RecipeItem models
-│   │   ├── inventory.py          # IngredientLoad, Balance models
-│   │   ├── expense.py            # VariableExpense model
-│   │   └── transaction.py        # VendistaTx model
+│   │   ├── user.py               # User model (упрощенный RBAC)
+│   │   ├── business.py           # ⭐ Объединяет: Location, Product, Drink, Ingredient, ButtonMatrix
+│   │   ├── inventory.py          # ⭐ Объединяет: IngredientLoad, VariableExpense
+│   │   └── vendista.py           # ⭐ Объединяет: VendistaTerminal, VendistaTx, SyncRun
 │   │
 │   ├── schemas/
 │   │   ├── __init__.py
 │   │   ├── auth.py               # TelegramAuthRequest, TokenResponse
-│   │   ├── user.py               # UserResponse, UserCreate
-│   │   ├── overview.py           # OverviewResponse (KPIs + alerts)
-│   │   ├── sales.py              # SalesResponse schemas
-│   │   ├── inventory.py          # InventoryResponse schemas
-│   │   ├── recipe.py             # RecipeResponse schemas
-│   │   ├── ingredient.py         # IngredientResponse schemas
-│   │   ├── expense.py            # ExpenseResponse schemas
-│   │   └── owner_report.py       # OwnerReportResponse schemas
+│   │   ├── business.py           # ⭐ Объединяет схемы для всех бизнес-сущностей
+│   │   └── vendista.py           # ⭐ Схемы для Vendista данных
 │   │
 │   ├── crud/
 │   │   ├── __init__.py
 │   │   ├── user.py               # CRUD для пользователей
-│   │   ├── location.py           # CRUD для локаций/терминалов
-│   │   ├── ingredient.py         # CRUD для ингредиентов
-│   │   ├── recipe.py             # CRUD для рецептов
-│   │   ├── inventory.py          # CRUD для склада
-│   │   ├── expense.py            # CRUD для расходов
-│   │   └── transaction.py        # CRUD для транзакций
+│   │   ├── business.py           # ⭐ Объединяет CRUD для всех бизнес-сущностей
+│   │   └── vendista.py           # ⭐ CRUD для Vendista данных
 │   │
 │   ├── db/
 │   │   ├── __init__.py
 │   │   ├── session.py            # SQLAlchemy session
 │   │   └── base.py               # Base model
 │   │
-│   └── services/
+│   └── services/                 # ⭐ Новое после рефакторинга
 │       ├── __init__.py
 │       ├── vendista_sync.py      # Синхронизация с Vendista API
-│       ├── kpi_calculator.py     # Расчет KPI и метрик
-│       └── alert_service.py      # Генерация алертов
+│       ├── vendista_client.py   # HTTP клиент для Vendista API
+│       ├── ingredient_service.py # ⭐ Бизнес-логика ингредиентов
+│       ├── recipe_service.py     # ⭐ Бизнес-логика рецептов
+│       └── expense_service.py    # ⭐ Бизнес-логика расходов
 │
 ├── migrations/                    # Alembic migrations
 ├── tests/
+│   ├── unit/                     # Unit тесты
+│   │   └── test_services.py      # ⭐ Тесты сервисов
+│   └── integration/              # ⭐ Интеграционные тесты
+│       └── test_business_endpoints.py
 ├── requirements.txt
 ├── Dockerfile
 └── docker-compose.yml
 ```
 
+**Примечания:**
+- ⭐ Помечены компоненты, добавленные или измененные после рефакторинга
+- RBAC упрощен: используется поле `role` в таблице `users` (без таблиц `permissions`)
+- Модули объединены для упрощения структуры (business.py вместо отдельных файлов)
+
 ### API Endpoints
 
+**Актуальные пути (после рефакторинга):**
+
 ```
-POST   /api/v1/auth/telegram          # Аутентификация
+# Аутентификация
+POST   /api/v1/auth/telegram          # Аутентификация через Telegram
 GET    /api/v1/auth/me                # Текущий пользователь
 
-# Обзор (Dashboard)
-GET    /api/v1/overview               # KPIs + Alerts
-GET    /api/v1/overview/alerts        # Список алертов
+# Аналитика и отчеты (analytics.py)
+GET    /api/v1/analytics/overview     # KPIs для дашборда
+GET    /api/v1/analytics/sales/daily # Продажи по дням
+GET    /api/v1/analytics/sales/by-product # Продажи по напиткам
+GET    /api/v1/analytics/inventory/balance # Остатки на складе
+GET    /api/v1/analytics/owner-report # Отчет собственника (Owner only)
 
-# Продажи
-GET    /api/v1/sales/summary          # Сводка продаж
-GET    /api/v1/sales/daily            # По дням
-GET    /api/v1/sales/by-product       # По напиткам
-GET    /api/v1/sales/margin           # Маржинальность
+# Бизнес-сущности (business.py - агрегатор модулей)
+# Локации
+GET    /api/v1/business/locations      # Список локаций
+POST   /api/v1/business/locations      # Создать локацию
+GET    /api/v1/business/locations/{id} # Детали локации
+PUT    /api/v1/business/locations/{id} # Обновить локацию
 
-# Склад
-GET    /api/v1/inventory/balances     # Остатки
-GET    /api/v1/inventory/usage        # Расход
-GET    /api/v1/inventory/loads        # Загрузки
-POST   /api/v1/inventory/loads        # Добавить загрузку
-GET    /api/v1/inventory/alerts       # Алерты по остаткам
+# Продукты
+GET    /api/v1/business/products       # Список продуктов
+POST   /api/v1/business/products       # Создать продукт
 
-# Рецепты
-GET    /api/v1/recipes                # Список рецептов
-POST   /api/v1/recipes                # Создать рецепт
-GET    /api/v1/recipes/{id}           # Детали рецепта
-PUT    /api/v1/recipes/{id}           # Обновить рецепт
-DELETE /api/v1/recipes/{id}           # Удалить рецепт
-POST   /api/v1/recipes/{id}/clone     # Клонировать в другую локацию
+# Рецепты (drinks)
+GET    /api/v1/business/drinks         # Список рецептов
+POST   /api/v1/business/drinks         # Создать рецепт
+GET    /api/v1/business/drinks/{id}    # Детали рецепта
+PUT    /api/v1/business/drinks/{id}    # Обновить рецепт
+GET    /api/v1/business/drinks/{id}/cost # Расчет стоимости рецепта
 
 # Ингредиенты
-GET    /api/v1/ingredients            # Список ингредиентов
-POST   /api/v1/ingredients            # Создать ингредиент
-GET    /api/v1/ingredients/{id}       # Детали ингредиента
-PUT    /api/v1/ingredients/{id}       # Обновить ингредиент
-DELETE /api/v1/ingredients/{id}       # Удалить ингредиент
+GET    /api/v1/business/ingredients    # Список ингредиентов
+POST   /api/v1/business/ingredients    # Создать ингредиент
+GET    /api/v1/business/ingredients/{code} # Детали ингредиента
+PUT    /api/v1/business/ingredients/{code} # Обновить ингредиент
+DELETE /api/v1/business/ingredients/{code} # Удалить ингредиент
+PUT    /api/v1/business/ingredients/bulk/update # ⭐ Массовое обновление
 
-# Кнопки терминала
-GET    /api/v1/buttons                # Список привязок
-POST   /api/v1/buttons/map            # Привязать кнопку к рецепту
-POST   /api/v1/buttons/batch-map      # Массовая привязка
-POST   /api/v1/buttons/clone          # Копирование между локациями
+# Склад (inventory.py)
+GET    /api/v1/business/ingredient-loads # История загрузок
+POST   /api/v1/business/ingredient-loads # Добавить загрузку
+GET    /api/v1/business/inventory/status # Статус склада
 
-# Переменные расходы
-GET    /api/v1/expenses               # Список расходов
-POST   /api/v1/expenses               # Добавить расход
-GET    /api/v1/expenses/analytics     # Аналитика по расходам
-GET    /api/v1/expenses/categories    # Справочник категорий
+# Маппинг кнопок терминалов (mapping.py)
+GET    /api/v1/mapping/button-matrices # Список матриц
+POST   /api/v1/mapping/button-matrices # Создать матрицу
+GET    /api/v1/mapping/button-matrices/{id} # Детали матрицы
+PUT    /api/v1/mapping/button-matrices/{id} # Обновить матрицу
+DELETE /api/v1/mapping/button-matrices/{id} # Удалить матрицу
+GET    /api/v1/mapping/button-matrices/{id}/items # Элементы матрицы
+POST   /api/v1/mapping/button-matrices/{id}/items # Добавить элемент
+PUT    /api/v1/mapping/button-matrices/{id}/items/{item_id} # Обновить элемент
+DELETE /api/v1/mapping/button-matrices/{id}/items/{item_id} # Удалить элемент
+POST   /api/v1/mapping/button-matrices/{id}/assign-terminals # Привязать терминалы
 
-# Отчет собственника (Owner only)
-GET    /api/v1/owner-report/summary   # Сводка
-GET    /api/v1/owner-report/daily     # По дням
-GET    /api/v1/owner-report/issues    # Список проблем
+# Переменные расходы (expenses.py)
+GET    /api/v1/expenses                # Список расходов
+POST   /api/v1/expenses                # Добавить расход
 
-# Настройки (Owner only)
-GET    /api/v1/settings/users         # Список пользователей
-POST   /api/v1/settings/users         # Создать пользователя
-PUT    /api/v1/settings/users/{id}    # Обновить пользователя
-GET    /api/v1/settings/locations     # Локации и терминалы
-POST   /api/v1/settings/mappings      # Маппинг терминалов
+# Пользователи (users.py)
+GET    /api/v1/users                   # Список пользователей
+POST   /api/v1/users                   # Создать пользователя
+GET    /api/v1/users/{id}              # Детали пользователя
+PUT    /api/v1/users/{id}              # Обновить пользователя
+
+# Терминалы (terminals.py)
+GET    /api/v1/terminals               # Список терминалов
+
+# Транзакции (transactions.py)
+GET    /api/v1/transactions            # Список транзакций
+
+# Синхронизация (sync.py)
+POST   /api/v1/sync/run                # Запустить синхронизацию
+GET    /api/v1/sync/status             # Статус синхронизации
 ```
+
+**Примечания:**
+- ⭐ Помечены новые эндпоинты после рефакторинга
+- Пути отличаются от первоначальной документации (более структурированы)
+- Batch операции для кнопок реализованы через систему матриц
+- Некоторые эндпоинты из первоначальной документации не реализованы (см. IMPROVEMENT_PLAN.md)
+
+---
+
+## 🔧 Middleware и обработка ошибок (после рефакторинга)
+
+### Централизованная обработка ошибок
+
+**Файл:** `app/api/middleware/error_handlers.py`
+
+Реализует глобальные обработчики для:
+- `HTTPException` - стандартные HTTP ошибки
+- `IntegrityError` - ошибки целостности БД
+- `DataError` - ошибки данных БД
+- `ValidationError` - ошибки валидации Pydantic
+- `BusinessLogicError` - кастомные бизнес-ошибки
+- `Exception` - неожиданные ошибки
+
+Все ошибки возвращаются в консистентном формате:
+```json
+{
+  "detail": "Error message",
+  "type": "error_type",
+  "path": "/api/v1/endpoint"
+}
+```
+
+### Валидация и общие паттерны
+
+**Файл:** `app/api/middleware/validation.py`
+
+Предоставляет:
+- `ValidationMiddleware.validate_entity_exists()` - проверка существования сущности
+- `ValidationMiddleware.handle_db_operation()` - обработка операций БД
+- `ValidationMiddleware.validate_bulk_operation()` - валидация массовых операций
+
+---
+
+---
+
+## 🔧 Сервисы бизнес-логики (после рефакторинга)
+
+### IngredientService
+
+**Файл:** `app/services/ingredient_service.py`
+
+Функции:
+- `bulk_update_ingredients()` - массовое обновление ингредиентов
+- `delete_ingredient_safe()` - безопасное удаление с проверкой зависимостей
+- `validate_ingredient_data()` - валидация данных ингредиента
+- `get_ingredients_paginated()` - пагинация списка ингредиентов
+
+### RecipeService
+
+**Файл:** `app/services/recipe_service.py`
+
+Функции:
+- `create_recipe_with_validation()` - создание рецепта с валидацией
+- `update_recipe_with_validation()` - обновление рецепта с валидацией
+- `calculate_recipe_cost()` - расчет стоимости рецепта
+- `get_recipes_with_costs()` - получение рецептов с расчетом стоимости
+- `_validate_recipe_data()` - валидация данных рецепта
+- `_validate_recipe_items()` - валидация ингредиентов в рецепте
+
+### ExpenseService
+
+**Файл:** `app/services/expense_service.py`
+
+Функции:
+- `create_ingredient_load_with_validation()` - создание загрузки с валидацией
+- `create_variable_expense_with_validation()` - создание расхода с валидацией
+- `get_inventory_status_report()` - отчет о статусе склада
+- `get_expense_summary()` - сводка по расходам
+
+---
+
+## ⚠️ Отличия от первоначальной документации
+
+### Упрощения и изменения
+
+1. **RBAC упрощен:** Используется только поле `role` в таблице `users`, без таблиц `permissions`
+2. **Модули объединены:** Вместо отдельных файлов используется `business.py` для агрегации
+3. **Пути API изменены:** Более структурированные пути (`/api/v1/business/*` вместо `/api/v1/recipes`)
+4. **Некоторые эндпоинты не реализованы:** См. `IMPROVEMENT_PLAN.md` для деталей
+
+### Добавлено после рефакторинга
+
+1. ✅ Middleware для валидации и обработки ошибок
+2. ✅ Сервисы бизнес-логики (ingredient, recipe, expense)
+3. ✅ Разделение API по доменам
+4. ✅ Комплексная система тестирования
 
 ---
 

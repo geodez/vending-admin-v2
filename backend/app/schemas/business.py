@@ -244,6 +244,25 @@ class TerminalMatrixMapResponse(BaseModel):
         from_attributes = True
 
 
+class ButtonMatrixItemBatchRequest(BaseModel):
+    """Request for batch update of button matrix items"""
+    items: List[ButtonMatrixItemCreate]
+
+
+class ButtonMatrixItemBatchResponse(BaseModel):
+    """Response for batch update operation"""
+    inserted: int
+    updated: int
+    errors: List[dict] = []
+
+
+class ButtonMatrixCloneRequest(BaseModel):
+    """Request for cloning a button matrix"""
+    name: Optional[str] = None  # New name for cloned matrix (if not provided, will add " (copy)" suffix)
+    description: Optional[str] = None
+    vendista_term_ids: Optional[List[int]] = None  # Optional: assign terminals to cloned matrix
+
+
 # ============================================================================
 # Ingredient Load Schemas
 # ============================================================================

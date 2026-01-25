@@ -13,7 +13,9 @@ from app.schemas.business import (
     DrinkCreate, DrinkResponse, DrinkUpdate, DrinkItemResponse,
     ButtonMatrixCreate, ButtonMatrixUpdate, ButtonMatrixResponse, ButtonMatrixWithItems,
     ButtonMatrixItemCreate, ButtonMatrixItemUpdate, ButtonMatrixItemResponse,
-    TerminalMatrixMapCreate, TerminalMatrixMapResponse
+    TerminalMatrixMapCreate, TerminalMatrixMapResponse,
+    ButtonMatrixItemBatchRequest, ButtonMatrixItemBatchResponse,
+    ButtonMatrixCloneRequest
 )
 from app.crud import business as crud
 import logging
@@ -1051,3 +1053,209 @@ async def remove_terminal_from_matrix(
     
     if not crud.remove_terminal_from_matrix(db, matrix_id, term_id):
         raise HTTPException(status_code=404, detail="Terminal assignment not found")
+
+
+@router.post("/button-matrices/{matrix_id}/items/batch", response_model=ButtonMatrixItemBatchResponse)
+async def batch_update_button_matrix_items(
+    matrix_id: int,
+    request: ButtonMatrixItemBatchRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Batch create/update button matrix items.
+    
+    Accepts a list of items. For each item:
+    - If item with same machine_item_id exists: update it
+    - If item doesn't exist: create it
+    
+    All operations are transactional (all or nothing).
+    Owner-only access.
+    """
+    if current_user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only owners can modify matrices")
+    
+    # Check matrix exists
+    matrix = crud.get_button_matrix(db, matrix_id)
+    if not matrix:
+        raise HTTPException(status_code=404, detail="Matrix not found")
+    
+    if not request.items:
+        raise HTTPException(status_code=400, detail="No items provided")
+    
+    inserted = 0
+    updated = 0
+    errors = []
+    
+    try:
+        # Validate all items first
+        for idx, item in enumerate(request.items):
+            # Validate drink_id exists if provided
+            if item.drink_id:
+                drink_check = text("SELECT id FROM drinks WHERE id = :drink_id")
+                drink_result = db.execute(drink_check, {"drink_id": item.drink_id})
+                if not drink_result.first():
+                    errors.append({
+                        "index": idx,
+                        "machine_item_id": item.machine_item_id,
+                        "error": f"Drink with id {item.drink_id} not found"
+                    })
+                    continue
+            
+            # Check if item exists
+            existing_item = db.execute(
+                text("""
+                    SELECT id FROM button_matrix_items 
+                    WHERE matrix_id = :matrix_id AND machine_item_id = :machine_item_id
+                """),
+                {"matrix_id": matrix_id, "machine_item_id": item.machine_item_id}
+            ).first()
+            
+            if existing_item:
+                # Update existing item
+                update_data = {
+                    "drink_id": item.drink_id,
+                    "sale_price_rub": item.sale_price_rub,
+                    "is_active": item.is_active
+                }
+                update_query = text("""
+                    UPDATE button_matrix_items
+                    SET drink_id = :drink_id,
+                        sale_price_rub = :sale_price_rub,
+                        is_active = :is_active
+                    WHERE matrix_id = :matrix_id AND machine_item_id = :machine_item_id
+                """)
+                db.execute(update_query, {
+                    "matrix_id": matrix_id,
+                    "machine_item_id": item.machine_item_id,
+                    **update_data
+                })
+                updated += 1
+            else:
+                # Insert new item
+                insert_query = text("""
+                    INSERT INTO button_matrix_items 
+                    (matrix_id, machine_item_id, drink_id, sale_price_rub, is_active)
+                    VALUES (:matrix_id, :machine_item_id, :drink_id, :sale_price_rub, :is_active)
+                """)
+                db.execute(insert_query, {
+                    "matrix_id": matrix_id,
+                    "machine_item_id": item.machine_item_id,
+                    "drink_id": item.drink_id,
+                    "sale_price_rub": item.sale_price_rub,
+                    "is_active": item.is_active
+                })
+                inserted += 1
+        
+        # If there are validation errors, rollback
+        if errors:
+            db.rollback()
+            raise HTTPException(
+                status_code=422,
+                detail=f"Validation failed for {len(errors)} item(s)",
+                errors=errors
+            )
+        
+        db.commit()
+        logger.info(f"Batch update matrix {matrix_id}: inserted={inserted}, updated={updated}")
+        
+        return ButtonMatrixItemBatchResponse(
+            inserted=inserted,
+            updated=updated,
+            errors=[]
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Batch update error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Batch update failed: {str(e)}")
+
+
+@router.post("/button-matrices/{matrix_id}/clone", response_model=ButtonMatrixResponse)
+async def clone_button_matrix(
+    matrix_id: int,
+    request: ButtonMatrixCloneRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Clone a button matrix with all its items.
+    
+    Creates a new matrix with:
+    - New name (from request or auto-generated with " (copy)" suffix)
+    - Same description (or from request)
+    - All items copied from source matrix
+    - Optionally assign terminals (if vendista_term_ids provided)
+    
+    Owner-only access.
+    """
+    if current_user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only owners can clone matrices")
+    
+    # Get source matrix
+    source_matrix = crud.get_button_matrix(db, matrix_id)
+    if not source_matrix:
+        raise HTTPException(status_code=404, detail="Source matrix not found")
+    
+    # Get source items
+    source_items = crud.get_button_matrix_items(db, matrix_id)
+    
+    # Generate new name
+    new_name = request.name
+    if not new_name:
+        new_name = f"{source_matrix.name} (copy)"
+    
+    # Check if matrix with this name already exists
+    existing = db.execute(
+        text("SELECT id FROM button_matrices WHERE name = :name"),
+        {"name": new_name}
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Matrix with name '{new_name}' already exists"
+        )
+    
+    try:
+        # Create new matrix
+        new_matrix_data = ButtonMatrixCreate(
+            name=new_name,
+            description=request.description or source_matrix.description,
+            is_active=source_matrix.is_active
+        )
+        new_matrix = crud.create_button_matrix(db, new_matrix_data)
+        
+        # Copy all items
+        for item in source_items:
+            item_data = ButtonMatrixItemCreate(
+                machine_item_id=item.machine_item_id,
+                drink_id=item.drink_id,
+                sale_price_rub=item.sale_price_rub,
+                is_active=item.is_active
+            )
+            crud.create_button_matrix_item(db, new_matrix.id, item_data)
+        
+        # Optionally assign terminals
+        if request.vendista_term_ids:
+            # Validate terminals exist
+            for term_id in request.vendista_term_ids:
+                term_check = text("SELECT id FROM vendista_terminals WHERE id = :term_id")
+                term_result = db.execute(term_check, {"term_id": term_id})
+                if not term_result.first():
+                    raise HTTPException(status_code=404, detail=f"Terminal {term_id} not found")
+            
+            # Assign terminals
+            crud.assign_terminals_to_matrix(db, new_matrix.id, request.vendista_term_ids)
+        
+        logger.info(f"Cloned matrix {matrix_id} to {new_matrix.id} with {len(source_items)} items")
+        
+        return new_matrix
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Clone matrix error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Clone failed: {str(e)}")
