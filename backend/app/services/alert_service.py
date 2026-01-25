@@ -195,20 +195,20 @@ class AlertService:
         query = """
             SELECT
                 id,
-                run_at,
-                status,
-                error_message,
+                started_at,
+                ok,
+                message,
                 location_id
             FROM sync_runs
-            WHERE status = 'error'
-              AND run_at >= NOW() - INTERVAL '7 days'
-            ORDER BY run_at DESC
+            WHERE ok = false
+              AND started_at >= NOW() - INTERVAL '7 days'
+            ORDER BY started_at DESC
             LIMIT 10
         """
         params = {}
 
         if location_id:
-            query = query.replace("WHERE status = 'error'", "WHERE status = 'error' AND location_id = :location_id")
+            query = query.replace("WHERE ok = false", "WHERE ok = false AND location_id = :location_id")
             params['location_id'] = location_id
 
         try:
