@@ -114,52 +114,58 @@ const AppLayout = () => {
         >
           {collapsed ? '☕' : 'Vending Admin'}
         </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflow: 'auto',
+          }}
+        >
           <Menu
             theme="dark"
             mode="inline"
             selectedKeys={[location.pathname]}
             items={navItems}
-            style={{ flex: 1, overflow: 'auto' }}
+            style={{ border: 'none' }}
           />
-          {!collapsed && (
-            <div
+        </div>
+        {!collapsed && (
+          <div
+            style={{
+              padding: '10px 16px 16px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.15)',
+              flexShrink: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.2)',
+            }}
+          >
+            <Text
               style={{
-                padding: '12px 16px',
+                fontSize: 12,
+                color: 'rgba(255, 255, 255, 0.85)',
+                display: 'block',
+                fontWeight: 500,
                 textAlign: 'center',
-                borderTop: '1px solid rgba(255, 255, 255, 0.15)',
-                flexShrink: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                zIndex: 10,
               }}
             >
-              <Text
-                style={{
-                  fontSize: 12,
-                  color: 'rgba(255, 255, 255, 0.75)',
-                  display: 'block',
-                  fontWeight: 500,
-                }}
-              >
-                v{APP_VERSION}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 11,
-                  color: 'rgba(255, 255, 255, 0.6)',
-                  display: 'block',
-                  marginTop: 4,
-                }}
-              >
-                {new Date(RELEASE_DATE).toLocaleDateString('ru-RU', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                })}
-              </Text>
-            </div>
-          )}
-        </div>
+              v{APP_VERSION}
+            </Text>
+            <Text
+              style={{
+                fontSize: 11,
+                color: 'rgba(255, 255, 255, 0.65)',
+                display: 'block',
+                marginTop: 2,
+                textAlign: 'center',
+              }}
+            >
+              {new Date(RELEASE_DATE).toLocaleDateString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })}
+            </Text>
+          </div>
+        )}
       </Sider>
 
       <Layout style={{ marginLeft: collapsed ? 80 : 200, transition: 'margin-left 0.2s' }} className="hide-mobile">
