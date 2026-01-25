@@ -4,6 +4,7 @@ import { Button, Card, Typography, Space, Alert } from 'antd';
 import { LoginOutlined } from '@ant-design/icons';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useAuthStore } from '@/store/authStore';
+import { APP_VERSION } from '@/utils/constants';
 import { authApi } from '@/api/auth';
 import { ROUTES, TELEGRAM_BOT_USERNAME } from '@/utils/constants';
 import { useTelegramOAuth } from '@/hooks/useTelegramOAuth';
@@ -322,7 +323,7 @@ const LoginPage = () => {
 
           <div style={{ textAlign: 'center', marginTop: 24 }}>
             <Text type="secondary" style={{ fontSize: 12 }}>
-              Версия 1.0.0 • © 2026 Vending Admin
+              Версия {APP_VERSION} • © 2026 Vending Admin
             </Text>
           </div>
         </Space>

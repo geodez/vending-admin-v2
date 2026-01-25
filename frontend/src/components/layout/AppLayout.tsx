@@ -18,7 +18,7 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore } from '@/store/authStore';
 import { formatRole } from '@/utils/formatters';
-import { NAV_ITEMS, ROUTES } from '@/utils/constants';
+import { NAV_ITEMS, ROUTES, APP_VERSION, RELEASE_DATE } from '@/utils/constants';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -91,17 +91,19 @@ const AppLayout = () => {
         collapsedWidth={80}
         className="hide-mobile"
         style={{
-          overflow: 'auto',
           height: '100vh',
           position: 'fixed',
           left: 0,
           top: 0,
           bottom: 0,
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         <div
           style={{
             height: 64,
+            flexShrink: 0,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -112,12 +114,58 @@ const AppLayout = () => {
         >
           {collapsed ? '☕' : 'Vending Admin'}
         </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          items={navItems}
-        />
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflow: 'auto',
+          }}
+        >
+          <Menu
+            theme="dark"
+            mode="inline"
+            selectedKeys={[location.pathname]}
+            items={navItems}
+            style={{ border: 'none' }}
+          />
+        </div>
+        {!collapsed && (
+          <div
+            style={{
+              padding: '10px 16px 16px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.15)',
+              flexShrink: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.2)',
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                color: 'rgba(255, 255, 255, 0.85)',
+                display: 'block',
+                fontWeight: 500,
+                textAlign: 'center',
+              }}
+            >
+              v{APP_VERSION}
+            </Text>
+            <Text
+              style={{
+                fontSize: 11,
+                color: 'rgba(255, 255, 255, 0.65)',
+                display: 'block',
+                marginTop: 2,
+                textAlign: 'center',
+              }}
+            >
+              {new Date(RELEASE_DATE).toLocaleDateString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })}
+            </Text>
+          </div>
+        )}
       </Sider>
 
       <Layout style={{ marginLeft: collapsed ? 80 : 200, transition: 'margin-left 0.2s' }} className="hide-mobile">

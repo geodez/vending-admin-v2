@@ -114,3 +114,7 @@ export const NAV_ITEMS = [
     roles: ['owner'],
   },
 ] as const;
+
+// Version and release info
+export const APP_VERSION = '1.1.1';
+export const RELEASE_DATE = '2026-01-25'; // Format: YYYY-MM-DD

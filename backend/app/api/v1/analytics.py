@@ -1,7 +1,7 @@
 """
 API endpoints for analytics and reports.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import List, Optional
@@ -9,6 +9,8 @@ from datetime import date
 from app.db.session import get_db
 from app.api.deps import get_current_user, require_owner
 from app.models.user import User
+from app.services.alert_service import AlertService, AlertType, AlertSeverity
+from app.services.kpi_calculator import KPICalculator
 
 router = APIRouter()
 
@@ -25,68 +27,8 @@ def get_overview(
     Get overview KPIs (for dashboard).
     Returns aggregated metrics for the specified period.
     """
-    query = """
-        SELECT
-            COUNT(*) as total_sales,
-            SUM(revenue) as total_revenue,
-            SUM(cogs) as total_cogs,
-            SUM(gross_profit) as total_gross_profit,
-            CASE 
-                WHEN SUM(revenue) > 0 
-                THEN (SUM(gross_profit) / SUM(revenue) * 100)::numeric(5,2)
-                ELSE 0 
-            END as gross_margin_pct,
-            COUNT(DISTINCT drink_id) as unique_drinks,
-            COUNT(DISTINCT term_id) as active_terminals
-        FROM vw_tx_cogs
-        WHERE 1=1
-    """
-    
-    params = {}
-    if from_date:
-        query += " AND tx_date >= :from_date"
-        params['from_date'] = from_date
-    if to_date:
-        query += " AND tx_date <= :to_date"
-        params['to_date'] = to_date
-    if location_id:
-        query += " AND location_id = :location_id"
-        params['location_id'] = location_id
-    
-    result = db.execute(text(query), params).fetchone()
-    
-    # Get variable expenses for same period
-    expense_query = """
-        SELECT COALESCE(SUM(amount_rub), 0) as total_expenses
-        FROM variable_expenses
-        WHERE 1=1
-    """
-    if from_date:
-        expense_query += " AND expense_date >= :from_date"
-    if to_date:
-        expense_query += " AND expense_date <= :to_date"
-    if location_id:
-        expense_query += " AND location_id = :location_id"
-    
-    expenses_result = db.execute(text(expense_query), params).fetchone()
-    total_expenses = expenses_result[0] if expenses_result else 0
-    
-    # Calculate net profit
-    net_profit = (result[3] or 0) - total_expenses  # gross_profit - expenses
-    net_margin_pct = (net_profit / result[1] * 100) if result[1] and result[1] > 0 else 0
-    
-    return {
-        "total_sales": result[0] or 0,
-        "total_revenue": float(result[1] or 0),
-        "total_cogs": float(result[2] or 0),
-        "total_gross_profit": float(result[3] or 0),
-        "gross_margin_pct": float(result[4] or 0),
-        "unique_drinks": result[5] or 0,
-        "active_terminals": result[6] or 0,
-        "total_variable_expenses": float(total_expenses),
-        "net_profit": float(net_profit),
-        "net_margin_pct": float(net_margin_pct)
-    }
+    calculator = KPICalculator(db)
+    return calculator.calculate_overview_kpis(from_date, to_date, location_id)
 
 
 @router.get("/sales/daily")
@@ -122,22 +64,8 @@ def get_daily_sales(
         query += " AND location_id = :location_id"
         params['location_id'] = location_id
     
-    query += " ORDER BY tx_date DESC"
-    
-    results = db.execute(text(query), params).fetchall()
-    
-    return [
-        {
-            "date": row[0],
-            "location_id": row[1],
-            "sales_count": row[2],
-            "revenue": float(row[3]),
-            "cogs": float(row[4]),
-            "gross_profit": float(row[5]),
-            "gross_margin_pct": float(row[6])
-        }
-        for row in results
-    ]
+    calculator = KPICalculator(db)
+    return calculator.calculate_daily_kpis(from_date, to_date, location_id)
 
 
 @router.get("/sales/by-product")
@@ -454,6 +382,21 @@ def get_sales_summary(
     current_user: User = Depends(get_current_user)
 ):
     """
+    Get sales summary with aggregated metrics.
+    """
+    calculator = KPICalculator(db)
+    return calculator.calculate_sales_summary(from_date, to_date, location_id)
+
+
+@router.get("/sales/summary-old")
+def get_sales_summary(
+    from_date: Optional[date] = None,
+    to_date: Optional[date] = None,
+    location_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
     Get sales summary (aggregated statistics).
     Returns overall metrics for the period.
     """
@@ -503,6 +446,22 @@ def get_sales_summary(
 
 
 @router.get("/sales/margin")
+def get_sales_margin(
+    from_date: Optional[date] = None,
+    to_date: Optional[date] = None,
+    location_id: Optional[int] = None,
+    min_margin: Optional[float] = Query(None, description="Minimum margin threshold"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get detailed margin analysis by products.
+    """
+    calculator = KPICalculator(db)
+    return calculator.calculate_margin_analysis(from_date, to_date, location_id, min_margin)
+
+
+@router.get("/sales/margin-old")
 def get_sales_margin(
     from_date: Optional[date] = None,
     to_date: Optional[date] = None,
@@ -826,4 +785,57 @@ def get_owner_report_issues(
             "sync_error": len([i for i in issues if i["type"] == "sync_error"])
         },
         "issues": issues
+    }
+
+
+@router.get("/alerts")
+def get_alerts(
+    location_id: Optional[int] = Query(None, description="Filter by location ID"),
+    alert_type: Optional[str] = Query(None, description="Filter by alert type (low_stock, low_margin, sync_error, expiring_stock)"),
+    severity: Optional[str] = Query(None, description="Filter by severity (critical, warning, info)"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get list of active alerts.
+    
+    Returns alerts for:
+    - Low stock levels (based on alert_threshold)
+    - Low margin products (< 30%)
+    - Sync errors (from last 7 days)
+    - Expiring stock (based on alert_days_threshold)
+    
+    Filters:
+    - location_id: Filter alerts by location
+    - alert_type: Filter by type (low_stock, low_margin, sync_error, expiring_stock)
+    - severity: Filter by severity (critical, warning, info)
+    """
+    service = AlertService(db)
+    
+    # Convert string parameters to enums if provided
+    alert_type_enum = None
+    if alert_type:
+        try:
+            alert_type_enum = AlertType(alert_type)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid alert_type: {alert_type}")
+    
+    severity_enum = None
+    if severity:
+        try:
+            severity_enum = AlertSeverity(severity)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid severity: {severity}")
+    
+    alerts = service.get_all_alerts(
+        location_id=location_id,
+        alert_type=alert_type_enum,
+        severity=severity_enum
+    )
+    
+    summary = service.get_alert_summary(location_id=location_id)
+    
+    return {
+        "alerts": alerts,
+        "summary": summary
     }
