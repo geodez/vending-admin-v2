@@ -4,7 +4,7 @@ Business logic service for recipe (drink) operations.
 from sqlalchemy.orm import Session
 from typing import List, Optional, Any, Dict
 from app.crud import business as crud
-from app.models.business import Drink
+from app.models.business import Drink, DrinkItem
 from app.schemas.business import DrinkCreate, DrinkUpdate, DrinkCloneRequest, DrinkItemCreate
 from app.api.middleware.error_handlers import BusinessLogicError
 import logging
@@ -76,10 +76,13 @@ class RecipeService:
         if not drink:
             raise BusinessLogicError("Recipe not found", 404)
 
+        # Load drink items separately
+        drink_items = self.db.query(DrinkItem).filter(DrinkItem.drink_id == drink_id).all()
+
         total_cost = 0.0
         item_costs = []
 
-        for item in drink.items:
+        for item in drink_items:
             ingredient = crud.get_ingredient(self.db, item.ingredient_code)
             if not ingredient:
                 logger.warning(f"Ingredient {item.ingredient_code} not found for cost calculation")
@@ -218,9 +221,10 @@ class RecipeService:
         if existing_drink:
             raise BusinessLogicError(f"Drink with name '{new_name}' already exists", 400)
 
-        # Prepare items from original drink
+        # Prepare items from original drink - load items separately
+        drink_items = self.db.query(DrinkItem).filter(DrinkItem.drink_id == drink_id).all()
         items = []
-        for item in original_drink.items:
+        for item in drink_items:
             items.append({
                 'ingredient_code': item.ingredient_code,
                 'qty_per_unit': float(item.qty_per_unit),
