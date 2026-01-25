@@ -91,17 +91,19 @@ const AppLayout = () => {
         collapsedWidth={80}
         className="hide-mobile"
         style={{
-          overflow: 'auto',
           height: '100vh',
           position: 'fixed',
           left: 0,
           top: 0,
           bottom: 0,
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         <div
           style={{
             height: 64,
+            flexShrink: 0,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -112,48 +114,49 @@ const AppLayout = () => {
         >
           {collapsed ? '☕' : 'Vending Admin'}
         </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          items={navItems}
-        />
-        {!collapsed && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 16,
-              left: 0,
-              right: 0,
-              padding: '0 16px',
-              textAlign: 'center',
-            }}
-          >
-            <Text
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+          <Menu
+            theme="dark"
+            mode="inline"
+            selectedKeys={[location.pathname]}
+            items={navItems}
+            style={{ flex: 1, overflow: 'auto', paddingBottom: !collapsed ? 60 : 0 }}
+          />
+          {!collapsed && (
+            <div
               style={{
-                fontSize: 11,
-                color: 'rgba(255, 255, 255, 0.45)',
-                display: 'block',
+                padding: '16px',
+                textAlign: 'center',
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                flexShrink: 0,
               }}
             >
-              v{APP_VERSION}
-            </Text>
-            <Text
-              style={{
-                fontSize: 10,
-                color: 'rgba(255, 255, 255, 0.35)',
-                display: 'block',
-                marginTop: 2,
-              }}
-            >
-              {new Date(RELEASE_DATE).toLocaleDateString('ru-RU', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-              })}
-            </Text>
-          </div>
-        )}
+              <Text
+                style={{
+                  fontSize: 11,
+                  color: 'rgba(255, 255, 255, 0.65)',
+                  display: 'block',
+                }}
+              >
+                v{APP_VERSION}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 10,
+                  color: 'rgba(255, 255, 255, 0.5)',
+                  display: 'block',
+                  marginTop: 4,
+                }}
+              >
+                {new Date(RELEASE_DATE).toLocaleDateString('ru-RU', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                })}
+              </Text>
+            </div>
+          )}
+        </div>
       </Sider>
 
       <Layout style={{ marginLeft: collapsed ? 80 : 200, transition: 'margin-left 0.2s' }} className="hide-mobile">
