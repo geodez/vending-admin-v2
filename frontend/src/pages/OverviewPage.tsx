@@ -7,10 +7,12 @@ import {
   WalletOutlined,
   TrophyOutlined,
 } from '@ant-design/icons';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import { formatCurrency, formatNumber, formatPercent } from '@/utils/formatters';
-import { getOverview, getAlerts } from '../api/analytics';
+import { getOverview, getAlerts, getDailySales } from '../api/analytics';
 import { useAuthStore } from '../store/authStore';
 import OwnerReportTab from '../components/analytics/OwnerReportTab';
+import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 
@@ -28,11 +30,14 @@ const OverviewPage = () => {
   const loadData = async () => {
     setLoading(true);
     try {
+      const fromDate = dayjs().startOf('month').format('YYYY-MM-DD');
+      const toDate = dayjs().format('YYYY-MM-DD');
+      
       // Загружаем KPI для вкладки "Обзор"
       const [kpiResponse, alertsResponse] = await Promise.all([
         getOverview({
-          from_date: new Date(new Date().setDate(1)).toISOString().split('T')[0], // Начало месяца
-          to_date: new Date().toISOString().split('T')[0], // Сегодня
+          from_date: fromDate,
+          to_date: toDate,
         }),
         getAlerts().catch(() => ({ data: { alerts: [], summary: {} } })), // Игнорируем ошибки если нет доступа
       ]);
@@ -84,6 +89,40 @@ const OverviewPage = () => {
 
 // Компонент вкладки "Обзор"
 const OverviewTab = ({ kpiData, alerts }: { kpiData: any; alerts: any[] }) => {
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartLoading, setChartLoading] = useState(false);
+
+  useEffect(() => {
+    loadChartData();
+  }, []);
+
+  const loadChartData = async () => {
+    setChartLoading(true);
+    try {
+      const fromDate = dayjs().startOf('month').format('YYYY-MM-DD');
+      const toDate = dayjs().format('YYYY-MM-DD');
+      
+      const response = await getDailySales({
+        from_date: fromDate,
+        to_date: toDate,
+      });
+      
+      // Форматируем данные для графика
+      const formatted = response.data.map((item: any) => ({
+        date: dayjs(item.date).format('DD.MM'),
+        revenue: item.revenue || 0,
+        gross_profit: item.gross_profit || 0,
+        sales_count: item.sales_count || 0,
+      }));
+      
+      setChartData(formatted);
+    } catch (error: any) {
+      console.error('Error loading chart data:', error);
+    } finally {
+      setChartLoading(false);
+    }
+  };
+
   if (!kpiData) {
     return <Empty description="Нет данных для отображения" />;
   }
@@ -166,10 +205,10 @@ const OverviewTab = ({ kpiData, alerts }: { kpiData: any; alerts: any[] }) => {
       {alerts.length > 0 && (
         <Card title="⚠️ Критические алерты">
           <Space direction="vertical" style={{ width: '100%' }}>
-            {alerts.map((alert) => (
+            {alerts.map((alert, index) => (
               <Alert
-                key={alert.id}
-                message={alert.message || alert.title}
+                key={`${alert.type || 'alert'}-${alert.ingredient_code || alert.drink_id || index}`}
+                message={alert.message || alert.title || 'Алерт'}
                 type={alert.severity === 'critical' ? 'error' : alert.severity === 'warning' ? 'warning' : 'info'}
                 showIcon
               />
@@ -178,9 +217,53 @@ const OverviewTab = ({ kpiData, alerts }: { kpiData: any; alerts: any[] }) => {
         </Card>
       )}
 
-      {/* Chart Placeholder */}
-      <Card title="📈 График продаж">
-        <Empty description="График будет доступен после интеграции с API" />
+      {/* Chart */}
+      <Card title="📈 График продаж" loading={chartLoading}>
+        {chartData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis yAxisId="left" />
+              <YAxis yAxisId="right" orientation="right" />
+              <RechartsTooltip 
+                formatter={(value: number, name: string) => {
+                  if (name === 'Выручка' || name === 'Валовая прибыль') {
+                    return [formatCurrency(value), name];
+                  }
+                  return [value, name];
+                }}
+              />
+              <Legend />
+              <Line 
+                yAxisId="left"
+                type="monotone" 
+                dataKey="revenue" 
+                stroke="#1890ff" 
+                name="Выручка"
+                strokeWidth={2}
+              />
+              <Line 
+                yAxisId="left"
+                type="monotone" 
+                dataKey="gross_profit" 
+                stroke="#52c41a" 
+                name="Валовая прибыль"
+                strokeWidth={2}
+              />
+              <Line 
+                yAxisId="right"
+                type="monotone" 
+                dataKey="sales_count" 
+                stroke="#faad14" 
+                name="Количество продаж"
+                strokeWidth={2}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <Empty description="Нет данных для графика" />
+        )}
       </Card>
     </Space>
   );
