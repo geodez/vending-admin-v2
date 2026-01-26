@@ -17,17 +17,22 @@ const SettingsPage = () => {
   const [dateTo, setDateTo] = useState<Dayjs | null>(dayjs());
   const [terminals, setTerminals] = useState<VendistaTerminal[]>([]);
   const [loadingTerminals, setLoadingTerminals] = useState(false);
+  // Отдельные даты для фильтрации истории (по умолчанию - без фильтра, показываем все)
+  const [historyDateFrom, setHistoryDateFrom] = useState<Dayjs | null>(null);
+  const [historyDateTo, setHistoryDateTo] = useState<Dayjs | null>(null);
 
   const fetchRuns = async () => {
     setLoading(true);
     try {
       const data = await getSyncRuns({
-        date_from: dateFrom ? dateFrom.format('YYYY-MM-DD') : undefined,
-        date_to: dateTo ? dateTo.format('YYYY-MM-DD') : undefined,
+        // Используем отдельные даты для истории, если не заданы - показываем все запуски
+        date_from: historyDateFrom ? historyDateFrom.format('YYYY-MM-DD') : undefined,
+        date_to: historyDateTo ? historyDateTo.format('YYYY-MM-DD') : undefined,
         limit: 50,
       });
       setRuns(data);
     } catch (error: any) {
+      console.error('Error fetching sync runs:', error);
       message.error(error.response?.data?.detail || 'Ошибка загрузки истории');
     } finally {
       setLoading(false);
@@ -114,6 +119,11 @@ const SettingsPage = () => {
     fetchRuns();
     fetchTerminals();
   }, []);
+
+  // Автоматически обновляем историю при изменении фильтров
+  useEffect(() => {
+    fetchRuns();
+  }, [historyDateFrom, historyDateTo]);
 
   const columns = [
     {
@@ -303,14 +313,48 @@ const SettingsPage = () => {
       </Card>
 
       <Card style={{ marginTop: 16 }} title="История запусков">
-        <Button
-          style={{ marginBottom: 16 }}
-          icon={<SyncOutlined />}
-          onClick={fetchRuns}
-          loading={loading}
-        >
-          Обновить
-        </Button>
+        <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }}>
+          <Space wrap>
+            <DatePicker
+              value={historyDateFrom}
+              onChange={(date) => setHistoryDateFrom(date)}
+              format="DD.MM.YYYY"
+              placeholder="От (фильтр истории)"
+              allowClear
+            />
+            <DatePicker
+              value={historyDateTo}
+              onChange={(date) => setHistoryDateTo(date)}
+              format="DD.MM.YYYY"
+              placeholder="До (фильтр истории)"
+              allowClear
+            />
+            <Button
+              icon={<SyncOutlined />}
+              onClick={fetchRuns}
+              loading={loading}
+            >
+              Обновить
+            </Button>
+            {(historyDateFrom || historyDateTo) && (
+              <Button
+                type="text"
+                size="small"
+                onClick={() => {
+                  setHistoryDateFrom(null);
+                  setHistoryDateTo(null);
+                }}
+              >
+                Сбросить фильтр
+              </Button>
+            )}
+          </Space>
+          <Text type="secondary" style={{ fontSize: '12px' }}>
+            {historyDateFrom || historyDateTo
+              ? 'Показаны запуски с фильтром по датам'
+              : 'Показаны все запуски синхронизации'}
+          </Text>
+        </Space>
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
