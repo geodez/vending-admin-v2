@@ -177,6 +177,65 @@ def get_inventory_balance(
     ]
 
 
+@router.get("/inventory/usage-daily")
+def get_ingredient_usage_daily(
+    from_date: Optional[date] = None,
+    to_date: Optional[date] = None,
+    location_id: Optional[int] = None,
+    ingredient_code: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get daily ingredient usage."""
+    query = """
+        SELECT
+            DATE(t.tx_time) as day,
+            t.location_id,
+            l.name as location_name,
+            di.ingredient_code,
+            i.display_name_ru as ingredient_name,
+            SUM(di.qty_per_unit) as qty_used,
+            i.unit
+        FROM vw_tx_cogs t
+        JOIN drink_items di ON di.drink_id = t.drink_id
+        JOIN ingredients i ON i.ingredient_code = di.ingredient_code
+        LEFT JOIN locations l ON l.id = t.location_id
+        WHERE i.expense_kind = 'stock_tracked'
+    """
+    
+    params = {}
+    if from_date:
+        query += " AND DATE(t.tx_time) >= :from_date"
+        params['from_date'] = from_date
+    if to_date:
+        query += " AND DATE(t.tx_time) <= :to_date"
+        params['to_date'] = to_date
+    if location_id:
+        query += " AND t.location_id = :location_id"
+        params['location_id'] = location_id
+    if ingredient_code:
+        query += " AND di.ingredient_code = :ingredient_code"
+        params['ingredient_code'] = ingredient_code
+    
+    query += " GROUP BY DATE(t.tx_time), t.location_id, l.name, di.ingredient_code, i.display_name_ru, i.unit"
+    query += " ORDER BY day DESC, ingredient_name"
+    
+    results = db.execute(text(query), params).fetchall()
+    
+    return [
+        {
+            "day": row[0].isoformat() if row[0] else None,
+            "location_id": row[1],
+            "location_name": row[2],
+            "ingredient_code": row[3],
+            "ingredient_name": row[4],
+            "qty_used": float(row[5]) if row[5] else 0.0,
+            "unit": row[6]
+        }
+        for row in results
+    ]
+
+
 @router.get("/owner-report")
 def get_owner_report(
     period_start: Optional[date] = None,
