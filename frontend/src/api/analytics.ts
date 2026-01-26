@@ -44,3 +44,11 @@ export const getOwnerReport = (params?: { period_start?: string; period_end?: st
 // Daily Sales for charts
 export const getDailySales = (params?: { from_date?: string; to_date?: string; location_id?: number }) =>
   apiClient.get<any[]>('/analytics/sales/daily', { params });
+
+// Overview KPIs
+export const getOverview = (params?: { from_date?: string; to_date?: string; location_id?: number }) =>
+  apiClient.get<any>('/analytics/overview', { params });
+
+// Alerts
+export const getAlerts = (params?: { location_id?: number; alert_type?: string; severity?: string }) =>
+  apiClient.get<{ alerts: any[]; summary: any }>('/analytics/alerts', { params });

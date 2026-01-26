@@ -45,7 +45,6 @@ export const ROUTES = {
   INGREDIENTS: '/ingredients',
   MATRIX_TEMPLATES: '/matrix-templates',
   EXPENSES: '/expenses',
-  OWNER_REPORT: '/owner-report',
   SETTINGS: '/settings',
 } as const;
 
@@ -98,13 +97,6 @@ export const NAV_ITEMS = [
     path: ROUTES.EXPENSES,
     icon: 'WalletOutlined',
     roles: ['owner', 'operator'],
-  },
-  {
-    key: 'owner-report',
-    label: 'Отчёт собственника',
-    path: ROUTES.OWNER_REPORT,
-    icon: 'FileTextOutlined',
-    roles: ['owner'],
   },
   {
     key: 'settings',

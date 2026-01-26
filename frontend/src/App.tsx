@@ -13,7 +13,6 @@ import RecipesPage from './pages/RecipesPage';
 import IngredientsPage from './pages/IngredientsPage';
 import MatrixTemplatesPage from './pages/MatrixTemplatesPage';
 import ExpensesPage from './pages/ExpensesPage';
-import OwnerReportPage from './pages/OwnerReportPage';
 import SettingsPage from './pages/SettingsPage';
 import { ROUTES } from './utils/constants';
 
@@ -86,7 +85,6 @@ function App() {
             <Route path={ROUTES.INGREDIENTS} element={<IngredientsPage />} />
             <Route path={ROUTES.MATRIX_TEMPLATES} element={<MatrixTemplatesPage />} />
             <Route path={ROUTES.EXPENSES} element={<ExpensesPage />} />
-            <Route path={ROUTES.OWNER_REPORT} element={<OwnerReportPage />} />
             <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
           </Route>
         ) : (
