@@ -74,12 +74,14 @@ export const getTransactionCount = (params?: {
 }) => apiClient.get<{ count: number }>('/sync/transactions/count', { params });
 
 // Get sync runs history
-export const getSyncRuns = (params?: {
+export const getSyncRuns = async (params?: {
   date_from?: string;
   date_to?: string;
   limit?: number;
-}) =>
-  apiClient.get<SyncRun[]>('/sync/runs', { params: { limit: 20, ...params } });
+}) => {
+  const response = await apiClient.get<SyncRun[]>('/sync/runs', { params: { limit: 20, ...params } });
+  return response.data;
+};
 
 // Rerun a specific sync run
 export const rerunSync = (runId: number) =>
