@@ -98,7 +98,7 @@ class ExpenseService:
                     'locations': set()
                 }
 
-            ingredient_totals[code]['total_loaded'] += float(load.qty_loaded)
+            ingredient_totals[code]['total_loaded'] += float(load.qty)
             ingredient_totals[code]['load_count'] += 1
             ingredient_totals[code]['locations'].add(load.location_id)
 

@@ -73,13 +73,13 @@ export const inventoryApi = {
     if (params?.skip !== undefined) queryParams.append('skip', String(params.skip));
     if (params?.limit !== undefined) queryParams.append('limit', String(params.limit));
     
-    const response = await apiClient.get<IngredientLoadResponse[]>(`/inventory/ingredient-loads?${queryParams.toString()}`);
+    const response = await apiClient.get<IngredientLoadResponse[]>(`/business/inventory/ingredient-loads?${queryParams.toString()}`);
     return response.data;
   },
 
   // Создать загрузку ингредиента
   createIngredientLoad: async (data: IngredientLoadCreate): Promise<IngredientLoadResponse> => {
-    const response = await apiClient.post<IngredientLoadResponse>('/inventory/ingredient-loads', data);
+    const response = await apiClient.post<IngredientLoadResponse>('/business/inventory/ingredient-loads', data);
     return response.data;
   },
 
@@ -94,7 +94,7 @@ export const inventoryApi = {
     if (params?.location_id !== undefined) queryParams.append('location_id', String(params.location_id));
     if (params?.days_back !== undefined) queryParams.append('days_back', String(params.days_back));
     
-    const response = await apiClient.get(`/inventory/inventory/status?${queryParams.toString()}`);
+    const response = await apiClient.get(`/business/inventory/status?${queryParams.toString()}`);
     return response.data;
   },
 

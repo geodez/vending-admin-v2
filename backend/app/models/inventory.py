@@ -36,6 +36,7 @@ class VariableExpense(Base):
     amount_rub = Column(Numeric(10, 2), nullable=False)
     comment = Column(Text, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     created_by_user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
 
     def __repr__(self):
