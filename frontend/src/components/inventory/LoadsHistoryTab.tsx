@@ -150,6 +150,27 @@ const LoadsHistoryTab = () => {
               </Select.Option>
             ))}
           </Select>
+          <Select
+            placeholder="Ингредиент"
+            allowClear
+            showSearch
+            style={{ width: 240 }}
+            value={selectedIngredientCode}
+            onChange={setSelectedIngredientCode}
+            filterOption={(input, option) =>
+              (option?.children ?? '').toString().toLowerCase().includes(input.toLowerCase())
+            }
+          >
+            {ingredients.map(ing => {
+              const code = (ing.code || ing.ingredient_code) as string;
+              const name = ing.name_ru || ing.display_name_ru || ing.name || code;
+              return (
+                <Select.Option key={code} value={code}>
+                  {name}
+                </Select.Option>
+              );
+            })}
+          </Select>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
             Добавить загрузку
           </Button>

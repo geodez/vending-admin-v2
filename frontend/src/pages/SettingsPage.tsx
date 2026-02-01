@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Card, Typography, Table, Button, Empty, message, Spin, Tag, DatePicker, Space, Popconfirm, List, Badge } from 'antd';
+import { Card, Typography, Table, Button, Empty, message, Spin, Tag, DatePicker, Space, Popconfirm, List, Badge, Switch } from 'antd';
 import { SyncOutlined, CheckCircleOutlined, CloseCircleOutlined, RedoOutlined, DatabaseOutlined, ReloadOutlined } from '@ant-design/icons';
-import { getSyncRuns, checkSyncHealth, triggerSyncWithPeriod, rerunSync, syncTerminals, getTerminals, SyncRun, VendistaTerminal } from '../api/sync';
+import { getSyncRuns, checkSyncHealth, triggerSyncWithPeriod, rerunSync, syncTerminals, getTerminals, updateTerminal, SyncRun, VendistaTerminal } from '../api/sync';
 import dayjs, { Dayjs } from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -17,6 +17,7 @@ const SettingsPage = () => {
   const [dateTo, setDateTo] = useState<Dayjs | null>(dayjs());
   const [terminals, setTerminals] = useState<VendistaTerminal[]>([]);
   const [loadingTerminals, setLoadingTerminals] = useState(false);
+  const [terminalUpdating, setTerminalUpdating] = useState<Record<number, boolean>>({});
   // Отдельные даты для фильтрации истории (по умолчанию - без фильтра, показываем все)
   const [historyDateFrom, setHistoryDateFrom] = useState<Dayjs | null>(null);
   const [historyDateTo, setHistoryDateTo] = useState<Dayjs | null>(null);
@@ -112,6 +113,19 @@ const SettingsPage = () => {
       message.error(error.response?.data?.detail || 'Ошибка синхронизации терминалов');
     } finally {
       setSyncingTerminals(false);
+    }
+  };
+
+  const handleToggleTerminal = async (terminal: VendistaTerminal, nextActive: boolean) => {
+    setTerminalUpdating(prev => ({ ...prev, [terminal.id]: true }));
+    try {
+      const { data } = await updateTerminal(terminal.id, { is_active: nextActive });
+      setTerminals(prev => prev.map(t => (t.id === terminal.id ? { ...t, is_active: data.is_active } : t)));
+      message.success(`Терминал #${terminal.id} ${nextActive ? 'включен' : 'отключен'}`);
+    } catch (error: any) {
+      message.error(error.response?.data?.detail || 'Ошибка обновления терминала');
+    } finally {
+      setTerminalUpdating(prev => ({ ...prev, [terminal.id]: false }));
     }
   };
 
@@ -297,9 +311,16 @@ const SettingsPage = () => {
                       </Text>
                     )}
                   </Space>
-                  <Tag color={terminal.is_active ? 'green' : 'default'}>
-                    {terminal.is_active ? 'Активен' : 'Неактивен'}
-                  </Tag>
+                  <Space size="small">
+                    <Tag color={terminal.is_active ? 'green' : 'default'}>
+                      {terminal.is_active ? 'Активен' : 'Неактивен'}
+                    </Tag>
+                    <Switch
+                      checked={terminal.is_active}
+                      loading={terminalUpdating[terminal.id]}
+                      onChange={(checked) => handleToggleTerminal(terminal, checked)}
+                    />
+                  </Space>
                 </Space>
               </List.Item>
             )}

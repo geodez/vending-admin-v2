@@ -42,6 +42,7 @@ const InventoryPage = () => {
         activeKey={activeTab}
         onChange={setActiveTab}
         items={tabItems}
+        destroyInactiveTabPane
         style={{ marginTop: 16 }}
       />
     </div>

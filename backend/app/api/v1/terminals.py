@@ -40,15 +40,17 @@ async def get_terminals(
     # We parse JSON payload to extract sum and count only positive transactions
     query = text("""
         SELECT
-            term_id,
-            COUNT(*) FILTER (WHERE (payload->>'sum')::numeric > 0) as tx_count,
-            COALESCE(SUM((payload->>'sum')::numeric) FILTER (WHERE (payload->>'sum')::numeric > 0), 0) / 100.0 as revenue_gross,
-            MAX(tx_time) FILTER (WHERE (payload->>'sum')::numeric > 0) as last_tx_time
-        FROM vendista_tx_raw
-        WHERE tx_time >= :period_start
-          AND tx_time < :period_end + interval '1 day'
-        GROUP BY term_id
-        HAVING COUNT(*) FILTER (WHERE (payload->>'sum')::numeric > 0) > 0
+            t.term_id,
+            COUNT(*) FILTER (WHERE (t.payload->>'sum')::numeric > 0) as tx_count,
+            COALESCE(SUM((t.payload->>'sum')::numeric) FILTER (WHERE (t.payload->>'sum')::numeric > 0), 0) / 100.0 as revenue_gross,
+            MAX(t.tx_time) FILTER (WHERE (t.payload->>'sum')::numeric > 0) as last_tx_time
+        FROM vendista_tx_raw t
+        LEFT JOIN vendista_terminals vt ON vt.id = t.term_id
+        WHERE t.tx_time >= :period_start
+          AND t.tx_time < :period_end + interval '1 day'
+          AND vt.is_active IS DISTINCT FROM false
+        GROUP BY t.term_id
+        HAVING COUNT(*) FILTER (WHERE (t.payload->>'sum')::numeric > 0) > 0
         ORDER BY revenue_gross DESC
     """)
     

@@ -323,6 +323,7 @@ def get_owner_report(
                 FROM variable_expenses ve
                 LEFT JOIN vendista_terminals vt ON vt.id = ve.vendista_term_id
                 WHERE ve.expense_date >= :from_date AND ve.expense_date <= :to_date
+                  AND vt.is_active IS DISTINCT FROM false
             """
             if location_id:
                 expense_query += " AND COALESCE(vt.location_id, -1) = :location_id"
@@ -356,6 +357,7 @@ def get_owner_report(
                         FROM variable_expenses ve
                         LEFT JOIN vendista_terminals vt ON vt.id = ve.vendista_term_id
                         WHERE ve.expense_date >= :from_date AND ve.expense_date <= :to_date
+                          AND vt.is_active IS DISTINCT FROM false
                     """
                     if location_id:
                         expense_query += " AND COALESCE(vt.location_id, -1) = :location_id"

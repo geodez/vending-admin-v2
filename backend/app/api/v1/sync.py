@@ -12,7 +12,7 @@ from app.models.user import User
 from app.services.vendista_sync import sync_service
 from app.services.vendista_client import vendista_client
 from app.crud import vendista as crud_vendista
-from app.schemas.vendista import VendistaTerminalResponse
+from app.schemas.vendista import VendistaTerminalResponse, VendistaTerminalUpdate
 import logging
 
 logger = logging.getLogger(__name__)
@@ -311,6 +311,34 @@ async def get_vendista_terminals(
     """
     terminals = crud_vendista.get_terminals(db, skip=skip, limit=limit, is_active=is_active)
     return terminals
+
+
+@router.patch("/terminals/{term_id}", response_model=VendistaTerminalResponse)
+async def update_vendista_terminal(
+    term_id: int,
+    terminal_update: VendistaTerminalUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update Vendista terminal fields (e.g., is_active).
+    Owner-only access.
+    """
+    if current_user.role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owners can update terminals"
+        )
+
+    existing = crud_vendista.get_terminal(db, term_id)
+    if existing is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Terminal {term_id} not found"
+        )
+
+    updated = crud_vendista.update_terminal(db, term_id, terminal_update)
+    return updated
 
 
 @router.post("/terminals/sync")

@@ -51,6 +51,14 @@ class VendistaSyncService:
         if period_start is None:
             period_start = today.replace(day=1)
 
+        disabled_term_ids = {
+            row[0] for row in db.query(VendistaTerminal.id)
+            .filter(VendistaTerminal.is_active == False)  # noqa: E712
+            .all()
+        }
+        if disabled_term_ids:
+            logger.info("Disabled terminals will be skipped in sync: %s", sorted(disabled_term_ids))
+
         date_from_str = f"{period_start.strftime('%Y-%m-%d')} 00:00:00"
         date_to_str = f"{period_end.strftime('%Y-%m-%d')} 23:59:59"
 
@@ -102,6 +110,7 @@ class VendistaSyncService:
 
             # Prepare rows for bulk insert
             rows = []
+            skipped_disabled = 0
             for tx in transactions:
                 try:
                     vendista_tx_id = tx.get("id")
@@ -118,6 +127,10 @@ class VendistaSyncService:
                         logger.warning(f"Failed to parse tx_time '{tx_time_str}' for tx {vendista_tx_id}")
                         tx_time = datetime.utcnow()
 
+                    if term_id in disabled_term_ids:
+                        skipped_disabled += 1
+                        continue
+
                     rows.append({
                         "term_id": term_id,
                         "vendista_tx_id": vendista_tx_id,
@@ -128,6 +141,24 @@ class VendistaSyncService:
                 except Exception as e:
                     logger.error(f"Error preparing transaction: {e}")
                     continue
+
+            if skipped_disabled:
+                logger.info("Skipped %s transactions from disabled terminals", skipped_disabled)
+
+            if not rows:
+                logger.info("No transactions to sync after filtering disabled terminals")
+                return SyncResult(
+                    success=True,
+                    fetched=len(transactions),
+                    inserted=0,
+                    skipped_duplicates=0,
+                    expected_total=expected_total,
+                    pages_fetched=pages_fetched,
+                    items_per_page=items_per_page_resp,
+                    last_page=last_page,
+                    transactions_synced=0,
+                    error_message=None,
+                )
 
             # Client-side deduplication
             seen = set()
@@ -303,9 +334,10 @@ class VendistaSyncService:
                         if title and existing_terminal.title != title:
                             update_data_dict["title"] = title
                             needs_update = True
-                        if existing_terminal.is_active != is_active:
-                            update_data_dict["is_active"] = is_active
-                            needs_update = True
+                        if existing_terminal.is_active:
+                            if existing_terminal.is_active != is_active:
+                                update_data_dict["is_active"] = is_active
+                                needs_update = True
                         
                         if needs_update:
                             update_data = VendistaTerminalUpdate(**update_data_dict)
