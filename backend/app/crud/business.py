@@ -6,9 +6,9 @@ from typing import List, Optional
 from datetime import date
 from app.models.business import (
     Location, Product, Ingredient, Drink, DrinkItem,
-    ButtonMatrix, ButtonMatrixItem, TerminalMatrixMap,
-    VendistaTxRaw
+    ButtonMatrix, ButtonMatrixItem, TerminalMatrixMap
 )
+from app.models.vendista import VendistaTxRaw
 from app.models.inventory import IngredientLoad, VariableExpense
 from app.schemas.business import *
 from sqlalchemy import text
