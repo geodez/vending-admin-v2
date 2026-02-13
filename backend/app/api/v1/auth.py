@@ -4,10 +4,12 @@ from typing import Optional
 from app.db.session import get_db
 from app.auth.telegram import validate_telegram_init_data, validate_telegram_login_widget
 from app.auth.jwt import create_access_token
-from app.crud.user import get_user_by_telegram_id, create_user
+from app.auth.password import verify_password
+from app.crud.user import get_user_by_telegram_id, get_user_by_email, create_user
 from app.schemas.auth import (
     TelegramAuthRequest, 
     TelegramLoginWidgetRequest,
+    LoginRequest,
     TokenResponse, 
     UserResponse, 
     UserCreate
@@ -23,6 +25,75 @@ import logging
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+@router.post("/login", response_model=TokenResponse)
+def authenticate_with_password(request: LoginRequest, db: Session = Depends(get_db)):
+    """
+    Аутентификация по email и паролю.
+    
+    Процесс:
+    1. Проверяет существование пользователя по email
+    2. Проверяет правильность пароля
+    3. Проверяет активность пользователя
+    4. Генерирует JWT токен
+    
+    Возвращает:
+    - access_token: JWT токен для доступа к API
+    - user: Данные пользователя
+    """
+    logger.info(f"🔐 Login attempt for email: {request.email}")
+    
+    # Поиск пользователя по email
+    user = get_user_by_email(db, request.email)
+    
+    if not user:
+        logger.warning(f"❌ User not found: {request.email}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Неверный email или пароль"
+        )
+    
+    # Проверка пароля
+    if not user.hashed_password:
+        logger.warning(f"❌ User has no password set: {request.email}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Неверный email или пароль"
+        )
+    
+    if not verify_password(request.password, user.hashed_password):
+        logger.warning(f"❌ Invalid password for: {request.email}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Неверный email или пароль"
+        )
+    
+    # Проверка активности
+    if not user.is_active:
+        logger.warning(f"❌ User inactive: {request.email}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Доступ запрещен"
+        )
+    
+    # Генерация JWT токена
+    token = create_access_token(
+        data={
+            "user_id": user.id,
+            "email": user.email,
+            "role": user.role
+        }
+    )
+    
+    logger.info(f"✅ Login successful: {request.email}, role={user.role}")
+    
+    return TokenResponse(
+        access_token=token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user)
+    )
+
 
 
 @router.post("/telegram_oauth", response_model=TokenResponse)

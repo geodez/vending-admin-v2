@@ -269,6 +269,13 @@ class ButtonMatrixCloneRequest(BaseModel):
     vendista_term_ids: Optional[List[int]] = None  # Optional: assign terminals to cloned matrix
 
 
+class UnmappedItemResponse(BaseModel):
+    term_id: int
+    machine_item_id: int
+    term_name: Optional[str] = None
+    matrix_id: Optional[int] = None
+
+
 # ============================================================================
 # Ingredient Load Schemas
 # ============================================================================

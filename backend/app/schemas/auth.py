@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional
 
 
@@ -18,10 +18,17 @@ class TelegramLoginWidgetRequest(BaseModel):
     photo_url: Optional[str] = None
 
 
+class LoginRequest(BaseModel):
+    """Запрос аутентификации по email и паролю"""
+    email: EmailStr
+    password: str
+
+
 class UserResponse(BaseModel):
     """Данные пользователя в ответе"""
     id: int
-    telegram_user_id: int
+    telegram_user_id: Optional[int] = None
+    email: Optional[str] = None
     username: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -34,7 +41,9 @@ class UserResponse(BaseModel):
 
 class UserCreate(BaseModel):
     """Схема для создания пользователя"""
-    telegram_user_id: int
+    telegram_user_id: Optional[int] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
     username: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -46,3 +55,4 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+

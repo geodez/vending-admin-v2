@@ -91,6 +91,13 @@ export interface TerminalMatrixMapCreate {
   vendista_term_ids: number[];
 }
 
+export interface UnmappedItem {
+  term_id: number;
+  machine_item_id: number;
+  term_name?: string | null;
+  matrix_id?: number | null;
+}
+
 export const mappingApi = {
   // Drinks
   getDrinks: async (): Promise<Drink[]> => {
@@ -205,6 +212,13 @@ export const mappingApi = {
       `/mapping/button-matrices/${matrixId}/clone`,
       data
     );
+    return response.data;
+  },
+
+
+  // Unmapped items
+  getUnmappedItems: async (): Promise<UnmappedItem[]> => {
+    const response = await apiClient.get<UnmappedItem[]>('/mapping/unmapped');
     return response.data;
   },
 };

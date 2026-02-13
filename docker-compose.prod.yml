@@ -12,12 +12,27 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vending"]
+      test: [ "CMD-SHELL", "pg_isready -U vending" ]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - vending_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vending_frontend_prod
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+    networks:
+      - vending_network
+    volumes:
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
 
   app:
     build:
@@ -49,6 +64,16 @@ services:
         alembic upgrade head &&
         uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4 --proxy-headers
       "
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: always
+    command: tunnel --protocol http2 run --token eyJhIjoiOTYwZmNkOTQ3YjkyYzI4Y2YyNzUyZWVjZWVmOTZmMDYiLCJ0IjoiMGZmYzI5OTEtMWU1NC00MmYxLTlmOTItNTIyYmNlNjE0OWUzIiwicyI6Ik56Y3lNR1V4TW1FdE56ZGhPQzAwT0dKakxUZzNaR1V0Wm1GaE5USmlNMkl4TTJJMyJ9
+    networks:
+      - vending_network
+    depends_on:
+      - frontend
+      - app
 
 volumes:
   postgres_data_prod:

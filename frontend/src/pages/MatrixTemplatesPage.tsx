@@ -1,18 +1,19 @@
 import { useEffect, useState, useMemo } from 'react';
-import { 
-  Card, Typography, Table, Button, Empty, message, Spin, Input, Modal, Space, 
+import {
+  Card, Typography, Table, Button, Empty, message, Spin, Input, Modal, Space,
   Form, Select, Switch, Tag, Popconfirm, Row, Col, Tabs, Divider, Badge
 } from 'antd';
-import { 
-  PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined, 
+import {
+  PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined,
   SearchOutlined, AppstoreOutlined, LinkOutlined, DisconnectOutlined
 } from '@ant-design/icons';
-import { 
-  mappingApi, ButtonMatrix, ButtonMatrixWithItems, ButtonMatrixItem, 
-  ButtonMatrixCreate, ButtonMatrixUpdate, ButtonMatrixItemCreate, 
+import {
+  mappingApi, ButtonMatrix, ButtonMatrixWithItems, ButtonMatrixItem,
+  ButtonMatrixCreate, ButtonMatrixUpdate, ButtonMatrixItemCreate,
   ButtonMatrixItemUpdate, TerminalMatrixMap, TerminalMatrixMapCreate, Drink
 } from '../api/mapping';
 import { getTerminals, VendistaTerminal } from '../api/sync';
+import { UnmappedItemsAlert } from '../components/UnmappedItemsAlert';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -23,27 +24,30 @@ const MatrixTemplatesPage = () => {
   const [loading, setLoading] = useState(false);
   const [selectedMatrix, setSelectedMatrix] = useState<ButtonMatrixWithItems | null>(null);
   const [matrixLoading, setMatrixLoading] = useState(false);
-  
+
   // Modal states
   const [matrixModalOpen, setMatrixModalOpen] = useState(false);
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [editingMatrix, setEditingMatrix] = useState<ButtonMatrix | null>(null);
   const [editingItem, setEditingItem] = useState<ButtonMatrixItem | null>(null);
-  
+
   // Forms
   const [matrixForm] = Form.useForm();
   const [itemForm] = Form.useForm();
   const [assignForm] = Form.useForm();
-  
+
   // Data for dropdowns
   const [terminals, setTerminals] = useState<VendistaTerminal[]>([]);
   const [drinks, setDrinks] = useState<Drink[]>([]);
   const [assignedTerminals, setAssignedTerminals] = useState<TerminalMatrixMap[]>([]);
-  
+
   // Filters
   const [searchText, setSearchText] = useState('');
   const [activeTab, setActiveTab] = useState('list');
+  const [alertRefreshKey, setAlertRefreshKey] = useState(0);
+
+  // Fetch matrices list
 
   // Fetch matrices list
   const fetchMatrices = async () => {
@@ -204,7 +208,7 @@ const MatrixTemplatesPage = () => {
         drink_id: values.drink_id ? Number(values.drink_id) : null,
         sale_price_rub: values.sale_price_rub ? Number(values.sale_price_rub) : null,
       };
-      
+
       if (editingItem) {
         await mappingApi.updateButtonMatrixItem(
           selectedMatrix.id,
@@ -219,6 +223,7 @@ const MatrixTemplatesPage = () => {
       setItemModalOpen(false);
       itemForm.resetFields();
       fetchMatrixDetails(selectedMatrix.id);
+      setAlertRefreshKey(prev => prev + 1); // Refresh alert
     } catch (error: any) {
       if (error.errorFields) {
         console.error('Validation errors:', error.errorFields);
@@ -511,6 +516,16 @@ const MatrixTemplatesPage = () => {
       <Title level={2}>📋 Матрицы</Title>
       <Text type="secondary">Управление и назначение терминалов</Text>
 
+      <div style={{ marginTop: 16 }}>
+        <UnmappedItemsAlert
+          key={alertRefreshKey}
+          onOpenMatrix={(id) => {
+            fetchMatrixDetails(id);
+            setActiveTab('details');
+          }}
+        />
+      </div>
+
       <Tabs activeKey={activeTab} onChange={setActiveTab} style={{ marginTop: 16 }}>
         <TabPane tab="Список матриц" key="list">
           <Card>
@@ -699,7 +714,7 @@ const MatrixTemplatesPage = () => {
             label="Номер кнопки"
             rules={[
               { required: true, message: 'Введите номер кнопки' },
-              { 
+              {
                 validator: (_, value) => {
                   const num = Number(value);
                   if (isNaN(num) || num < 1) {
@@ -765,7 +780,7 @@ const MatrixTemplatesPage = () => {
             name="sale_price_rub"
             label="Цена продажи (₽)"
             rules={[
-              { 
+              {
                 validator: (_, value) => {
                   if (value === undefined || value === null || value === '') {
                     return Promise.resolve();
@@ -788,9 +803,9 @@ const MatrixTemplatesPage = () => {
               return isNaN(num) ? value : num;
             }}
           >
-            <Input 
-              type="number" 
-              placeholder="Цена продажи в рублях" 
+            <Input
+              type="number"
+              placeholder="Цена продажи в рублях"
               step="0.01"
               addonAfter="₽"
             />

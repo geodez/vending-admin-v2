@@ -72,7 +72,7 @@ const AppLayout = () => {
 
   // Filter navigation items based on user role
   const navItems = NAV_ITEMS.filter((item) =>
-    item.roles.includes(user?.role || '')
+    item.roles.includes((user?.role || '') as any)
   ).map((item) => ({
     key: item.key,
     icon: iconMap[item.icon],

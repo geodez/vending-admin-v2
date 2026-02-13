@@ -16,12 +16,12 @@ const RecipesPage = () => {
   const [editingDrink, setEditingDrink] = useState<Drink | null>(null);
   const [form] = Form.useForm();
   const [bulkEditForm] = Form.useForm();
-  
+
   // Фильтры
   const [searchText, setSearchText] = useState('');
   const [filterIsActive, setFilterIsActive] = useState<boolean | undefined>(undefined);
   const [groupBy, setGroupBy] = useState<'none' | 'base_name' | 'volume'>('none');
-  
+
   // Выбранные рецепты для массового редактирования
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
@@ -40,7 +40,8 @@ const RecipesPage = () => {
   const fetchIngredients = async () => {
     try {
       const data = await getIngredients();
-      setIngredients(data.data || data);
+      const res: any = data;
+      setIngredients(res.data || res);
     } catch (error: any) {
       console.error('Ошибка загрузки ингредиентов:', error);
     }
@@ -54,10 +55,10 @@ const RecipesPage = () => {
   // Извлечение базового названия (без объема и вариантов типа Strong, Stronge и т.д.)
   const getBaseName = (name: string): string => {
     let baseName = name;
-    
+
     // Удаляем объем (250 мл, 350 мл, 120 мл и т.д.)
     baseName = baseName.replace(/\s+\d+\s*мл\.?/i, '').trim();
-    
+
     // Удаляем варианты напитков (Strong, Stronge, Двойной, и другие модификаторы)
     // Список модификаторов, которые нужно удалить
     const modifiers = [
@@ -70,14 +71,14 @@ const RecipesPage = () => {
       /\s+двойной\s+/i,       // Двойной в середине
       /\s+одинарный\s*/i,     // Одинарный
     ];
-    
+
     for (const modifier of modifiers) {
       baseName = baseName.replace(modifier, ' ').trim();
     }
-    
+
     // Удаляем лишние пробелы
     baseName = baseName.replace(/\s+/g, ' ').trim();
-    
+
     return baseName;
   };
 
@@ -91,7 +92,7 @@ const RecipesPage = () => {
   const { filteredDrinks, groupedDrinks } = useMemo(() => {
     // Сначала фильтруем
     const filtered = drinks.filter((drink) => {
-      const matchesSearch = !searchText || 
+      const matchesSearch = !searchText ||
         drink.name.toLowerCase().includes(searchText.toLowerCase());
       const matchesStatus = filterIsActive === undefined || drink.is_active === filterIsActive;
       return matchesSearch && matchesStatus;
@@ -182,7 +183,7 @@ const RecipesPage = () => {
         await mappingApi.createDrink(drinkData);
         message.success('Напиток добавлен');
       }
-      
+
       setModalOpen(false);
       fetchDrinks();
     } catch (error: any) {
@@ -202,14 +203,14 @@ const RecipesPage = () => {
   const handleBulkEditSubmit = async () => {
     try {
       const values = await bulkEditForm.validateFields();
-      
+
       const drinkIds = selectedRowKeys.map(key => Number(key));
-      
+
       const updateData: any = {};
       if (values.is_active !== undefined) {
         updateData.is_active = values.is_active;
       }
-      
+
       if (Object.keys(updateData).length === 0) {
         message.warning('Выберите параметры для изменения');
         return;
@@ -217,7 +218,7 @@ const RecipesPage = () => {
 
       const result = await mappingApi.bulkUpdateDrinks(drinkIds, updateData);
       message.success(`Успешно обновлено ${result.updated} рецептов`);
-      
+
       setBulkEditModalOpen(false);
       setSelectedRowKeys([]);
       fetchDrinks();
@@ -284,19 +285,21 @@ const RecipesPage = () => {
         if (!items || items.length === 0) {
           return <Text type="secondary" style={{ fontSize: '13px' }}>Нет ингредиентов</Text>;
         }
-        
+
         return (
           <div style={{ width: '100%' }}>
             {items.map((item, idx) => {
               // Используем display_name_ru из item, если есть, иначе ищем в списке ингредиентов
               const ingredientName = item.display_name_ru || (() => {
                 const ingredient = ingredients.find(ing => {
-                  const ingCode = ing.ingredient_code || ing.code;
+                  const item = ing as any;
+                  const ingCode = item.ingredient_code || item.code;
                   return ingCode === item.ingredient_code;
                 });
-                return ingredient?.display_name_ru || item.ingredient_code;
+                const foundItem = ingredient as any;
+                return foundItem?.display_name_ru || item.ingredient_code;
               })();
-              
+
               return (
                 <div key={idx} style={{ fontSize: '12px', lineHeight: '1.5', marginBottom: 3 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -315,10 +318,10 @@ const RecipesPage = () => {
                       const cost = item.item_cost_rub;
                       if (cost == null || cost === undefined || cost <= 0) return null;
                       return (
-                        <Tag 
-                          color="success" 
-                          style={{ 
-                            margin: 0, 
+                        <Tag
+                          color="success"
+                          style={{
+                            margin: 0,
                             fontWeight: 600,
                             fontSize: '10px',
                             padding: '1px 6px',
@@ -364,14 +367,14 @@ const RecipesPage = () => {
           if (value < 50) return '#1890ff'; // Синий для средней
           return '#fa8c16'; // Оранжевый для высокой
         };
-        
+
         const cogsValue = typeof cogs === 'number' ? cogs : 0;
-        
+
         return (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-            <Text 
-              strong 
-              style={{ 
+            <Text
+              strong
+              style={{
                 color: getColor(cogsValue),
                 fontSize: '15px',
                 fontWeight: 600,
@@ -381,9 +384,9 @@ const RecipesPage = () => {
               {cogsValue.toFixed(2)}₽
             </Text>
             {record.items && record.items.length > 0 && (
-              <Text 
-                type="secondary" 
-                style={{ 
+              <Text
+                type="secondary"
+                style={{
                   fontSize: '10px',
                   lineHeight: 1
                 }}
@@ -463,7 +466,7 @@ const RecipesPage = () => {
     <div>
       <Title level={2}>☕ Рецепты</Title>
       <Text type="secondary">Управление рецептами напитков</Text>
-      
+
       <Card style={{ marginTop: 16 }}>
         <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
           <Space>
@@ -604,17 +607,22 @@ const RecipesPage = () => {
                         style={{ width: 250 }}
                       >
                         <Select placeholder="Ингредиент" showSearch filterOption={(input, option) =>
-                          (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                          ((option?.label as string) ?? '').toLowerCase().includes(input.toLowerCase())
                         }>
-                          {ingredients.map(ing => (
-                            <Select.Option 
-                              key={ing.ingredient_code || ing.code} 
-                              value={ing.ingredient_code || ing.code}
-                              label={ing.display_name_ru || ing.ingredient_code || ing.code}
-                            >
-                              {ing.display_name_ru || ing.ingredient_code || ing.code}
-                            </Select.Option>
-                          ))}
+                          {ingredients.map(ing => {
+                            const item = ing as any;
+                            const code = item.ingredient_code || item.code;
+                            const name = item.display_name_ru || item.ingredient_code || item.code;
+                            return (
+                              <Select.Option
+                                key={code}
+                                value={code}
+                                label={name}
+                              >
+                                {name}
+                              </Select.Option>
+                            );
+                          })}
                         </Select>
                       </Form.Item>
                       <Form.Item

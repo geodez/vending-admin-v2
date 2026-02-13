@@ -1,0 +1,171 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] tests/chart.spec.ts:3:1 › Overview chart renders correctly
+[1A[2Ktests/chart.spec.ts:3:1 › Overview chart renders correctly
+BROWSER LOG: [Telegram.WebView] > postEvent web_app_set_header_color {color_key: bg_color}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_bottom_bar_color {color: #ffffff}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_theme 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_viewport 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_safe_area 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_content_safe_area 
+
+[1A[2KBROWSER LOG: [vite] connecting...
+
+[1A[2KBROWSER LOG: [vite] connected.
+
+[1A[2KBROWSER LOG: %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_header_color {color_key: bg_color}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_bottom_bar_color {color: #ffffff}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_theme 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_viewport 
+
+[1A[2KBROWSER LOG: Warning: [antd: Spin] `tip` only work in nest or fullscreen pattern.
+
+[1A[2KBROWSER LOG: 🚀 Инициализация Telegram WebApp...
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_ready 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_expand 
+
+[1A[2KBROWSER LOG: 📊 Данные Telegram: {userData: null, appInitData: ..., scheme: light}
+
+[1A[2KBROWSER LOG: ⚠️ userData не загружен, проверяем debug mode...
+
+[1A[2KBROWSER LOG: 💻 DEBUG MODE: Используем test Telegram данные
+
+[1A[2KBROWSER LOG: 📱 Test initData: query_id=test&user={"id":602720033,"is_bot":false,"first_name":"Roman","last_name":"Test","username":"roman_test","language_code":"ru","is_premium":false,"allows_write_to_pm":true}&auth_date=1770922533&hash=test
+
+[1A[2KBROWSER LOG: 🚀 Инициализация Telegram WebApp...
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_ready 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_expand 
+
+[1A[2KBROWSER LOG: 📊 Данные Telegram: {userData: null, appInitData: ..., scheme: light}
+
+[1A[2KBROWSER LOG: ⚠️ userData не загружен, проверяем debug mode...
+
+[1A[2KBROWSER LOG: 💻 DEBUG MODE: Используем test Telegram данные
+
+[1A[2KBROWSER LOG: 📱 Test initData: query_id=test&user={"id":602720033,"is_bot":false,"first_name":"Roman","last_name":"Test","username":"roman_test","language_code":"ru","is_premium":false,"allows_write_to_pm":true}&auth_date=1770922533&hash=test
+
+[1A[2KBROWSER LOG: ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+
+[1A[2KBROWSER LOG: ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+[1A[2KBROWSER LOG: The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+[1A[2KBROWSER LOG: The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+[1A[2KCurrent URL: http://localhost:3000/
+
+[1A[2KPage Title: Vending Admin
+
+[1A[2KTest failed. Dumping all card titles:
+
+[1A[2KTitles found: [ [32m'📈 Динамика продаж'[39m, [32m'📈 Динамика продаж'[39m ]
+
+[1A[2KPage content dump:
+
+[1A[2K<!DOCTYPE html><html lang="ru" style="--tg-viewport-height: 100vh; --tg-viewport-stable-height: 100vh;"><head><style data-rc-order="prepend" rc-util-key="@ant-design-icons">
+.anticon {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  font-style: normal;
+  line-height: 0;
+  text-align: center;
+  text-transform: none;
+  vertical-align: -0.125em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.anticon > * {
+  line-height: 1;
+}
+
+.anticon svg {
+  display: inline-block;
+}
+
+.anticon::before {
+  display: none;
+}
+
+.anticon .anticon-icon {
+  display: block;
+}
+
+.anticon[tabindex] {
+  cursor: pointer;
+}
+
+.anticon-spin::before,
+.anticon-spin {
+  display: inline-block;
+  -webkit-animation: loadingCircle 1s infinite linear;
+  animation: loadingCircle 1s infinite linear;
+}
+
+@-webkit-keyframes loadingCircle {
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loadingCircle {
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+</style><style data-rc-order="prependQueue" data-rc-priority="-999" data-css-hash="927bx6" data-token-hash="1wzp644" data-cache-path="1wzp644|Shared|ant">a:where(.css-dev-only-do-not-override-1e25g4o){color:#1677ff;text-decoration:none;background-color:transparent;outline:none;cursor:pointer;transition:color 0.3s;-webkit-text-decoration-skip:objects;}a:where(.css-dev-only-do-not-override-1e25g4o):hover{color:#69b1ff;}a:where(.css-dev-only-do-not-override-1e25g4o):active{color:#0958d9;}a:where(.css-dev-only-do-not-override-1e25g4o):active,a:where(.css-dev-only-do-not-override-1e25g4o):hover{text-decoration:none;outline:0;}a:where(.css-dev-only-do-not-override-1e25g4o):focus{text-decoration:none;outline:0;}a:where(.css-dev-only-do-not-override-1e25g4o)[disabled]{color:rgba(0,0,0,0.25);cursor:not-allowed;}:where(.css-dev-only-do-not-override-1e25g4o) a{color:#1677ff;text-decoration:none;background-c
+
+[1A[2K  1) tests/chart.spec.ts:3:1 › Overview chart renders correctly ────────────────────────────────────
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('.ant-card-head-title').filter({ hasText: 'Динамика продаж' })
+    Expected: visible
+    Error: strict mode violation: locator('.ant-card-head-title').filter({ hasText: 'Динамика продаж' }) resolved to 2 elements:
+        1) <div class="ant-card-head-title">📈 Динамика продаж</div> aka locator('#rc-tabs-2-panel-overview').getByText('📈 Динамика продаж')
+        2) <div class="ant-card-head-title">📈 Динамика продаж</div> aka locator('#rc-tabs-3-panel-overview').getByText('📈 Динамика продаж')
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('.ant-card-head-title').filter({ hasText: 'Динамика продаж' })[22m
+
+
+      55 |         // Check for chart title - using class selector to be safe
+      56 |         const titleLocator = page.locator('.ant-card-head-title').filter({ hasText: 'Динамика продаж' });
+    > 57 |         await expect(titleLocator).toBeVisible({ timeout: 5000 });
+         |                                    ^
+      58 |         console.log('Found title:', await titleLocator.textContent());
+      59 |     } catch (e) {
+      60 |         console.log('Test failed. Dumping all card titles:');
+        at /Users/romanr/Documents/Хобби/Gemini prj/vending-admin-v2/frontend/tests/chart.spec.ts:57:36
+
+    Error Context: test-results/tests-chart-Overview-chart-renders-correctly/error-context.md
+
+
+[1A[2K  1 failed
+    tests/chart.spec.ts:3:1 › Overview chart renders correctly ─────────────────────────────────────

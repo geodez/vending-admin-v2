@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { TelegramAuthRequest, TokenResponse, User } from '@/types/api';
+import { TelegramAuthRequest, TokenResponse, User, LoginRequest } from '@/types/api';
 
 export const authApi = {
   /**
@@ -14,6 +14,22 @@ export const authApi = {
       return response.data;
     } catch (error: any) {
       console.error('❌ Error sending initData:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Authenticate with email and password
+   */
+  loginWithPassword: async (email: string, password: string): Promise<TokenResponse> => {
+    try {
+      console.log('🔐 Sending email/password to server...');
+      const payload: LoginRequest = { email, password };
+      const response = await apiClient.post<TokenResponse>('/auth/login', payload);
+      console.log('✅ Login successful');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Login error:', error);
       throw error;
     }
   },

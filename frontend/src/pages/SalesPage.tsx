@@ -16,7 +16,7 @@ const SalesPage = () => {
     dayjs().startOf('month'),
     dayjs()
   ]);
-  
+
   // Transactions state
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
@@ -87,7 +87,7 @@ const SalesPage = () => {
         sum_type: sumType,
         term_id: termIdFilter,
       });
-      
+
       // Create download link
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -97,7 +97,7 @@ const SalesPage = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
+
       message.success('CSV файл загружен');
     } catch (error: any) {
       message.error(error.response?.data?.detail || 'Ошибка при экспорте');
@@ -144,7 +144,7 @@ const SalesPage = () => {
     <div>
       <Title level={2}>📊 Продажи по терминалам</Title>
       <Text type="secondary">Статистика продаж по терминалам за период</Text>
-      
+
       <Card style={{ marginTop: 16 }}>
         <div style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <RangePicker
@@ -275,9 +275,9 @@ const SalesPage = () => {
               current: page,
               pageSize: pageSize,
               total: total,
-              totalBoundaryShowSizeChanger: false,
-              onChange: (newPage) => fetchTransactions(newPage),
               showTotal: (total) => `Всего: ${total}`,
+              onChange: (newPage) => fetchTransactions(newPage),
+
             }}
             scroll={{ x: 1000 }}
           />

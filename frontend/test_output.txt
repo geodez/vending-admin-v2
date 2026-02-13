@@ -1,0 +1,478 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] tests/chart.spec.ts:3:1 › Overview chart renders correctly
+[1A[2Ktests/chart.spec.ts:3:1 › Overview chart renders correctly
+BROWSER LOG: [Telegram.WebView] > postEvent web_app_set_header_color {color_key: bg_color}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_bottom_bar_color {color: #ffffff}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_theme 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_viewport 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_safe_area 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_content_safe_area 
+
+[1A[2KBROWSER LOG: [vite] connecting...
+
+[1A[2KBROWSER LOG: [vite] connected.
+
+[1A[2KBROWSER LOG: %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_header_color {color_key: bg_color}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_bottom_bar_color {color: #ffffff}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_theme 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_viewport 
+
+[1A[2KBROWSER LOG: Warning: [antd: Spin] `tip` only work in nest or fullscreen pattern.
+
+[1A[2KBROWSER LOG: 🚀 Инициализация Telegram WebApp...
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_ready 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_expand 
+
+[1A[2KBROWSER LOG: 📊 Данные Telegram: {userData: null, appInitData: ..., scheme: light}
+
+[1A[2KBROWSER LOG: ⚠️ userData не загружен, проверяем debug mode...
+
+[1A[2KBROWSER LOG: 💻 DEBUG MODE: Используем test Telegram данные
+
+[1A[2KBROWSER LOG: 📱 Test initData: query_id=test&user={"id":602720033,"is_bot":false,"first_name":"Roman","last_name":"Test","username":"roman_test","language_code":"ru","is_premium":false,"allows_write_to_pm":true}&auth_date=1770922418&hash=test
+
+[1A[2KBROWSER LOG: 🚀 Инициализация Telegram WebApp...
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_ready 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_expand 
+
+[1A[2KBROWSER LOG: 📊 Данные Telegram: {userData: null, appInitData: ..., scheme: light}
+
+[1A[2KBROWSER LOG: ⚠️ userData не загружен, проверяем debug mode...
+
+[1A[2KBROWSER LOG: 💻 DEBUG MODE: Используем test Telegram данные
+
+[1A[2KBROWSER LOG: 📱 Test initData: query_id=test&user={"id":602720033,"is_bot":false,"first_name":"Roman","last_name":"Test","username":"roman_test","language_code":"ru","is_premium":false,"allows_write_to_pm":true}&auth_date=1770922418&hash=test
+
+[1A[2KBROWSER LOG: ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+
+[1A[2KBROWSER LOG: ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+[1A[2KBROWSER LOG: Failed to load resource: the server responded with a status of 401 (Unauthorized)
+
+[1A[2KBROWSER LOG: Error loading overview data: AxiosError
+
+[1A[2KBROWSER LOG: Warning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+
+[1A[2KBROWSER LOG: Failed to load resource: the server responded with a status of 401 (Unauthorized)
+
+[1A[2KBROWSER LOG: Error loading overview data: AxiosError
+
+[1A[2KBROWSER LOG: Failed to load resource: the server responded with a status of 401 (Unauthorized)
+
+[1A[2KBROWSER LOG: Failed to load resource: the server responded with a status of 401 (Unauthorized)
+
+[1A[2KBROWSER LOG: Error loading overview data: AxiosError
+
+[1A[2KBROWSER LOG: Failed to load resource: the server responded with a status of 401 (Unauthorized)
+
+[1A[2KBROWSER LOG: Failed to load resource: the server responded with a status of 401 (Unauthorized)
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_header_color {color_key: bg_color}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_bottom_bar_color {color: #ffffff}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_theme 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_viewport 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_safe_area 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_content_safe_area 
+
+[1A[2KBROWSER LOG: [vite] connecting...
+
+[1A[2KBROWSER LOG: [vite] connected.
+
+[1A[2KCurrent URL: http://localhost:3000/login
+
+[1A[2KPage Title: Vending Admin
+
+[1A[2KBROWSER LOG: %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_header_color {color_key: bg_color}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_bottom_bar_color {color: #ffffff}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_theme 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_viewport 
+
+[1A[2KBROWSER LOG: Warning: [antd: Spin] `tip` only work in nest or fullscreen pattern.
+
+[1A[2KBROWSER LOG: 🚀 Инициализация Telegram WebApp...
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_ready 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_expand 
+
+[1A[2KBROWSER LOG: 📊 Данные Telegram: {userData: null, appInitData: ..., scheme: light}
+
+[1A[2KBROWSER LOG: ⚠️ userData не загружен, проверяем debug mode...
+
+[1A[2KBROWSER LOG: 💻 DEBUG MODE: Используем test Telegram данные
+
+[1A[2KBROWSER LOG: 📱 Test initData: query_id=test&user={"id":602720033,"is_bot":false,"first_name":"Roman","last_name":"Test","username":"roman_test","language_code":"ru","is_premium":false,"allows_write_to_pm":true}&auth_date=1770922420&hash=test
+
+[1A[2KBROWSER LOG: 🚀 Инициализация Telegram WebApp...
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_ready 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_expand 
+
+[1A[2KBROWSER LOG: 📊 Данные Telegram: {userData: null, appInitData: ..., scheme: light}
+
+[1A[2KBROWSER LOG: ⚠️ userData не загружен, проверяем debug mode...
+
+[1A[2KBROWSER LOG: 💻 DEBUG MODE: Используем test Telegram данные
+
+[1A[2KBROWSER LOG: 📱 Test initData: query_id=test&user={"id":602720033,"is_bot":false,"first_name":"Roman","last_name":"Test","username":"roman_test","language_code":"ru","is_premium":false,"allows_write_to_pm":true}&auth_date=1770922420&hash=test
+
+[1A[2KBROWSER LOG: 🚀 Инициализация Telegram WebApp...
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_ready 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_expand 
+
+[1A[2KBROWSER LOG: 📊 Данные Telegram: {userData: null, appInitData: ..., scheme: light}
+
+[1A[2KBROWSER LOG: ⚠️ userData не загружен, проверяем debug mode...
+
+[1A[2KBROWSER LOG: 💻 DEBUG MODE: Используем test Telegram данные
+
+[1A[2KBROWSER LOG: 📱 Test initData: query_id=test&user={"id":602720033,"is_bot":false,"first_name":"Roman","last_name":"Test","username":"roman_test","language_code":"ru","is_premium":false,"allows_write_to_pm":true}&auth_date=1770922420&hash=test
+
+[1A[2KBROWSER LOG: Telegram Login Widget инициализирован с callback
+
+[1A[2KBROWSER LOG: ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+
+[1A[2KBROWSER LOG: ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+[1A[2KBROWSER LOG: 🚀 Инициализация Telegram WebApp...
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_ready 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_expand 
+
+[1A[2KBROWSER LOG: 📊 Данные Telegram: {userData: null, appInitData: ..., scheme: light}
+
+[1A[2KBROWSER LOG: ⚠️ userData не загружен, проверяем debug mode...
+
+[1A[2KBROWSER LOG: 💻 DEBUG MODE: Используем test Telegram данные
+
+[1A[2KBROWSER LOG: 📱 Test initData: query_id=test&user={"id":602720033,"is_bot":false,"first_name":"Roman","last_name":"Test","username":"roman_test","language_code":"ru","is_premium":false,"allows_write_to_pm":true}&auth_date=1770922420&hash=test
+
+[1A[2KBROWSER LOG: Telegram Login Widget инициализирован с callback
+
+[1A[2KBROWSER LOG: Failed to load resource: the server responded with a status of 401 (Unauthorized)
+
+[1A[2KBROWSER LOG: Error loading overview data: AxiosError
+
+[1A[2KBROWSER LOG: Warning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+
+[1A[2KBROWSER LOG: Failed to load resource: the server responded with a status of 401 (Unauthorized)
+
+[1A[2KBROWSER LOG: Error loading overview data: AxiosError
+
+[1A[2KBROWSER LOG: Failed to load resource: the server responded with a status of 401 (Unauthorized)
+
+[1A[2KBROWSER LOG: Failed to load resource: the server responded with a status of 401 (Unauthorized)
+
+[1A[2KBROWSER LOG: Error loading overview data: AxiosError
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_header_color {color_key: bg_color}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_bottom_bar_color {color: #ffffff}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_theme 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_viewport 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_safe_area 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_content_safe_area 
+
+[1A[2KBROWSER LOG: [vite] connecting...
+
+[1A[2KBROWSER LOG: [vite] connected.
+
+[1A[2KBROWSER LOG: %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_header_color {color_key: bg_color}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_bottom_bar_color {color: #ffffff}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_theme 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_viewport 
+
+[1A[2KBROWSER LOG: Warning: [antd: Spin] `tip` only work in nest or fullscreen pattern.
+
+[1A[2KBROWSER LOG: 🚀 Инициализация Telegram WebApp...
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_ready 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_expand 
+
+[1A[2KBROWSER LOG: 📊 Данные Telegram: {userData: null, appInitData: ..., scheme: light}
+
+[1A[2KBROWSER LOG: ⚠️ userData не загружен, проверяем debug mode...
+
+[1A[2KBROWSER LOG: 💻 DEBUG MODE: Используем test Telegram данные
+
+[1A[2KBROWSER LOG: 📱 Test initData: query_id=test&user={"id":602720033,"is_bot":false,"first_name":"Roman","last_name":"Test","username":"roman_test","language_code":"ru","is_premium":false,"allows_write_to_pm":true}&auth_date=1770922422&hash=test
+
+[1A[2KBROWSER LOG: 🚀 Инициализация Telegram WebApp...
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_ready 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_expand 
+
+[1A[2KBROWSER LOG: 📊 Данные Telegram: {userData: null, appInitData: ..., scheme: light}
+
+[1A[2KBROWSER LOG: ⚠️ userData не загружен, проверяем debug mode...
+
+[1A[2KBROWSER LOG: 💻 DEBUG MODE: Используем test Telegram данные
+
+[1A[2KBROWSER LOG: 📱 Test initData: query_id=test&user={"id":602720033,"is_bot":false,"first_name":"Roman","last_name":"Test","username":"roman_test","language_code":"ru","is_premium":false,"allows_write_to_pm":true}&auth_date=1770922422&hash=test
+
+[1A[2KBROWSER LOG: 🚀 Инициализация Telegram WebApp...
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_ready 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_expand 
+
+[1A[2KBROWSER LOG: 📊 Данные Telegram: {userData: null, appInitData: ..., scheme: light}
+
+[1A[2KBROWSER LOG: ⚠️ userData не загружен, проверяем debug mode...
+
+[1A[2KBROWSER LOG: 💻 DEBUG MODE: Используем test Telegram данные
+
+[1A[2KBROWSER LOG: 📱 Test initData: query_id=test&user={"id":602720033,"is_bot":false,"first_name":"Roman","last_name":"Test","username":"roman_test","language_code":"ru","is_premium":false,"allows_write_to_pm":true}&auth_date=1770922422&hash=test
+
+[1A[2KBROWSER LOG: Telegram Login Widget инициализирован с callback
+
+[1A[2KBROWSER LOG: ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+
+[1A[2KBROWSER LOG: ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+[1A[2KBROWSER LOG: 🚀 Инициализация Telegram WebApp...
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_ready 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_expand 
+
+[1A[2KBROWSER LOG: 📊 Данные Telegram: {userData: null, appInitData: ..., scheme: light}
+
+[1A[2KBROWSER LOG: ⚠️ userData не загружен, проверяем debug mode...
+
+[1A[2KBROWSER LOG: 💻 DEBUG MODE: Используем test Telegram данные
+
+[1A[2KBROWSER LOG: 📱 Test initData: query_id=test&user={"id":602720033,"is_bot":false,"first_name":"Roman","last_name":"Test","username":"roman_test","language_code":"ru","is_premium":false,"allows_write_to_pm":true}&auth_date=1770922422&hash=test
+
+[1A[2KBROWSER LOG: Telegram Login Widget инициализирован с callback
+
+[1A[2KBROWSER LOG: Failed to load resource: the server responded with a status of 401 (Unauthorized)
+
+[1A[2KBROWSER LOG: Error loading overview data: AxiosError
+
+[1A[2KBROWSER LOG: Warning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+
+[1A[2KBROWSER LOG: Failed to load resource: the server responded with a status of 401 (Unauthorized)
+
+[1A[2KBROWSER LOG: Error loading overview data: AxiosError
+
+[1A[2KBROWSER LOG: Failed to load resource: the server responded with a status of 401 (Unauthorized)
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_header_color {color_key: bg_color}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_bottom_bar_color {color: #ffffff}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_theme 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_viewport 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_safe_area 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_content_safe_area 
+
+[1A[2KBROWSER LOG: [vite] connecting...
+
+[1A[2KBROWSER LOG: [vite] connected.
+
+[1A[2KBROWSER LOG: %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_header_color {color_key: bg_color}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_set_bottom_bar_color {color: #ffffff}
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_theme 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_request_viewport 
+
+[1A[2KBROWSER LOG: Warning: [antd: Spin] `tip` only work in nest or fullscreen pattern.
+
+[1A[2KBROWSER LOG: 🚀 Инициализация Telegram WebApp...
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_ready 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_expand 
+
+[1A[2KBROWSER LOG: 📊 Данные Telegram: {userData: null, appInitData: ..., scheme: light}
+
+[1A[2KBROWSER LOG: ⚠️ userData не загружен, проверяем debug mode...
+
+[1A[2KBROWSER LOG: 💻 DEBUG MODE: Используем test Telegram данные
+
+[1A[2KBROWSER LOG: 📱 Test initData: query_id=test&user={"id":602720033,"is_bot":false,"first_name":"Roman","last_name":"Test","username":"roman_test","language_code":"ru","is_premium":false,"allows_write_to_pm":true}&auth_date=1770922424&hash=test
+
+[1A[2KBROWSER LOG: 🚀 Инициализация Telegram WebApp...
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_ready 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_expand 
+
+[1A[2KBROWSER LOG: 📊 Данные Telegram: {userData: null, appInitData: ..., scheme: light}
+
+[1A[2KBROWSER LOG: ⚠️ userData не загружен, проверяем debug mode...
+
+[1A[2KBROWSER LOG: 💻 DEBUG MODE: Используем test Telegram данные
+
+[1A[2KBROWSER LOG: 📱 Test initData: query_id=test&user={"id":602720033,"is_bot":false,"first_name":"Roman","last_name":"Test","username":"roman_test","language_code":"ru","is_premium":false,"allows_write_to_pm":true}&auth_date=1770922424&hash=test
+
+[1A[2KBROWSER LOG: 🚀 Инициализация Telegram WebApp...
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_ready 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_expand 
+
+[1A[2KBROWSER LOG: 📊 Данные Telegram: {userData: null, appInitData: ..., scheme: light}
+
+[1A[2KBROWSER LOG: ⚠️ userData не загружен, проверяем debug mode...
+
+[1A[2KBROWSER LOG: 💻 DEBUG MODE: Используем test Telegram данные
+
+[1A[2KBROWSER LOG: 📱 Test initData: query_id=test&user={"id":602720033,"is_bot":false,"first_name":"Roman","last_name":"Test","username":"roman_test","language_code":"ru","is_premium":false,"allows_write_to_pm":true}&auth_date=1770922424&hash=test
+
+[1A[2KBROWSER LOG: Telegram Login Widget инициализирован с callback
+
+[1A[2KBROWSER LOG: ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+
+[1A[2KBROWSER LOG: ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+[1A[2KBROWSER LOG: 🚀 Инициализация Telegram WebApp...
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_ready 
+
+[1A[2KBROWSER LOG: [Telegram.WebView] > postEvent web_app_expand 
+
+[1A[2KBROWSER LOG: 📊 Данные Telegram: {userData: null, appInitData: ..., scheme: light}
+
+[1A[2KBROWSER LOG: ⚠️ userData не загружен, проверяем debug mode...
+
+[1A[2KBROWSER LOG: 💻 DEBUG MODE: Используем test Telegram данные
+
+[1A[2KBROWSER LOG: 📱 Test initData: query_id=test&user={"id":602720033,"is_bot":false,"first_name":"Roman","last_name":"Test","username":"roman_test","language_code":"ru","is_premium":false,"allows_write_to_pm":true}&auth_date=1770922424&hash=test
+
+[1A[2KBROWSER LOG: Telegram Login Widget инициализирован с callback
+
+[1A[2KTest failed. Page content substring:
+
+[1A[2KPAGE CONTENT START
+
+[1A[2K<!DOCTYPE html><html lang="ru" style="--tg-viewport-height: 100vh; --tg-viewport-stable-height: 100vh;"><head><style data-rc-order="prepend" rc-util-key="@ant-design-icons">
+.anticon {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  font-style: normal;
+  line-height: 0;
+  text-align: center;
+  text-transform: none;
+  vertical-align: -0.125em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.anticon > * {
+  line-height: 1;
+}
+
+.anticon svg {
+  display: inline-block;
+}
+
+.anticon::before {
+  display: none;
+}
+
+.anticon .anticon-icon {
+  display: block;
+}
+
+.anticon[tabindex] {
+  cursor: pointer;
+}
+
+.anticon-spin::before,
+.anticon-spin {
+  display: inline-block;
+  -webkit-animation: loadingCircle 1s infinite linear;
+  animation: loadingCircle 1s infinite linear;
+}
+
+@-webkit-keyframes loadingCircle {
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loadingCir
+
+[1A[2KPAGE CONTENT END
+
+[1A[2K  1) tests/chart.spec.ts:3:1 › Overview chart renders correctly ────────────────────────────────────
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('Динамика продаж')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for getByText('Динамика продаж')[22m
+
+
+      54 |     try {
+      55 |         // Check for chart title
+    > 56 |         await expect(page.getByText('Динамика продаж')).toBeVisible({ timeout: 5000 });
+         |                                                         ^
+      57 |     } catch (e) {
+      58 |         console.log('Test failed. Page content substring:');
+      59 |         const content = await page.content();
+        at /Users/romanr/Documents/Хобби/Gemini prj/vending-admin-v2/frontend/tests/chart.spec.ts:56:57
+
+    Error Context: test-results/tests-chart-Overview-chart-renders-correctly/error-context.md
+
+
+[1A[2K  1 failed
+    tests/chart.spec.ts:3:1 › Overview chart renders correctly ─────────────────────────────────────

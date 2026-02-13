@@ -2,7 +2,8 @@
 
 export interface User {
   id: number;
-  telegram_user_id: number;
+  telegram_user_id: number | null;
+  email: string | null;
   username: string | null;
   first_name: string | null;
   last_name: string | null;
@@ -14,6 +15,11 @@ export interface User {
 
 export interface TelegramAuthRequest {
   init_data: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
 }
 
 export interface TokenResponse {

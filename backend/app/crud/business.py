@@ -6,10 +6,12 @@ from typing import List, Optional
 from datetime import date
 from app.models.business import (
     Location, Product, Ingredient, Drink, DrinkItem,
-    ButtonMatrix, ButtonMatrixItem, TerminalMatrixMap
+    ButtonMatrix, ButtonMatrixItem, TerminalMatrixMap,
+    VendistaTxRaw
 )
 from app.models.inventory import IngredientLoad, VariableExpense
 from app.schemas.business import *
+from sqlalchemy import text
 
 
 # ============================================================================
@@ -348,6 +350,45 @@ def remove_terminal_from_matrix(
     db.delete(assignment)
     db.commit()
     return True
+
+
+def get_unmapped_transactions(db: Session) -> List[dict]:
+    """
+    Get list of unique (term_id, machine_item_id) that are present in transactions
+    but missing from the assigned button matrix.
+    """
+    query = text("""
+        SELECT DISTINCT
+            t.term_id,
+            (t.payload->'machine_item'->0->>'machine_item_id')::int as machine_item_id,
+            vt.comment as term_name,
+            tmm.matrix_id
+        FROM vendista_tx_raw t
+        JOIN vendista_terminals vt ON vt.id = t.term_id
+        LEFT JOIN terminal_matrix_map tmm 
+            ON tmm.vendista_term_id = t.term_id 
+            AND tmm.is_active = true
+        LEFT JOIN button_matrix_items bmi 
+            ON bmi.matrix_id = tmm.matrix_id 
+            AND bmi.machine_item_id = (t.payload->'machine_item'->0->>'machine_item_id')::int
+        WHERE 
+            (t.payload->'machine_item'->0->>'machine_item_id') IS NOT NULL
+            AND bmi.id IS NULL
+        ORDER BY t.term_id, machine_item_id
+    """)
+    
+    results = db.execute(query).fetchall()
+    
+    unmapped = []
+    for row in results:
+        unmapped.append({
+            "term_id": row[0],
+            "machine_item_id": row[1],
+            "term_name": row[2],
+            "matrix_id": row[3]
+        })
+    
+    return unmapped
 
 
 # ============================================================================

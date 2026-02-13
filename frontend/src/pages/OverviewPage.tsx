@@ -8,7 +8,8 @@ import {
   TrophyOutlined,
 } from '@ant-design/icons';
 import { formatCurrency, formatNumber, formatPercent } from '@/utils/formatters';
-import { getOverview, getAlerts } from '../api/analytics';
+import { getOverview, getAlerts, getDailySales } from '../api/analytics';
+import DailySalesChart from '../components/charts/DailySalesChart';
 import { useAuthStore } from '../store/authStore';
 import OwnerReportTab from '../components/analytics/OwnerReportTab';
 
@@ -18,6 +19,7 @@ const OverviewPage = () => {
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [kpiData, setKpiData] = useState<any>(null);
+  const [dailySales, setDailySales] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -29,15 +31,20 @@ const OverviewPage = () => {
     setLoading(true);
     try {
       // Загружаем KPI для вкладки "Обзор"
-      const [kpiResponse, alertsResponse] = await Promise.all([
+      const [kpiResponse, alertsResponse, salesResponse] = await Promise.all([
         getOverview({
           from_date: new Date(new Date().setDate(1)).toISOString().split('T')[0], // Начало месяца
           to_date: new Date().toISOString().split('T')[0], // Сегодня
         }),
         getAlerts().catch(() => ({ data: { alerts: [], summary: {} } })), // Игнорируем ошибки если нет доступа
+        getDailySales({
+          from_date: new Date(new Date().setDate(1)).toISOString().split('T')[0],
+          to_date: new Date().toISOString().split('T')[0],
+        }),
       ]);
 
       setKpiData(kpiResponse.data);
+      setDailySales(salesResponse.data || []);
       setAlerts(alertsResponse.data?.alerts || []);
     } catch (error: any) {
       console.error('Error loading overview data:', error);
@@ -62,14 +69,14 @@ const OverviewPage = () => {
         <Text type="secondary">Обзор показателей и отчёт собственника</Text>
       </div>
 
-      <Tabs 
-        activeKey={activeTab} 
+      <Tabs
+        activeKey={activeTab}
         onChange={setActiveTab}
         items={[
           {
             key: 'overview',
             label: 'Обзор',
-            children: <OverviewTab kpiData={kpiData} alerts={alerts} />,
+            children: <OverviewTab kpiData={kpiData} alerts={alerts} dailySales={dailySales} />,
           },
           ...(user?.role === 'owner' ? [{
             key: 'owner-report',
@@ -83,7 +90,7 @@ const OverviewPage = () => {
 };
 
 // Компонент вкладки "Обзор"
-const OverviewTab = ({ kpiData, alerts }: { kpiData: any; alerts: any[] }) => {
+const OverviewTab = ({ kpiData, alerts, dailySales }: { kpiData: any; alerts: any[]; dailySales: any[] }) => {
   if (!kpiData) {
     return <Empty description="Нет данных для отображения" />;
   }
@@ -178,10 +185,8 @@ const OverviewTab = ({ kpiData, alerts }: { kpiData: any; alerts: any[] }) => {
         </Card>
       )}
 
-      {/* Chart Placeholder */}
-      <Card title="📈 График продаж">
-        <Empty description="График будет доступен после интеграции с API" />
-      </Card>
+      {/* Chart */}
+      <DailySalesChart data={dailySales} />
     </Space>
   );
 };

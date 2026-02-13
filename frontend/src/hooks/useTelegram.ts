@@ -23,22 +23,22 @@ export const useTelegram = (): UseTelegramReturn => {
     try {
       if (typeof window !== 'undefined' && WebApp) {
         console.log('🚀 Инициализация Telegram WebApp...');
-        
+
         // Initialize Telegram WebApp
         WebApp.ready();
         WebApp.expand();
-        
+
         // Get user data
         const userData = (WebApp as any)?.initDataUnsafe?.user || null;
         const appInitData = (WebApp as any)?.initData || '';
         const scheme = (WebApp as any)?.colorScheme || 'light';
-        
+
         console.log('📊 Данные Telegram:', {
           userData,
           appInitData: appInitData?.substring(0, 50) + '...',
           scheme
         });
-        
+
         // Если есть реальные данные от Telegram - используем их
         if (userData && appInitData) {
           console.log('👤 Пользователь найден:', userData.id, userData.first_name);
@@ -47,14 +47,14 @@ export const useTelegram = (): UseTelegramReturn => {
         } else if (!userData) {
           // Если userData не загружен - это не реальное Telegram окружение
           console.warn('⚠️ userData не загружен, проверяем debug mode...');
-          
+
           const isDev = !import.meta.env.PROD;
           const isLocalhost = window.location.hostname === 'localhost';
           const hasDebugParam = new URLSearchParams(window.location.search).has('debug');
-          
+
           if ((isDev && isLocalhost) || hasDebugParam) {
             console.log('💻 DEBUG MODE: Используем test Telegram данные');
-            
+
             // Test user data
             const testUser: TelegramUser = {
               id: 602720033,
@@ -64,12 +64,12 @@ export const useTelegram = (): UseTelegramReturn => {
               username: 'roman_test',
               language_code: 'ru',
               is_premium: false,
-              allows_write_to_pm: true,
+              // allows_write_to_pm: true,
             };
-            
+
             // Генерируем test initData
             const testInitData = `query_id=test&user=${JSON.stringify(testUser)}&auth_date=${Math.floor(Date.now() / 1000)}&hash=test`;
-            
+
             console.log('📱 Test initData:', testInitData);
             setUser(testUser);
             setInitData(testInitData);
@@ -77,16 +77,16 @@ export const useTelegram = (): UseTelegramReturn => {
             console.warn('⚠️ initData пуст и debug mode не включен');
           }
         }
-        
+
         if (scheme) {
           setColorScheme(scheme);
         }
-        
+
         // Apply theme
         if ((WebApp as any)?.themeParams?.bg_color) {
           document.body.style.backgroundColor = (WebApp as any).themeParams.bg_color;
         }
-        
+
         setIsReady(true);
       } else {
         console.warn('⚠️ WebApp недоступен');

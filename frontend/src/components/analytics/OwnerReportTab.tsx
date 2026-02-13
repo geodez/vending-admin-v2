@@ -59,7 +59,7 @@ export default function OwnerReportTab() {
   const [healthStatus, setHealthStatus] = useState<{ ok: boolean; status: string } | null>(null);
   const [dailyData, setDailyData] = useState<any[]>([]);
   const [dailyLoading, setDailyLoading] = useState(false);
-  
+
   // Filters
   const [periodStart, setPeriodStart] = useState<Dayjs>(dayjs().startOf('month'));
   const [periodEnd, setPeriodEnd] = useState<Dayjs>(dayjs());
@@ -90,11 +90,12 @@ export default function OwnerReportTab() {
       if (selectedTerminal) {
         // Find location_id from terminal
         const terminal = terminals.find(t => t.id === selectedTerminal);
-        if (terminal?.location_id) {
-          params.location_id = terminal.location_id;
+        const term: any = terminal;
+        if (term?.location_id) {
+          params.location_id = term.location_id;
         }
       }
-      
+
       const res = await getOwnerReport(params);
       setState({ kind: 'ok', data: res.data });
     } catch (e: any) {
@@ -123,11 +124,12 @@ export default function OwnerReportTab() {
       };
       if (selectedTerminal) {
         const terminal = terminals.find(t => t.id === selectedTerminal);
-        if (terminal?.location_id) {
-          params.location_id = terminal.location_id;
+        const term: any = terminal;
+        if (term?.location_id) {
+          params.location_id = term.location_id;
         }
       }
-      
+
       const res = await getDailySales(params);
       // Группируем по датам (на случай нескольких локаций)
       const grouped = res.data.reduce((acc: any, item: any) => {
@@ -147,7 +149,7 @@ export default function OwnerReportTab() {
         acc[date].sales_count += item.sales_count || 0;
         return acc;
       }, {});
-      
+
       // Добавляем расходы и считаем чистую прибыль
       const result = Object.values(grouped).map((item: any) => {
         const fees = item.revenue * 0.0895;
@@ -161,7 +163,7 @@ export default function OwnerReportTab() {
           dateFormatted: dayjs(item.date).format('DD.MM'),
         };
       }).sort((a: any, b: any) => a.date.localeCompare(b.date));
-      
+
       setDailyData(result);
     } catch (error: any) {
       console.error('Error loading daily data:', error);
@@ -211,7 +213,7 @@ export default function OwnerReportTab() {
       const res = await apiClient.get('/sync/health');
       const { ok, status } = res.data;
       setHealthStatus({ ok, status });
-      
+
       if (ok) {
         message.success('✅ ' + status);
       } else {
@@ -237,7 +239,7 @@ export default function OwnerReportTab() {
         try {
           const res = await apiClient.post('/sync/sync');
           const { ok, transactions_synced, message: msg } = res.data;
-          
+
           if (ok) {
             message.success(`✅ Синхронизировано ${transactions_synced} транзакций`);
             await loadReport();
@@ -276,7 +278,7 @@ export default function OwnerReportTab() {
   if (state.kind === 'ok') {
     const data: OwnerReportData = state.data;
     const isDataEmpty = data.revenue_gross === 0 && data.transactions_count === 0;
-    
+
     // Таблица итогов
     const tableColumns = [
       {
@@ -288,7 +290,7 @@ export default function OwnerReportTab() {
             return (
               <Space>
                 {text}
-                <Tooltip 
+                <Tooltip
                   title={
                     <div style={{ whiteSpace: 'normal', maxWidth: '300px' }}>
                       <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Маржа прибыли</div>
@@ -314,7 +316,7 @@ export default function OwnerReportTab() {
             return (
               <Space>
                 {text}
-                <Tooltip 
+                <Tooltip
                   title={
                     <div style={{ whiteSpace: 'normal', maxWidth: '300px' }}>
                       <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Количество транзакций</div>
@@ -371,7 +373,7 @@ export default function OwnerReportTab() {
       {
         key: 'margin',
         param: 'Маржа (%)',
-        value: data.revenue_gross > 0 
+        value: data.revenue_gross > 0
           ? `${data.net_margin_pct?.toFixed(2) || ((data.net_profit / data.revenue_gross) * 100).toFixed(2)}%`
           : '0.00%',
       },
@@ -383,7 +385,7 @@ export default function OwnerReportTab() {
           <div>
             <Space align="center" style={{ marginBottom: 8 }}>
               <Title level={2} style={{ margin: 0 }}>Отчёт собственника</Title>
-              <Tooltip 
+              <Tooltip
                 title={
                   <div style={{ maxWidth: '350px', whiteSpace: 'normal' }}>
                     <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Источник данных</div>
@@ -505,7 +507,7 @@ export default function OwnerReportTab() {
                   title={
                     <Space>
                       Выручка
-                      <Tooltip 
+                      <Tooltip
                         title={
                           <div style={{ maxWidth: '350px', whiteSpace: 'normal' }}>
                             <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Выручка (валовая)</div>
@@ -536,7 +538,7 @@ export default function OwnerReportTab() {
                   title={
                     <Space>
                       Комиссии и налоги
-                      <Tooltip 
+                      <Tooltip
                         title={
                           <div style={{ maxWidth: '300px', whiteSpace: 'normal' }}>
                             <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Комиссии платформы</div>
@@ -564,7 +566,7 @@ export default function OwnerReportTab() {
                   title={
                     <Space>
                       Расходы
-                      <Tooltip 
+                      <Tooltip
                         title={
                           <div style={{ maxWidth: '350px', whiteSpace: 'normal' }}>
                             <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Переменные расходы</div>
@@ -594,7 +596,7 @@ export default function OwnerReportTab() {
                   title={
                     <Space>
                       Чистая прибыль
-                      <Tooltip 
+                      <Tooltip
                         title={
                           <div style={{ maxWidth: '400px', whiteSpace: 'normal' }}>
                             <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Чистая прибыль</div>
@@ -718,7 +720,7 @@ export default function OwnerReportTab() {
                   title={
                     <Space>
                       Средний чек
-                      <Tooltip 
+                      <Tooltip
                         title={
                           <div style={{ maxWidth: '350px', whiteSpace: 'normal' }}>
                             <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Средний чек</div>
@@ -763,7 +765,7 @@ export default function OwnerReportTab() {
                   title={
                     <Space>
                       Валовая прибыль
-                      <Tooltip 
+                      <Tooltip
                         title={
                           <div style={{ maxWidth: '400px', whiteSpace: 'normal' }}>
                             <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Валовая прибыль</div>
@@ -808,7 +810,7 @@ export default function OwnerReportTab() {
                   title={
                     <Space>
                       COGS (себестоимость)
-                      <Tooltip 
+                      <Tooltip
                         title={
                           <div style={{ maxWidth: '400px', whiteSpace: 'normal' }}>
                             <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>COGS (Cost of Goods Sold)</div>
@@ -871,7 +873,7 @@ export default function OwnerReportTab() {
                   title={
                     <Space>
                       Валовая маржа
-                      <Tooltip 
+                      <Tooltip
                         title={
                           <div style={{ maxWidth: '350px', whiteSpace: 'normal' }}>
                             <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Валовая маржа</div>

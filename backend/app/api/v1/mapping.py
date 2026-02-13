@@ -15,7 +15,7 @@ from app.schemas.business import (
     ButtonMatrixItemCreate, ButtonMatrixItemUpdate, ButtonMatrixItemResponse,
     TerminalMatrixMapCreate, TerminalMatrixMapResponse,
     ButtonMatrixItemBatchRequest, ButtonMatrixItemBatchResponse,
-    ButtonMatrixCloneRequest
+    ButtonMatrixCloneRequest, UnmappedItemResponse
 )
 from app.crud import business as crud
 import logging
@@ -767,6 +767,22 @@ async def import_matrix(
         errors=apply_errors,
         message=f"Successfully imported {inserted} rows"
     )
+
+
+# ===== BUTTON MATRIX ENDPOINTS (New Template System) =====
+
+@router.get("/unmapped", response_model=List[UnmappedItemResponse])
+async def get_unmapped_items(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get list of items present in transactions but missing from assigned matrices.
+    """
+    if current_user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only owners can view unmapped items")
+    
+    return crud.get_unmapped_transactions(db)
 
 
 # ===== BUTTON MATRIX ENDPOINTS (New Template System) =====
