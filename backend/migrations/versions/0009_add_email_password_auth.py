@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '0009_add_email_password_auth'
-down_revision = '0008_update_views_remove_machine_matrix'
+down_revision = '0008'
 branch_labels = None
 depends_on = None
 
