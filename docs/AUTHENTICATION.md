@@ -28,7 +28,29 @@
 
 ## 2. Авторизация по Email/Паролю
 
-### Настройка
+### Настройка и Развертывание (Production)
+
+Поскольку Docker Hub может быть недоступен, для обновления используйте скрипт "горячего исправления":
+
+1. **Запустите скрипт деплоя:**
+   Этот скрипт копирует код и обновленные зависимости на сервер, применяет миграции и перезапускает контейнеры.
+   ```bash
+   ./scripts/deploy_manual_hotfix.sh
+   ```
+
+2. **Создайте администратора:**
+   Скрипт создания пользователя должен запускаться внутри контейнера.
+   Вначале скопируйте скрипт на сервер (если он не обновился):
+   ```bash
+   scp backend/scripts/create_user.py vend@192.168.1.104:~/app/backend/pkgs/
+   ```
+   
+   Затем выполните команду:
+   ```bash
+   ssh vend@192.168.1.104 "cd ~/app && docker compose -f docker-compose.prod.yml exec app sh -c 'export PYTHONPATH=/app && python /pkgs/create_user.py admin@example.com MySecurePass123 owner Admin'"
+   ```
+
+### Настройка (Локальная разработка)
 
 #### Шаг 1: Установите зависимости
 ```bash
@@ -36,59 +58,15 @@ cd backend
 pip install -r requirements.txt
 ```
 
-#### Шаг 2: Примените миграцию базы данных
+#### Шаг 2: Примените миграции
 ```bash
-# В Docker контейнере
-docker-compose exec backend alembic upgrade head
-
-# Или локально
 cd backend
 alembic upgrade head
 ```
 
-#### Шаг 3: Создайте пользователя с паролем
-
-Используйте Python скрипт для создания пользователя:
-
-```python
-from app.db.session import SessionLocal
-from app.crud.user import create_user
-from app.schemas.auth import UserCreate
-
-db = SessionLocal()
-
-# Создание пользователя
-user = create_user(
-    db,
-    UserCreate(
-        email="admin@example.com",
-        password="secure_password_123",
-        first_name="Администратор",
-        role="owner",  # или "operator"
-    )
-)
-
-print(f"Пользователь создан: {user.email}")
-db.close()
-```
-
-Или через SQL:
-
-```sql
--- Сначала нужно захешировать пароль через Python:
--- from app.auth.password import get_password_hash
--- hashed = get_password_hash("your_password")
-
-INSERT INTO users (email, hashed_password, first_name, role, is_active, created_at, updated_at)
-VALUES (
-    'admin@example.com',
-    '$2b$12$...', -- хешированный пароль
-    'Администратор',
-    'owner',
-    true,
-    NOW(),
-    NOW()
-);
+#### Шаг 3: Создайте пользователя
+```bash
+python scripts/create_user.py admin@example.com MySecurePass123 owner Admin
 ```
 
 ### Использование
@@ -224,70 +202,24 @@ alembic upgrade head
 alembic downgrade -1
 ```
 
-## 8. Создание скрипта для добавления пользователей
+## 8. Управление пользователями
 
-Создайте файл `backend/scripts/create_user.py`:
+Скрипт `backend/scripts/create_user.py` позволяет создавать новых пользователей из командной строки.
 
-```python
-#!/usr/bin/env python3
-"""
-Скрипт для создания пользователя с email/паролем
-"""
-import sys
-from app.db.session import SessionLocal
-from app.crud.user import create_user, get_user_by_email
-from app.schemas.auth import UserCreate
-
-def main():
-    if len(sys.argv) < 4:
-        print("Usage: python create_user.py <email> <password> <role> [first_name]")
-        print("Example: python create_user.py admin@example.com password123 owner Admin")
-        sys.exit(1)
-    
-    email = sys.argv[1]
-    password = sys.argv[2]
-    role = sys.argv[3]
-    first_name = sys.argv[4] if len(sys.argv) > 4 else email.split('@')[0]
-    
-    if role not in ['owner', 'operator']:
-        print("Error: role must be 'owner' or 'operator'")
-        sys.exit(1)
-    
-    db = SessionLocal()
-    
-    try:
-        # Проверяем, существует ли пользователь
-        existing = get_user_by_email(db, email)
-        if existing:
-            print(f"Error: User with email {email} already exists")
-            sys.exit(1)
-        
-        # Создаем пользователя
-        user = create_user(
-            db,
-            UserCreate(
-                email=email,
-                password=password,
-                first_name=first_name,
-                role=role,
-            )
-        )
-        
-        print(f"✅ User created successfully!")
-        print(f"   Email: {user.email}")
-        print(f"   Name: {user.first_name}")
-        print(f"   Role: {user.role}")
-        print(f"   ID: {user.id}")
-        
-    finally:
-        db.close()
-
-if __name__ == "__main__":
-    main()
-```
-
-Использование:
+### Использование на production сервере:
 ```bash
-cd backend
-python scripts/create_user.py admin@example.com SecurePass123 owner "Администратор"
+ssh user@host "cd ~/app && docker compose -f docker-compose.prod.yml exec app sh -c 'export PYTHONPATH=/app && python /pkgs/create_user.py <email> <password> <role> [name]'"
 ```
+
+Пример:
+```bash
+# Создать владельца
+python create_user.py admin@example.com Secret123 owner "Главный Админ"
+
+# Создать оператора
+python create_user.py operator@example.com SimplePass123 operator "Иван Оператор"
+```
+
+### Роли:
+- `owner` - полный доступ
+- `operator` - ограниченный доступ (без настроек и управления матрицами)

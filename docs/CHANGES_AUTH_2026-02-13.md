@@ -87,6 +87,18 @@ cd backend
 python scripts/create_user.py admin@example.com SecurePass123 owner "Администратор"
 ```
 
+### Production (Hotfix Deploy)
+
+Если Docker Hub недоступен, используйте:
+```bash
+./scripts/deploy_manual_hotfix.sh
+```
+
+Создание пользователя на сервере:
+```bash
+ssh user@host "cd ~/app && docker compose -f docker-compose.prod.yml exec app sh -c 'export PYTHONPATH=/app && python /pkgs/create_user.py <email> <password> <role> [name]'"
+```
+
 ### Вход в систему
 
 1. Откройте страницу входа

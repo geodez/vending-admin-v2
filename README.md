@@ -138,6 +138,13 @@ docker-compose -f docker-compose.prod.yml logs -f app
 docker-compose -f docker-compose.prod.yml down
 ```
 
+### Hotfix Update (когда Docker Hub недоступен)
+
+```bash
+# Обновление кода и зависимостей без пересборки образа
+./scripts/deploy_manual_hotfix.sh
+```
+
 ## 🎯 Основные возможности
 
 ### Для Собственника (Owner)
